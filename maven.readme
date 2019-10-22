@@ -1,0 +1,7 @@
+ "C:\Users\Administrator\Downloads\apache-maven-3.6.2-bin\apache-maven-3.6.2\bin\mvn"
+
+Build maven project
+mvn install:install-file -DgroupId=net.scr0pt -DartifactId=Scr0ptLibrary -Dversion=1.0 -Dfile="out/artifacts/Scr0ptLibrary/Scr0ptLibrary.jar" -Dpackaging=jar -DgeneratePom=true -DlocalRepositoryPath=. -DcreateChecksum=true
+
+Updating to the Latest RELEASE
+mvn versions:use-latest-releases
