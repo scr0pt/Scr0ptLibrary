@@ -8,7 +8,8 @@ import org.bson.Document
 
 
 fun main() {
-    for(i in 0..100) println(RandomUtils.nextInt(2001,2003))
+    val url = "https://dashboard.heroku.com/apps/anigoo-news/access"
+    val a = 1
 }
 
 fun main22() {

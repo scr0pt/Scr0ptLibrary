@@ -43,8 +43,8 @@ suspend fun main() {
 
             if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) return
 
-            val appName = "scr0pt-" + RandomStringUtils.randomAlphabetic(15).toLowerCase()
-            val collaboratorEmail = "alphahoai@gmail.com"
+            val appName = randomAppname()
+            val collaboratorEmail = "brucealmighty5daeae612ce205583fda39d5@gmail.com"
             val result = FakeProfile.getNewProfile()
             val first = result?.name?.first ?: "Bruce"
             val last = result?.name?.last ?: "Lee"
@@ -57,7 +57,7 @@ suspend fun main() {
                 email = gmailUsername,
                 appName = appName,
                 collaboratorEmail = collaboratorEmail,
-                password = "XinChaoVietNam@${ThreadLocalRandom.current().nextInt()}",
+                password = "Bruce_${ThreadLocalRandom.current().nextInt()}",
                 firstName = first,
                 lastName = last,
                 driver = Browser.firefox,
@@ -82,7 +82,7 @@ suspend fun registerHeroku(
     loginGoogle(gmailUsername, gmailPassword, driver) {
         val pageManager = PageManager(
             arrayListOf<Page>(
-                HerokuRegisterPage(firstName, lastName, email, password) {
+                HerokuRegisterPage(firstName, lastName, email) {
                     herokuCollection.insertOne(
                         org.bson.Document("email", email)
                             .append("password", password).append("firstName", firstName).append("lastName", lastName)
@@ -106,7 +106,7 @@ suspend fun registerHeroku(
                 HerokuWelcomePage {
                     println("HerokuWelcomePage success")
                 },
-                HerokuDashboardPage {
+                HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
                     println("HerokuDashboardPage success")
                 },
                 HerokuCreateNewAppPage(appName = appName) {
@@ -143,7 +143,6 @@ class HerokuRegisterPage(
     val firstName: String,
     val lastName: String,
     val email: String,
-    val password: String,
     onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
@@ -248,26 +247,6 @@ class HerokuWelcomePage(
                 doc.selectFirst(".account-page .account-content h2")?.text() == "Welcome to Heroku" &&
                 doc.selectFirst(".account-page .account-content h3") == null &&
                 doc.selectFirst("form#final_login .center input[type=\"submit\"]")?.attr("value") == "Click here to proceed"
-}
-
-
-class HerokuDashboardPage(
-    onPageFinish: (() -> Unit)? = null
-) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: WebDriver): PageResponse {
-        driver.get("https://dashboard.heroku.com/new-app")
-        return PageResponse.WAITING_FOR_RESULT()
-    }
-
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-        currentUrl.startsWith("https://dashboard.heroku.com/apps") &&
-                doc.selectFirst("#ember22 .hk-button--secondary")?.text() == "New" &&
-                doc.selectFirst(".header-main h2") == null &&
-                doc.selectFirst(".account-page .account-content h2") == null &&
-                doc.selectFirst(".account-page .account-content h3") == null &&
-                doc.selectFirst("#ember21 button.context-toggle span.purple")?.text() == "Personal"
 }
 
 
