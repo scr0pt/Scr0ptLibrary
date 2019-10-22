@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact name="Scr0ptLibrary">
+    <output-path>$PROJECT_DIR$/out/artifacts/Scr0ptLibrary</output-path>
+    <root id="root">
+      <element id="archive" name="Scr0ptLibrary.jar">
+        <element id="module-output" name="Scr0ptLibrary" />
+      </element>
+    </root>
+  </artifact>
+</component>

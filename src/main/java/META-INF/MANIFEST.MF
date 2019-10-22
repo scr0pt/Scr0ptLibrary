@@ -1,35 +1,71 @@
 Manifest-Version: 1.0
-Class-Path: jetty-xml-9.4.20.v20190813.jar selenium-firefox-xpi-driver-4
- .0.0-alpha-2.jar jetty-client-9.4.20.v20190813.jar accessors-smart-1.2.
- jar jsr305-3.0.2.jar curvesapi-1.04.jar selenium-chrome-driver-4.0.0-al
- pha-2.jar commons-collections4-4.1.jar commons-exec-1.3.jar listenablef
- uture-9999.0-empty-to-avoid-conflict-with-guava.jar pdfbox-2.0.6.jar co
- mmons-email-1.5.jar selenium-ie-driver-4.0.0-alpha-2.jar xmlbeans-2.6.0
- .jar okio-1.17.2.jar poi-ooxml-schemas-3.17.jar jetty-util-9.4.20.v2019
- 0813.jar stax-api-1.0.1.jar mongodb-driver-sync-3.11.0.jar selenium-saf
- ari-driver-4.0.0-alpha-2.jar selenium-chromium-driver-4.0.0-alpha-2.jar
-  j2objc-annotations-1.1.jar commons-lang3-3.9.jar okhttp-3.14.0.jar ope
- ntracing-api-0.33.0.jar serializer-2.7.2.jar kotlin-stdlib-common-1.3.5
- 0.jar opentracing-tracerresolver-0.1.7.jar httpmime-4.5.9.jar websocket
- -api-9.4.20.v20190813.jar selenium-edgehtml-driver-4.0.0-alpha-2.jar po
- i-ooxml-3.17.jar htmlunit-core-js-2.36.0.jar kotlin-stdlib-jdk8-1.3.50.
- jar htmlunit-cssparser-1.5.0.jar selenium-remote-driver-4.0.0-alpha-2.j
- ar zip4j-2.1.2.jar selenium-edge-driver-4.0.0-alpha-2.jar checker-qual-
- 2.5.2.jar failureaccess-1.0.1.jar gson-2.8.5.jar error_prone_annotation
- s-2.2.0.jar poi-3.17.jar commons-logging-1.2.jar neko-htmlunit-2.36.0.j
- ar annotations-13.0.jar commons-net-3.6.jar httpcore-4.4.11.jar jetty-h
- ttp-9.4.20.v20190813.jar htmlunit-driver-2.36.0.jar activation-1.1.jar 
- byte-buddy-1.9.12.jar kotlin-stdlib-jdk7-1.3.50.jar dec-0.1.2.jar asm-5
- .0.4.jar commons-io-2.6.jar httpclient-4.5.9.jar selenium-firefox-drive
- r-4.0.0-alpha-2.jar animal-sniffer-annotations-1.17.jar htmlunit-2.36.0
- .jar websocket-client-9.4.20.v20190813.jar xml-apis-1.4.01.jar xercesIm
- pl-2.12.0.jar json-smart-2.3.jar bson-3.11.0.jar xalan-2.7.2.jar fontbo
- x-2.0.6.jar selenium-java-4.0.0-alpha-2.jar opentracing-noop-0.33.0.jar
-  kotlinx-coroutines-core-1.3.2.jar guava-27.1-jre.jar selenium-support-
- 4.0.0-alpha-2.jar websocket-common-9.4.20.v20190813.jar opentracing-uti
- l-0.33.0.jar commons-text-1.7.jar javax.mail-1.5.6.jar mongodb-driver-c
- ore-3.11.0.jar selenium-opera-driver-4.0.0-alpha-2.jar kotlinx-serializ
- ation-runtime-0.13.0.jar jetty-io-9.4.20.v20190813.jar jsoup-1.12.1.jar
-  kotlin-stdlib-1.3.50.jar selenium-api-3.141.59.jar commons-codec-1.10.
- jar
+Class-Path: tomcat-embed-logging-juli-7.0.47.jar jetty-util-9.4.20.v2019
+ 0813.jar tomcat-util-7.0.47.jar tomcat-jdbc-7.0.47.jar selenium-edgehtm
+ l-driver-4.0.0-alpha-3.jar hk2-api-2.6.1.jar htmlunit-cssparser-1.5.0.j
+ ar selenium-ie-driver-4.0.0-alpha-3.jar aopalliance-repackaged-2.6.1.ja
+ r selenium-firefox-xpi-driver-4.0.0-alpha-3.jar xml-apis-1.4.01.jar acc
+ essors-smart-1.2.jar doxia-sink-api-1.0-alpha-7.jar commons-net-3.6.jar
+  annotations-13.0.jar commons-lang3-3.9.jar maven-model-2.0.6.jar xerce
+ sImpl-2.12.0.jar checker-qual-2.5.2.jar plexus-build-api-0.0.4.jar kotl
+ in-stdlib-1.3.50.jar tomcat-dbcp-7.0.47.jar selenium-java-4.0.0-alpha-3
+ .jar htmlunit-driver-2.36.0.jar plexus-archiver-2.1.1.jar maven-reposit
+ ory-metadata-2.0.6.jar jersey-server-2.29.1.jar wagon-ssh-external-1.0-
+ beta-2.jar plexus-container-default-1.0-alpha-9-stable-1.jar httpmime-4
+ .5.9.jar gson-2.8.6.jar jetty-http-9.4.20.v20190813.jar jakarta.ws.rs-a
+ pi-2.1.6.jar plexus-component-annotations-1.5.5.jar jakarta.json.bind-a
+ pi-1.0.2.jar tomcat-coyote-7.0.47.jar selenium-chromium-driver-4.0.0-al
+ pha-3.jar wagon-ssh-1.0-beta-2.jar selenium-api-4.0.0-alpha-3.jar poi-o
+ oxml-schemas-4.1.1.jar selenium-opera-driver-4.0.0-alpha-3.jar maven-fi
+ ltering-1.0.jar jakarta.xml.bind-api-2.3.2.jar jetty-client-9.4.20.v201
+ 90813.jar tomcat-jsp-api-7.0.47.jar mongodb-driver-core-3.11.1.jar poi-
+ ooxml-4.1.1.jar common-tomcat-maven-plugin-2.2.jar jersey-media-jaxb-2.
+ 29.1.jar tomcat-catalina-7.0.47.jar httpclient-4.5.10.jar javax.servlet
+ -api-4.0.1.jar maven-settings-2.0.6.jar poi-4.1.1.jar commons-cli-1.2.j
+ ar curvesapi-1.06.jar jsch-0.1.27.jar commons-io-2.6.jar javax.mail-1.5
+ .6.jar zip4j-2.2.3.jar htmlunit-2.36.0.jar maven-plugin-parameter-docum
+ enter-2.0.6.jar wagon-provider-api-1.0-beta-2.jar maven-core-2.0.6.jar 
+ plexus-interpolation-1.13.jar selenium-http-4.0.0-alpha-3.jar plexus-ut
+ ils-3.0.15.jar selenium-json-4.0.0-alpha-3.jar wagon-file-1.0-beta-2.ja
+ r jersey-client-2.29.1.jar tomcat-annotations-api-7.0.47.jar maven-arch
+ iver-2.4.2.jar mimepull-1.9.11.jar failureaccess-1.0.1.jar xalan-2.7.2.
+ jar htmlunit-core-js-2.36.0.jar selenium-firefox-driver-4.0.0-alpha-3.j
+ ar jakarta.json-api-1.1.5.jar jetty-io-9.4.20.v20190813.jar jakarta.ann
+ otation-api-1.3.5.jar json-smart-2.3.jar maven-error-diagnostics-2.0.6.
+ jar tomcat-embed-logging-log4j-7.0.47.jar plexus-classworlds-2.2.2.jar 
+ mongodb-driver-sync-3.11.1.jar jersey-hk2-2.29.1.jar bson-3.11.1.jar ja
+ karta.validation-api-2.0.2.jar jakarta.activation-api-1.2.1.jar commons
+ -collections4-4.4.jar maven-monitor-2.0.6.jar dec-0.1.2.jar jersey-comm
+ on-2.29.1.jar okhttp-4.0.1.jar kotlin-stdlib-jdk8-1.3.50.jar kotlinx-co
+ routines-core-1.3.2.jar jersey-container-servlet-core-2.29.1.jar maven-
+ profile-2.2.1.jar commons-compress-1.19.jar maven-artifact-manager-2.2.
+ 1.jar tomcat-servlet-api-7.0.47.jar listenablefuture-9999.0-empty-to-av
+ oid-conflict-with-guava.jar jakarta.json-1.1.5.jar websocket-client-9.4
+ .20.v20190813.jar jsoup-1.12.1.jar tomcat-el-api-7.0.47.jar maven-repor
+ ting-api-2.0.6.jar maven-plugin-registry-2.2.1.jar commons-text-1.7.jar
+  guava-27.1-jre.jar tomcat7-maven-plugin-2.2.jar selenium-edge-driver-4
+ .0.0-alpha-3.jar asm-5.0.4.jar tomcat-api-7.0.47.jar commons-logging-1.
+ 2.jar maven-artifact-2.0.6.jar tomcat-catalina-ha-7.0.47.jar tomcat-emb
+ ed-core-7.0.47.jar selenium-safari-driver-4.0.0-alpha-3.jar animal-snif
+ fer-annotations-1.17.jar tomcat-jasper-7.0.47.jar plexus-interactivity-
+ api-1.0-alpha-4.jar tomcat7-war-runner-2.2.jar activation-1.1.jar neko-
+ htmlunit-2.36.0.jar classworlds-1.1-alpha-2.jar wagon-http-lightweight-
+ 1.0-beta-2.jar commons-email-1.5.jar error_prone_annotations-2.2.0.jar 
+ plexus-io-2.0.3.jar wagon-ssh-common-1.0-beta-2.jar websocket-common-9.
+ 4.20.v20190813.jar hk2-locator-2.6.1.jar opentracing-api-0.33.0.jar wag
+ on-http-shared-1.0-beta-2.jar okio-2.2.2.jar jcl-over-slf4j-1.7.5.jar j
+ ersey-media-json-binding-2.29.1.jar commons-lang-2.6.jar jsr305-3.0.2.j
+ ar maven-plugin-api-2.2.1.jar kotlin-stdlib-jdk7-1.3.50.jar xmlbeans-3.
+ 1.0.jar tomcat-tribes-7.0.47.jar yasson-1.0.3.jar jersey-media-multipar
+ t-2.29.1.jar javassist-3.22.0-CR2.jar tomcat-jasper-el-7.0.47.jar selen
+ ium-support-4.0.0-alpha-3.jar fontbox-2.0.17.jar commons-exec-1.3.jar j
+ tidy-4aug2000r7-dev.jar tomcat-juli-7.0.47.jar commons-codec-1.13.jar s
+ elenium-devtools-4.0.0-alpha-3.jar ecj-4.2.2.jar httpcore-4.4.12.jar pd
+ fbox-2.0.17.jar websocket-api-9.4.20.v20190813.jar junit-3.8.1.jar j2ob
+ jc-annotations-1.1.jar kotlin-stdlib-common-1.3.50.jar maven-project-2.
+ 2.1.jar jetty-xml-9.4.20.v20190813.jar serializer-2.7.2.jar byte-buddy-
+ 1.9.12.jar selenium-chrome-driver-4.0.0-alpha-3.jar commons-math3-3.6.1
+ .jar jakarta.activation-1.2.1.jar selenium-remote-driver-4.0.0-alpha-3.
+ jar osgi-resource-locator-1.0.3.jar backport-util-concurrent-3.1.jar sl
+ f4j-api-1.7.5.jar maven-plugin-descriptor-2.0.6.jar jakarta.inject-2.6.
+ 1.jar hk2-utils-2.6.1.jar
 
