@@ -14,6 +14,7 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
     var hhhhhhhh = 0
     val INTERVAL_SLEEP_TIME =1000L//1 second
     val MAX_SLEEP_TIME = 180000L//3 min
+    var isSuccess = false
 
     var generalWatingResult: ((doc: Document, currentUrl: String) -> PageResponse)? = null
 
@@ -24,7 +25,13 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
             loop@ while (currentPage?.isEndPage() != true) {
                 var waitTime = 0L
                 while (waitTime < MAX_SLEEP_TIME) {
-                    pageResponse = waiting()
+
+                    pageResponse = if(isSuccess){
+                        PageResponse.OK("Force success")
+                    } else {
+                        waiting()
+                    }
+
                     if (pageResponse is PageResponse.WAITING_FOR_RESULT) {
                         waitTime += INTERVAL_SLEEP_TIME
                         delay(INTERVAL_SLEEP_TIME)
@@ -77,18 +84,26 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
         }
         return PageResponse.WAITING_FOR_RESULT()
     }
+
+    fun success() {
+        isSuccess = true
+    }
 }
 
 abstract class Page(val onPageFinish: (() -> Unit)? = null) {
+    var isDone = false
+    public var onPageDetect: (() -> Unit) = {
+        println(this::class.java.simpleName + ": detect")
+    }
     //check if driver is in this page
     abstract fun _detect(doc: Document, currentUrl: String, title: String): Boolean
 
     fun detect(doc: Document?, currentUrl: String, title: String): Boolean {
         doc ?: return false
-        val _detect = _detect(doc, currentUrl, title)
-        if (_detect)
-            println(this::class.java.simpleName + ": detect")
-        return _detect
+        val result = _detect(doc, currentUrl, title)
+        if (result)
+            onPageDetect()
+        return result
     }
 
     open fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? = null
@@ -97,12 +112,15 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     abstract fun _action(driver: WebDriver): PageResponse
 
     fun action(driver: WebDriver): PageResponse {
-        val _action = _action(driver)
-        if (_action is PageResponse.WAITING_FOR_RESULT) {
+        if(isDone) return PageResponse.WAITING_FOR_RESULT(this::class.java.simpleName + " done")
+
+        val response = _action(driver)
+        isDone = true
+        if (response is PageResponse.WAITING_FOR_RESULT) {
             println(this::class.java.simpleName + ": WAITING_FOR_RESULT")
         }
 
-        return _action
+        return response
     }
 }
 
