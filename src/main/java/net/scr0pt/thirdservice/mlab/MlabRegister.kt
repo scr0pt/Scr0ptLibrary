@@ -1,22 +1,19 @@
 package net.scr0pt.thirdservice.mlab
 
+import com.mongodb.client.MongoClients
+import com.mongodb.client.MongoCollection
 import net.scr0pt.bot.MlabPageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageManager
 import net.scr0pt.bot.PageResponse
-import net.scr0pt.bot.google.GoogleSearch
-import net.scr0pt.bot.google.LoginEnterEmailPage
-import net.scr0pt.bot.google.LoginEnterPasswordPage
-import net.scr0pt.bot.google.ProtectYourAccount
-import com.mongodb.client.MongoClients
-import com.mongodb.client.MongoCollection
+import net.scr0pt.bot.google.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
 import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.findElWait
+import org.jsoup.nodes.Document
+import org.openqa.selenium.WebDriver
 
 /**
  * Created by Long
@@ -26,18 +23,18 @@ import net.scr0pt.utils.webdriver.findElWait
 
 suspend fun main() {
     val mongoClient =
-        MongoClients.create(MongoConnection.megaConnection)
+            MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("mlab-account")
     val infinityMail = InfinityMail("tranvananh.200896@gmail.com")
     do {
         val email = infinityMail.getNext()?.fullAddress ?: break
         if (collection.countDocuments(
-                org.bson.Document(
-                    "email",
-                    email
-                )
-            ) == 0L && email != "t.ranvananh.2.00.896@gmail.com"
+                        org.bson.Document(
+                                "email",
+                                email
+                        )
+                ) == 0L && email != "t.ranvananh.2.00.896@gmail.com"
         ) {
             val result = FakeProfile.getNewProfile()
             val first = result?.name?.first ?: "Bruce"
@@ -46,36 +43,42 @@ suspend fun main() {
             println(first)
             println(last)
             registerMlab(
-                email = email,
-                firstName = first,
-                lastName = last,
-                driver = Browser.chrome,
-                collection = collection
+                    email = email,
+                    firstName = first,
+                    lastName = last,
+                    driver = Browser.chrome,
+                    collection = collection
             )
         }
     } while (true)
 }
 
-
-suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLoginSuccess: suspend () -> Unit) {
+suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLoginSuccess: suspend () -> Unit, onLoginFail: (suspend (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+    println("loginGoogle: $email $password")
     val googlePageManager = PageManager(
-        arrayListOf<Page>(
-            LoginEnterEmailPage(email) {
-                println("enter email success")
-            },
-            LoginEnterPasswordPage(password) {
-                println("enter password success")
-            },
-            ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
-                println("ProtectYourAccount success")
-            },
-            GoogleSearch {
-                println("GoogleSearch success")
-            }
-        ),
-        driver,
-        "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
+            arrayListOf<Page>(
+                    LoginEnterEmailPage(email) {
+                        println("enter email success")
+                    },
+                    LoginEnterPasswordPage(password) {
+                        println("enter password success")
+                    },
+                    ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
+                        println("ProtectYourAccount success")
+                    },
+                    GoogleSearch {
+                        println("GoogleSearch success")
+                    }
+            ),
+            driver,
+            "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
     )
+
+    recoverEmail?.let {
+        googlePageManager.pageList.add(VerifyItsYouRecoverEmail(it){
+            println("VerifyItsYouRecoverEmail success")
+        })
+    }
 
     googlePageManager.generalWatingResult = { jsoupDoc, currentUrl ->
         if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
@@ -88,34 +91,36 @@ suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLo
             onLoginSuccess()
         } else {
             driver.close()
+            onLoginFail?.let { it(pageResponse) }
         }
     }
 }
 
+
 suspend fun registerMlab(
-    email: String,
-    firstName: String,
-    lastName: String,
-    driver: WebDriver,
-    collection: MongoCollection<org.bson.Document>
+        email: String,
+        firstName: String,
+        lastName: String,
+        driver: WebDriver,
+        collection: MongoCollection<org.bson.Document>
 ) {
     val password = "XinChaoVietnam"
 
     val pageManager = PageManager(
-        arrayListOf<Page>(
-            TryMongoDBAtlasPage(email, password, firstName, lastName) {
-                collection.insertOne(
-                    org.bson.Document("email", email)
-                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                )
-                println("register success")
-            },
-            BuildClusterPage() {
-                println("BuildClusterPage success")
-            }
-        ),
-        driver,
-        "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
+            arrayListOf<Page>(
+                    TryMongoDBAtlasPage(email, password, firstName, lastName) {
+                        collection.insertOne(
+                                org.bson.Document("email", email)
+                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                        )
+                        println("register success")
+                    },
+                    BuildClusterPage() {
+                        println("BuildClusterPage success")
+                    }
+            ),
+            driver,
+            "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
     )
     pageManager.run { pageResponse ->
         println(pageResponse)
@@ -134,44 +139,44 @@ suspend fun loginMlab(driver: WebDriver, collection: MongoCollection<org.bson.Do
     val db_password = "mongo"
 
     val pageManager = PageManager(
-        arrayListOf<Page>(
-            TryMongoDBAtlasPage(email, password, firstName, lastName) {
-                collection.insertOne(
-                    org.bson.Document("email", email)
-                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                )
-                println("register success")
-            },
-            BuildClusterPage() {
-                println("BuildClusterPage success")
-            },
-            CreateClusterTypePage {
-                println("BuildClusterPage success")
-            },
-            ClusterCreatingPage() {
-                println("ClusterCreatingPage success")
-            },
-            CreatingDatabaseUserPage() {
-                println("CreatingDatabaseUserPage success")
-            },
-            AddNewUserPage(db_username, db_password) {
-                println("AddNewUserPage success")
-            },
-            CreatingDatabaseUserDonePage() {
-                println("CreatingDatabaseUserDonePage success")
-            },
-            NetworkAccessPage() {
-                println("NetworkAccessPage success")
-            },
-            NetworkAccessAddWhitelistPage {
-                println("NetworkAccessAddWhitelistPage success")
-            },
-            NetworkAccessAddWhitelistDonePage {
-                println("NetworkAccessAddWhitelistDonePage success")
-            }
-        ),
-        driver,
-        "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
+            arrayListOf<Page>(
+                    TryMongoDBAtlasPage(email, password, firstName, lastName) {
+                        collection.insertOne(
+                                org.bson.Document("email", email)
+                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                        )
+                        println("register success")
+                    },
+                    BuildClusterPage() {
+                        println("BuildClusterPage success")
+                    },
+                    CreateClusterTypePage {
+                        println("BuildClusterPage success")
+                    },
+                    ClusterCreatingPage() {
+                        println("ClusterCreatingPage success")
+                    },
+                    CreatingDatabaseUserPage() {
+                        println("CreatingDatabaseUserPage success")
+                    },
+                    AddNewUserPage(db_username, db_password) {
+                        println("AddNewUserPage success")
+                    },
+                    CreatingDatabaseUserDonePage() {
+                        println("CreatingDatabaseUserDonePage success")
+                    },
+                    NetworkAccessPage() {
+                        println("NetworkAccessPage success")
+                    },
+                    NetworkAccessAddWhitelistPage {
+                        println("NetworkAccessAddWhitelistPage success")
+                    },
+                    NetworkAccessAddWhitelistDonePage {
+                        println("NetworkAccessAddWhitelistDonePage success")
+                    }
+            ),
+            driver,
+            "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
     )
     pageManager.run { pageResponse ->
         when (pageResponse) {
@@ -183,11 +188,11 @@ suspend fun loginMlab(driver: WebDriver, collection: MongoCollection<org.bson.Do
 }
 
 class TryMongoDBAtlasPage(
-    val email: String,
-    val password: String,
-    val firstName: String,
-    val lastName: String,
-    onPageFinish: (() -> Unit)? = null
+        val email: String,
+        val password: String,
+        val firstName: String,
+        val lastName: String,
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -221,18 +226,18 @@ class TryMongoDBAtlasPage(
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-        doc.selectFirst("h1.txt-center")?.text() == "Try MongoDB Atlas"
+            doc.selectFirst("h1.txt-center")?.text() == "Try MongoDB Atlas"
 }
 
 class BuildClusterPage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
         val submitBtns =
-            driver.findElWait(100, 5000, ".path-selector-door-footer-starter .path-selector-door-submit", jsoup = false)
+                driver.findElWait(100, 5000, ".path-selector-door-footer-starter .path-selector-door-submit", jsoup = false)
 //            driver.findElWait(100, 5000, ".path-selector-door-hourly-price-free ~ .path-selector-door-submit")
         return if (submitBtns.isEmpty()) {
             PageResponse.NOT_FOUND_ELEMENT()
@@ -250,7 +255,7 @@ class BuildClusterPage(
 }
 
 class CreateClusterTypePage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -273,7 +278,7 @@ class CreateClusterTypePage(
 }
 
 class ClusterCreatingPage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -295,7 +300,7 @@ class ClusterCreatingPage(
 }
 
 class CreatingDatabaseUserPage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -319,9 +324,9 @@ class CreatingDatabaseUserPage(
 }
 
 class AddNewUserPage(
-    val username: String,
-    val password: String,
-    onPageFinish: (() -> Unit)? = null
+        val username: String,
+        val password: String,
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -349,7 +354,7 @@ class AddNewUserPage(
 
 
 class CreatingDatabaseUserDonePage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -373,7 +378,7 @@ class CreatingDatabaseUserDonePage(
 }
 
 class NetworkAccessPage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -396,7 +401,7 @@ class NetworkAccessPage(
 }
 
 class NetworkAccessAddWhitelistPage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
@@ -420,7 +425,7 @@ class NetworkAccessAddWhitelistPage(
 }
 
 class NetworkAccessAddWhitelistDonePage(
-    onPageFinish: (() -> Unit)? = null
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 

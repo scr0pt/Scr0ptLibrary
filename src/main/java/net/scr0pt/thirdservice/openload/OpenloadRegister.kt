@@ -39,28 +39,28 @@ suspend fun register() {
         if (collection.countDocuments(org.bson.Document("email", email)) > 0L) continue
         val password = "XinChaoVietNam@1990"
         val driver = Browser.firefox
-        loginGoogle(email = gmailUsername, password = gmailPassword, driver = driver) {
+        loginGoogle(email = gmailUsername, password = gmailPassword, driver = driver, onLoginSuccess = {
             driver.get("https://openload.co/register")
 
             val emailInputs =
-                driver.findElWait(1000, 60000, "form#register-form input#registerform-email", jsoup = false)
+                    driver.findElWait(1000, 60000, "form#register-form input#registerform-email", jsoup = false)
             emailInputs.first().sendKeys(email)
 
             val passwordInputs =
-                driver.findElWait(1000, 60000, "form#register-form input#registerform-password", jsoup = false)
+                    driver.findElWait(1000, 60000, "form#register-form input#registerform-password", jsoup = false)
             passwordInputs.first().sendKeys(password)
             val repasswordInputs =
-                driver.findElWait(1000, 60000, "form#register-form input#registerform-passwordconfirm", jsoup = false)
+                    driver.findElWait(1000, 60000, "form#register-form input#registerform-passwordconfirm", jsoup = false)
             repasswordInputs.first().sendKeys(password)
             val iagreeInputs =
-                driver.findElWait(1000, 60000, "form#register-form input#registerform-iagree", jsoup = false)
+                    driver.findElWait(1000, 60000, "form#register-form input#registerform-iagree", jsoup = false)
             iagreeInputs.first().click()
 
             val recaptcha = driver.findElWait(
-                1000,
-                60000,
-                "form#register-form iframe[src*='https://www.google.com/recaptcha']",
-                jsoup = false
+                    1000,
+                    60000,
+                    "form#register-form iframe[src*='https://www.google.com/recaptcha']",
+                    jsoup = false
             )
 
             recaptcha.first().click()
@@ -75,14 +75,14 @@ suspend fun register() {
             cookies.removeSuffix(";")
 
             collection.insertOne(
-                Document("email", email).append("password", password).append(
-                    "cookies",
-                    cookies
-                ).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
+                    Document("email", email).append("password", password).append(
+                            "cookies",
+                            cookies
+                    ).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
             )
             driver.close()
 
-        }
+        })
     } while (true)
 }
 

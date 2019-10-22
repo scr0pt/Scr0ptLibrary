@@ -1,6 +1,7 @@
 package net.scr0pt.utils.tempmail
 
 import com.sun.mail.imap.IMAPBodyPart
+import net.scr0pt.utils.curl.NetworkUtils
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
@@ -11,6 +12,7 @@ import javax.mail.internet.MimeMultipart
 import kotlin.text.StringBuilder
 
 fun main() {
+    NetworkUtils.getUnsafeOkHttpClient()
 
     //1571281709000
     val registerTime = 1571290983527

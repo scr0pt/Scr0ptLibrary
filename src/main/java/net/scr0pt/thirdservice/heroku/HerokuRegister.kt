@@ -78,7 +78,7 @@ suspend fun registerHeroku(
         gmailUsername: String,
         gmailPassword: String
 ) {
-    loginGoogle(gmailUsername, gmailPassword, driver) {
+    loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
         val pageManager = PageManager(
                 arrayListOf<Page>(
                         HerokuRegisterPage(firstName, lastName, email) {
@@ -135,7 +135,7 @@ suspend fun registerHeroku(
             driver.close()
             Thread.sleep(180000)
         }
-    }
+    })
 }
 
 class HerokuRegisterPage(

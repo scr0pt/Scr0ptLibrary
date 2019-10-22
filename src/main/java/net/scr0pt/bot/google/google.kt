@@ -5,6 +5,7 @@ import net.scr0pt.bot.PageResponse
 import org.jsoup.nodes.Document
 import org.openqa.selenium.WebDriver
 import net.scr0pt.utils.webdriver.findElWait
+import net.scr0pt.utils.webdriver.findFirstElWait
 
 
 class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
@@ -319,16 +320,34 @@ class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onP
     }
 }
 
-class VerifyItsYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+
+//Veryfy phone number
+class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false
-        return "Xác minh đó là bạn" == headingText
+        return "Xác minh đó là bạn" == headingText && !doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình")
     }
 
     override fun isEndPage() = true
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
+        return PageResponse.WAITING_FOR_RESULT()
+    }
+}
+class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
+        val headingText = doc.selectFirst("#headingText")?.text() ?: return false
+        return "Xác minh đó là bạn" == headingText && doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình")
+    }
+
+    override fun isEndPage() = false
+
+    override fun _action(driver: WebDriver): PageResponse {
+        println(this::class.java.simpleName + ": action")
+        driver.findFirstElWait(100, 5000, "input#knowledge-preregistered-email-response", jsoup = false)?.sendKeys(recoverEmail) ?: return PageResponse.NOT_FOUND_ELEMENT()
+        Thread.sleep(1000)
+        driver.findFirstElWait(100, 5000, "span", jsoup = false, filter = {el -> el.text == "Tiếp theo" })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
