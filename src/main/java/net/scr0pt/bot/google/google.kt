@@ -1,5 +1,6 @@
 package net.scr0pt.bot.google
 
+import net.scr0pt.bot.GooglePageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageResponse
 import org.jsoup.nodes.Document
@@ -53,7 +54,7 @@ class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null)
 }
 
 class LoginEnterPasswordPage(val password: String, onPageFinish: (() -> Unit)? = null) :
-    Page(onPageFinish = onPageFinish) {
+        Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false
         val forgotPassword = doc.selectFirst("#forgotPassword")?.text() ?: return false
@@ -74,7 +75,7 @@ class LoginEnterPasswordPage(val password: String, onPageFinish: (() -> Unit)? =
         if (doc.selectFirst("[jsname=\"B34EJ\"]")?.text()?.startsWith("Mật khẩu không chính xác.") ?: false) {
             return PageResponse.INCORECT_PASSWORD()//incorect password
         } else if (doc.selectFirst(".Xk3mYe.Jj6Lae .xgOPLd")?.text()?.startsWith("Mật khẩu của bạn đã thay đổi")
-                ?: false
+                        ?: false
         ) {
             return PageResponse.PASSWORD_CHANGED()//incorect password
         }
@@ -124,7 +125,7 @@ class WellcomeToNewAccount(onPageFinish: (() -> Unit)? = null) : Page(onPageFini
 }
 
 class ChangePasswordFirstTime(val newPassword: String, onPageFinish: (() -> Unit)? = null) :
-    Page(onPageFinish = onPageFinish) {
+        Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val wellcomeTitle = doc.selectFirst(".glT6eb h1")?.text() ?: return false
         return wellcomeTitle.startsWith("Thay đổi mật khẩu cho ")
@@ -159,7 +160,7 @@ class ChangePasswordFirstTime(val newPassword: String, onPageFinish: (() -> Unit
 }
 
 class EnterPasswordFirstTimeChanged(val newPassword: String, onPageFinish: (() -> Unit)? = null) :
-    Page(onPageFinish = onPageFinish) {
+        Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val wellcomeTitle = doc.selectFirst(".dMArKd .ck6P8")?.text() ?: return false
         return wellcomeTitle.startsWith("Để tiếp tục, trước tiên, hãy xác minh danh tính của bạn")
@@ -188,8 +189,8 @@ class EnterPasswordFirstTimeChanged(val newPassword: String, onPageFinish: (() -
 }
 
 class ProtectYourAccount(
-    val defaultAction: DEFAULT_ACTION = DEFAULT_ACTION.UPDATE,
-    onPageFinish: (() -> Unit)? = null
+        val defaultAction: DEFAULT_ACTION = DEFAULT_ACTION.UPDATE,
+        onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     enum class DEFAULT_ACTION {
         UPDATE, DONE
@@ -205,31 +206,18 @@ class ProtectYourAccount(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action ~ $defaultAction")
-        return when (defaultAction) {
-            DEFAULT_ACTION.UPDATE -> actionUpdate(driver)
-            DEFAULT_ACTION.DONE -> actionDone(driver)
+        when (defaultAction) {
+            DEFAULT_ACTION.UPDATE -> {
+                driver.findFirstElWait(5000, 120000, "span", jsoup = false, filter = { el ->  ( "Cập nhật".equals(el.text, ignoreCase = true)  || "Update".equals(el.text, ignoreCase = true)) })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
+                return PageResponse.WAITING_FOR_RESULT()
+            }
+            DEFAULT_ACTION.DONE -> {
+                driver.findFirstElWait(5000, 120000, "span", jsoup = false, filter = { el -> ( "Xong".equals(el.text, ignoreCase = true)  || "Done".equals(el.text, ignoreCase = true)) })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
+                return PageResponse.WAITING_FOR_RESULT()
+            }
         }
     }
 
-    fun actionUpdate(driver: WebDriver): PageResponse {
-        val updateBtns = driver.findElWait(100, 5000, ".n6Gm2e div[role=\"button\"].U26fgb")
-        if (updateBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            updateBtns.first().click()
-            return PageResponse.WAITING_FOR_RESULT()
-        }
-    }
-
-    fun actionDone(driver: WebDriver): PageResponse {
-        val doneBtns = driver.findElWait(100, 5000, ".yKBrKe div[role=\"button\"].U26fgb")
-        if (doneBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            doneBtns.first().click()
-            return PageResponse.WAITING_FOR_RESULT()
-        }
-    }
 }
 
 class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
@@ -237,6 +225,7 @@ class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(o
         return doc.selectFirst("#headingText") == null &&
                 doc.selectFirst("#headingSubtext") == null &&
                 doc.selectFirst(".mkCr7e .N4lOwd")?.text() == "Xác minh số điện thoại của bạn"
+
     }
 
     override fun isEndPage() = false
@@ -255,7 +244,7 @@ class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(o
 }
 
 class ProtectYourAccountUpdateRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Unit)? = null) :
-    Page(onPageFinish = onPageFinish) {
+        Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         return doc.selectFirst("#headingText") == null &&
                 doc.selectFirst("#headingSubtext") == null &&
@@ -284,7 +273,7 @@ class ProtectYourAccountUpdateRecoverEmail(val recoverEmail: String, onPageFinis
 }
 
 class ProtectYourAccountUpdateRecoverEmailSuccess(onPageFinish: (() -> Unit)? = null) :
-    Page(onPageFinish = onPageFinish) {
+        Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         return doc.selectFirst("#headingText") == null &&
                 doc.selectFirst("#headingSubtext") == null &&
@@ -324,8 +313,10 @@ class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onP
 //Veryfy phone number
 class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        val headingText = doc.selectFirst("#headingText")?.text() ?: return false
-        return "Xác minh đó là bạn" == headingText && !doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình")
+        return !doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
+                doc.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
+                doc.selectFirst("#headingSubtext")?.text() == "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm" &&
+                doc.selectFirst("input#phoneNumberId") != null
     }
 
     override fun isEndPage() = true
@@ -335,6 +326,7 @@ class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageF
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
+
 class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false
@@ -345,9 +337,11 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "input#knowledge-preregistered-email-response", jsoup = false)?.sendKeys(recoverEmail) ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#knowledge-preregistered-email-response", jsoup = false)?.sendKeys(recoverEmail)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
         Thread.sleep(1000)
-        driver.findFirstElWait(100, 5000, "span", jsoup = false, filter = {el -> el.text == "Tiếp theo" })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "span", jsoup = false, filter = { el -> el.text == "Tiếp theo" })?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
@@ -379,5 +373,24 @@ class AccountDisable(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = o
         //RveJvd snByac Cố gắng khôi phục
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
+    }
+}
+
+
+class CantLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
+        return "Không thể đăng nhập cho bạn" == doc.selectFirst("#headingText")?.text()
+                && doc.html().contains("Google không thể xác minh tài khoản này thuộc về bạn.")
+                && doc.html().contains("Hãy thử lại sau hoặc sử dụng Khôi phục tài khoản để được trợ giúp.")
+    }
+
+    override fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? = GooglePageResponse.CANT_LOGIN_FOR_YOU()
+
+    override fun isEndPage() = false
+
+    override fun _action(driver: WebDriver): PageResponse {
+        //RveJvd snByac Cố gắng khôi phục
+        println(this::class.java.simpleName + ": action")
+        return GooglePageResponse.CANT_LOGIN_FOR_YOU()
     }
 }

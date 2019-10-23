@@ -136,6 +136,11 @@ sealed class PageResponse(val msg: String? = null) {
     class INVALID_CURRENT_PAGE(msg: String? = null) : PageResponse(msg)
 }
 
+//GooglePageResponse
+sealed class GooglePageResponse(msg: String? = null) : PageResponse(msg) {
+    class CANT_LOGIN_FOR_YOU(msg: String? = null) : GooglePageResponse(msg)
+}
+
 //MlabPageResponse
 sealed class MlabPageResponse(msg: String? = null) : PageResponse(msg) {
     class LOGIN_ERROR(msg: String? = null) : MlabPageResponse(msg)

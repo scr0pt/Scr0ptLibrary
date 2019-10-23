@@ -25,8 +25,8 @@ import java.util.*
  */
 
 suspend fun main() {
-    val gmailUsername = "vanlethi74@gmail.com"
-    val gmailPassword = "XinChaoVietNam@@2000"
+    val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
+    val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
 
     val mongoClient =
         MongoClients.create(MongoConnection.megaConnection)

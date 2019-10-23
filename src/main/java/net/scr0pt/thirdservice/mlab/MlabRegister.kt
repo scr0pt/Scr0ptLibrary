@@ -66,8 +66,14 @@ suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLo
                     ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
                         println("ProtectYourAccount success")
                     },
+                    VerifyItsYouPhoneNumber(){
+                        println("VerifyItsYouPhoneNumber success")
+                    },
                     GoogleSearch {
                         println("GoogleSearch success")
+                    },
+                    CantLoginForYou {
+                        println("CantLoginForYou success")
                     }
             ),
             driver,
