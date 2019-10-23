@@ -5,8 +5,6 @@ import com.gargoylesoftware.htmlunit.WebClient
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
-import org.bson.Document
-import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.InfinityMail
@@ -14,8 +12,10 @@ import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
-import net.scr0pt.utils.webdriver.findElWait
+import net.scr0pt.utils.webdriver.findFirstElWait
 import net.scr0pt.utils.webdriver.waitUntilUrlChange
+import org.bson.Document
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.util.*
 
 
@@ -27,10 +27,9 @@ suspend fun register() {
     val gmailUsername = "vanlethi74@gmail.com"
     val gmailPassword = "XinChaoVietNam@@2000"
 
-
     val infinityMail = InfinityMail(gmailUsername)
     val mongoClient =
-        MongoClients.create(MongoConnection.megaConnection)
+            MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("openload")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("openload-account")
     do {
@@ -42,29 +41,21 @@ suspend fun register() {
         loginGoogle(email = gmailUsername, password = gmailPassword, driver = driver, onLoginSuccess = {
             driver.get("https://openload.co/register")
 
-            val emailInputs =
-                    driver.findElWait(1000, 60000, "form#register-form input#registerform-email", jsoup = false)
-            emailInputs.first().sendKeys(email)
-
-            val passwordInputs =
-                    driver.findElWait(1000, 60000, "form#register-form input#registerform-password", jsoup = false)
-            passwordInputs.first().sendKeys(password)
-            val repasswordInputs =
-                    driver.findElWait(1000, 60000, "form#register-form input#registerform-passwordconfirm", jsoup = false)
-            repasswordInputs.first().sendKeys(password)
-            val iagreeInputs =
-                    driver.findElWait(1000, 60000, "form#register-form input#registerform-iagree", jsoup = false)
-            iagreeInputs.first().click()
-
-            val recaptcha = driver.findElWait(
-                    1000,
-                    60000,
-                    "form#register-form iframe[src*='https://www.google.com/recaptcha']",
-                    jsoup = false
-            )
-
-            recaptcha.first().click()
-
+            driver.findFirstElWait(1000, 60000,
+                    "form#register-form input#registerform-email", jsoup = false)
+                    ?.sendKeys(email) ?: return@loginGoogle
+            driver.findFirstElWait(1000, 60000,
+                    "form#register-form input#registerform-password", jsoup = false)
+                    ?.sendKeys(password) ?: return@loginGoogle
+            driver.findFirstElWait(1000, 60000,
+                    "form#register-form input#registerform-passwordconfirm", jsoup = false)
+                    ?.sendKeys(password) ?: return@loginGoogle
+            driver.findFirstElWait(1000, 60000,
+                    "form#register-form input#registerform-iagree", jsoup = false)
+                    ?.click() ?: return@loginGoogle
+            driver.findFirstElWait(1000, 60000,
+                    "form#register-form iframe[src*='https://www.google.com/recaptcha']", jsoup = false)
+                    ?.click() ?: return@loginGoogle
             driver.waitUntilUrlChange(1000, 300000)
             println(driver.currentUrl)
 
@@ -87,11 +78,11 @@ suspend fun register() {
 }
 
 fun login(
-    openloadEmail: String,
-    openloadPassword: String,
-    gmailUsername: String,
-    gmailPassword: String,
-    collection: MongoCollection<Document>
+        openloadEmail: String,
+        openloadPassword: String,
+        gmailUsername: String,
+        gmailPassword: String,
+        collection: MongoCollection<Document>
 ) {//update cookie
 //    val driver = Browser.firefox
 
@@ -107,7 +98,7 @@ fun login(
     driver.get("https://openload.co/login")
     try {
         driver.executeAsyncScript(
-            """
+                """
                 document.querySelector(".sign-in-button").click();
                 setTimeout(function(){ 
                     document.querySelector("#loginform-email").value = "${openloadEmail}"
@@ -121,37 +112,37 @@ fun login(
 
     val gmail = Gmail(gmailUsername, gmailPassword).apply {
         onEvent(
-            MailReceiveEvent(
-                key = "ona1sender",
-                validator = { mail ->
-                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                        mail.from,
-                        "admin@openload.co"
-                    )
-                },
-                callback = { mails ->
-                    val mail =
-                        mails.firstOrNull { it.content?.contains("Please log in using your login code below:") == true }
-                    val code = mail?.content?.substringAfter("Please log in using your login code below:")?.trim()
-                        ?.substringBefore(" ")?.trim()
-                    if (code != null) {
-                        try {
-                            driver.executeAsyncScript(
-                                """
+                MailReceiveEvent(
+                        key = "ona1sender",
+                        validator = { mail ->
+                            Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                    mail.from,
+                                    "admin@openload.co"
+                            )
+                        },
+                        callback = { mails ->
+                            val mail =
+                                    mails.firstOrNull { it.content?.contains("Please log in using your login code below:") == true }
+                            val code = mail?.content?.substringAfter("Please log in using your login code below:")?.trim()
+                                    ?.substringBefore(" ")?.trim()
+                            if (code != null) {
+                                try {
+                                    driver.executeAsyncScript(
+                                            """
                                     document.getElementById("loginform-loginkey").value = "${code}"
                                     setTimeout(function(){ 
                                         document.querySelector("#main #login-form .submitcontainer button").click();
                                     }, 3000);
                             """.trimIndent()
-                            )
-                        } catch (e: Exception) {
-                        }
-                    }
-                },
-                once = false,
-                new = true,
-                fetchContent = true
-            )
+                                    )
+                                } catch (e: Exception) {
+                                }
+                            }
+                        },
+                        once = false,
+                        new = true,
+                        fetchContent = true
+                )
         )
     }
 
@@ -166,9 +157,9 @@ fun login(
     cookies.removeSuffix(";")
 
     collection.updateOne(
-        Document("email", openloadEmail), Updates.combine(
+            Document("email", openloadEmail), Updates.combine(
             Updates.set("cookies", cookies),
             Updates.set("updated_at", Date())
-        )
+    )
     )
 }
