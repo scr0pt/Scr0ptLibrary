@@ -281,8 +281,7 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
         println(this::class.java.simpleName + ": action")
         driver.sendKeysFirstEl(recoverEmail, "input#knowledge-preregistered-email-response")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("span", equals = "Tiếp theo")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("div[role=\"button\"] > span > span", equals = "Tiếp theo")?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }

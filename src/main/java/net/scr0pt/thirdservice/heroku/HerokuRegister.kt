@@ -335,11 +335,11 @@ class HerokuAccessPage(
 
         collaboratorEmailObjectList.forEach {
             val collaboratorEmail = it.collaboratorEmail
-            driver.clickFirstEl("button", equals = "Add collaborator")
+            driver.clickFirstEl("button.hk-button--secondary", equals = "Add collaborator")
                     ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
             driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
                     ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
-            driver.clickFirstEl("button", equals = "Save changes") ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            driver.clickFirstEl("button.hk-button--primary", equals = "Save changes") ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
             Thread.sleep(2000)
         }
         return PageResponse.WAITING_FOR_RESULT()
