@@ -258,7 +258,7 @@ class MegaChooseAccTypePage(
 
     override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstEl(By.className("loading-info"), filter = { el -> el.isDisplayed == false })
+        driver.findFirstEl(By.className("loading-info"), filter = { el -> !el.isDisplayed })
         driver.clickFirstEl(".key .plans .reg-st3-membership-bl.free .membership-pad-bl")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()

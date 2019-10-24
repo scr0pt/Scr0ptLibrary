@@ -35,23 +35,21 @@ suspend fun main() {
             loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
                 println(1)
                 driver.get("https://myaccount.google.com/lesssecureapps?utm_source=google-account&utm_medium=web")
-                var accessTxt = driver.findFirstEl("div", filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
-                        ?: return@loginGoogle
+                var accessTxt = driver.findFirstEl("div",contains = "Cho phép ứng dụng kém an toàn: ")?.text ?: return@loginGoogle
                 println(1.5)
-                if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
+                if (accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
                     println(2)
                     onSuccess(gmailUsername, collection, driver)
-                } else if (accessTxt == "Allow less secure apps: OFF" || accessTxt == "Cho phép ứng dụng kém an toàn: TẮT") {
+                } else if (accessTxt == "Cho phép ứng dụng kém an toàn: TẮT") {
                     println(3)
                     driver.findFirstEl(".LsSwGf")?.click()
                     Thread.sleep(2000)
                     driver.refresh()
                     Thread.sleep(2000)
 
-                    accessTxt = driver.findFirstEl("div", filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
-                            ?: return@loginGoogle
+                    accessTxt = driver.findFirstEl("div", contains = "Cho phép ứng dụng kém an toàn: ")?.text ?: return@loginGoogle
                     println(4)
-                    if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
+                    if (accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
                         println(5)
                         onSuccess(gmailUsername, collection, driver)
                     }

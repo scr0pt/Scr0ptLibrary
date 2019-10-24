@@ -7,7 +7,7 @@ import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 
-class DriverManager(private var driver: WebDriver) {
+class DriverManager(var driver: WebDriver) {
     companion object {
         @JvmStatic
         var INTERVAL_SLEEP_TIME = 1000L//1 second
@@ -37,7 +37,7 @@ class DriverManager(private var driver: WebDriver) {
             null
         }
     val title: String?
-        get() = doc?.title()
+        get() = driver.title
     val cookieStr: String
         get() {
             var cookies = ""
@@ -74,16 +74,18 @@ class DriverManager(private var driver: WebDriver) {
     }
 
 
-    fun findFirstElOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return this.findElsOneTime(selector, filter = filter).firstOrNull()
+    fun findFirstElOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return this.findElsOneTime(selector, filter = filter, contains = contains, equals = equals).firstOrNull()
     }
 
-    fun findElsOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): ArrayList<WebElement> {
+    fun findElsOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): ArrayList<WebElement> {
         val arr = arrayListOf<WebElement>()
         try {
             parseSelector(selector)?.let {
                 this.driver.findElements(it)?.forEach {
-                    if (it != null && filter(it)) arr.add(it)
+                    if (it != null && filter(it) && (contains == null || (it.text.contains(contains, ignoreCase = true))) && (equals == null || (equals.equals(it.text, ignoreCase = true)))) {
+                        arr.add(it)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -101,41 +103,41 @@ class DriverManager(private var driver: WebDriver) {
     }
 
 
-    fun findFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return findEls(selector, filter = filter).firstOrNull()
+    fun findFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains,equals = equals).firstOrNull()
     }
 
 
-    fun sendKeysFirstEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return findEls(selector, filter = filter).firstOrNull()?.apply {
+    fun sendKeysFirstEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains,equals = equals).firstOrNull()?.apply {
             clear()
             sendKeys(txt)
         }
     }
 
-    fun sendKeysLastEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return findEls(selector, filter = filter).lastOrNull()?.apply {
+    fun sendKeysLastEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals).lastOrNull()?.apply {
             clear()
             sendKeys(txt)
         }
     }
 
 
-    fun clickFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return findEls(selector, filter = filter).firstOrNull()?.apply {
+    fun clickFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals).firstOrNull()?.apply {
             click()
         }
     }
 
-    fun clickLastEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): WebElement? {
-        return findEls(selector, filter = filter).lastOrNull()?.apply {
+    fun clickLastEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals).lastOrNull()?.apply {
             click()
         }
     }
 
-    fun findEls(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }): ArrayList<WebElement> {
-        wait(isDone = { findElsOneTime(selector, filter).isNotEmpty() })
-        return findElsOneTime(selector, filter)
+    fun findEls(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): ArrayList<WebElement> {
+        wait(isDone = { findElsOneTime(selector, filter = filter, contains = contains).isNotEmpty() })
+        return findElsOneTime(selector, filter = filter, contains =  contains)
     }
 
 

@@ -17,7 +17,6 @@ import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
-import org.openqa.selenium.firefox.FirefoxDriver
 
 /**
  * Created by Long
@@ -336,12 +335,11 @@ class HerokuAccessPage(
 
         collaboratorEmailObjectList.forEach {
             val collaboratorEmail = it.collaboratorEmail
-            driver.clickFirstEl("button", filter = { el -> "Add collaborator".equals(el.text.trim(), ignoreCase = true) })
+            driver.clickFirstEl("button", equals = "Add collaborator")
                     ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
             driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
                     ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
-            driver.clickFirstEl("button", filter = { el -> "Save changes".equals(el.text.trim(), ignoreCase = true) })
-                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            driver.clickFirstEl("button", equals = "Save changes") ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
             Thread.sleep(2000)
         }
         return PageResponse.WAITING_FOR_RESULT()
