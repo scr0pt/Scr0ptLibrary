@@ -31,11 +31,11 @@ fun main() {
 //        it.headersNameCheck.addAll(arrayListOf("Mã số", "NTNS"))
         it.headersRemove.addAll(arrayListOf("STT", "Ghi chú"))
         it.headersRename.addAll(
-            arrayListOf(
-                Pair("Họ tên", "HỌ TÊN"),
-                Pair("Mã số", "MSSV"),
-                Pair("NTNS", "Ngày Sinh")
-            )
+                arrayListOf(
+                        Pair("Họ tên", "HỌ TÊN"),
+                        Pair("Mã số", "MSSV"),
+                        Pair("NTNS", "Ngày Sinh")
+                )
         )
     }.parse(update = true)
 }
@@ -81,7 +81,7 @@ class Excel2Mongo(val filePath: String, val collection: MongoCollection<Document
                         if (headersName.isEmpty()) {
                             row.forEach { cell ->
                                 var element = getHeaderAfterRename(cell.getStringValue())
-                                element = element.replace("\n"," ").replace("  ", "").trim()
+                                element = element.replace("\n", " ").replace("  ", "").trim()
                                 println(element)
                                 headersName.add(element)
                             }

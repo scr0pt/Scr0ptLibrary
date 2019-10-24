@@ -1,22 +1,36 @@
 package net.scr0pt.utils.webdriver
 
+import com.gargoylesoftware.htmlunit.BrowserVersion
+import com.gargoylesoftware.htmlunit.WebClient
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 
 
 object Browser {
-    val firefox: FirefoxDriver
+    val htmlUnitDriver: DriverManager
+        get() {
+            return DriverManager(object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
+                override fun modifyWebClient(client: WebClient): WebClient {
+                    val webClient = super.modifyWebClient(client)
+                    // you might customize the client here
+                    webClient.options.isCssEnabled = false
+                    return webClient
+                }
+            })
+        }
+    val firefox: DriverManager
         get() {
             if (GeckoUtils.getGeckoDriver()) {
                 System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
             } else {
                 println("Cant get getko driver")
             }
-            return FirefoxDriver()
+            return DriverManager(FirefoxDriver())
         }
 
-    val chrome: ChromeDriver
+    val chrome: DriverManager
         get() {
             //file config phai dat o desktop
             val options = ChromeOptions()
@@ -27,10 +41,10 @@ object Browser {
 //        options.addArguments("user-data-dir=" + Config.getInstance().get("chrome_profile"))
             if (ChromeDriverUtils.getChromeDriver()) {
                 System.setProperty("webdriver.chrome.driver",
-                    ChromeDriverUtils.CHROMEDRIVER_EXE_FILE
+                        ChromeDriverUtils.CHROMEDRIVER_EXE_FILE
                 )
             }
-            return ChromeDriver(options)
+            return DriverManager(ChromeDriver(options))
         }
 
 

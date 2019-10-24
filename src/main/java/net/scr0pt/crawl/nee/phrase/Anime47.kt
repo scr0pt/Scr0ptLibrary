@@ -28,7 +28,7 @@ class Anime47(con: LongConnection, id: Long?) : WebPhrase() {
     }
 
     override fun getSubteam(doc: Document?) =
-        doc?.selectFirst(".name + .episodes:has(ul li a.active)")?.previousElementSibling()?.selectFirst(".name span")?.text()
+            doc?.selectFirst(".name + .episodes:has(ul li a.active)")?.previousElementSibling()?.selectFirst(".name span")?.text()
 
     override fun getAnimeYear(doc: Document?): Long? {
         val selects = doc?.selectFirst(".movie-dl > .movie-dt:containsOwn(Năm:)") ?: return null
@@ -42,7 +42,7 @@ class Anime47(con: LongConnection, id: Long?) : WebPhrase() {
     }
 
     override fun getAnimeStream(doc: Document?) =
-        getgetAnimeStream_mpd(doc) ?: getgetAnimeStream_Jwplayer(doc) ?: getgetAnimeStream_Embed(doc)
+            getgetAnimeStream_mpd(doc) ?: getgetAnimeStream_Jwplayer(doc) ?: getgetAnimeStream_Embed(doc)
 
     /**
      * Hàm chính
@@ -55,7 +55,7 @@ class Anime47(con: LongConnection, id: Long?) : WebPhrase() {
         doc ?: return null
         try {
             var playerInstanceSetup =
-                MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
+                    MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
             playerInstanceSetup = playerInstanceSetup + "}"
             val jo = JSONValue.parse(playerInstanceSetup) as JSONObject
             val sources = jo["sources"] as JSONArray? ?: return null
@@ -89,12 +89,12 @@ class Anime47(con: LongConnection, id: Long?) : WebPhrase() {
         doc ?: return null
         try {
             val playerInstanceSetup =
-                MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
+                    MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
             var mpd = MyString.textBetween(playerInstanceSetup, "http://anime47.com/getlink/mpd/mpd/", ".mpd\"")
-                ?: return null
+                    ?: return null
             mpd = "http://anime47.com/getlink/mpd/mpd/$mpd.mpd"
 
-            val xmlDoc: Document? = con?.get(mpd)?.doc  ?: return null
+            val xmlDoc: Document? = con?.get(mpd)?.doc ?: return null
             val Representations = xmlDoc?.select("Representation ") ?: return null
             if (Representations.isEmpty()) return null
             val files = arrayListOf<File>()
@@ -145,10 +145,11 @@ class Anime47(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getNewAnimes(doc: Document?): ArrayList<Anime> {
         val animelist = arrayListOf<Anime>()
         doc ?: return animelist
-        val selects = doc.select(".last-film-box-wrapper .content ul#movie-last-movie > li > a[href^='/phim/']") ?: return animelist
+        val selects = doc.select(".last-film-box-wrapper .content ul#movie-last-movie > li > a[href^='/phim/']")
+                ?: return animelist
         for (select in selects) {
             val anime = Anime()
-            anime.web_link =  select?.absUrl("href") ?: continue
+            anime.web_link = select?.absUrl("href") ?: continue
             anime.name = select.selectFirst(".movie-meta .movie-title-1")?.text()?.trim() ?: continue
             animelist.add(anime)
         }

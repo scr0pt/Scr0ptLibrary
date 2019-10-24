@@ -16,15 +16,16 @@ suspend fun main() {
     job.join()
 }
 
-suspend fun callSum(){
+suspend fun callSum() {
     println("Call sum")
     sum()
 }
 
-suspend fun sum(){
+suspend fun sum() {
     println("Sum")
     mer()
 }
-suspend fun mer(){
+
+suspend fun mer() {
     println("Mer")
 }

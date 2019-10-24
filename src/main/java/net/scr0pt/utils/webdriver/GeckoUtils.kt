@@ -31,13 +31,13 @@ object GeckoUtils {
         }
 
     val GECKODRIVER_ZIP_File =
-        GECKODRIVER_DOWNLOAD_FOLDER + (GECKODRIVER_ZIP_File_URL?.split("/")?.last() ?: "GeckoDriver.ZIPFILE")
+            GECKODRIVER_DOWNLOAD_FOLDER + (GECKODRIVER_ZIP_File_URL?.split("/")?.last() ?: "GeckoDriver.ZIPFILE")
     val GECKODRIVER_EXE_FILE =
-        GECKODRIVER_DOWNLOAD_FOLDER + (if (OSUtils.isWindows()) "geckodriver.exe" else "geckodriver")
+            GECKODRIVER_DOWNLOAD_FOLDER + (if (OSUtils.isWindows()) "geckodriver.exe" else "geckodriver")
 
 
     fun getLatestReleaseVersion(): String? =
-        Jsoup.connect("https://github.com/mozilla/geckodriver/releases/latest").execute().url()?.path?.split("/")?.last()
+            Jsoup.connect("https://github.com/mozilla/geckodriver/releases/latest").execute().url()?.path?.split("/")?.last()
 
 
     /*
@@ -53,9 +53,9 @@ object GeckoUtils {
         GECKODRIVER_ZIP_File_URL ?: return false
 
         if (!File(GECKODRIVER_ZIP_File).exists() && !NetworkUtils.downloadRemoteFile(
-                GECKODRIVER_ZIP_File,
-                GECKODRIVER_ZIP_File_URL!!
-            )
+                        GECKODRIVER_ZIP_File,
+                        GECKODRIVER_ZIP_File_URL!!
+                )
         ) return false
         ZipFile(GECKODRIVER_ZIP_File).extractAll(GECKODRIVER_DOWNLOAD_FOLDER)
         return File(GECKODRIVER_EXE_FILE).exists()

@@ -6,7 +6,7 @@ import net.scr0pt.utils.curl.LongResponse
 
 
 abstract class TempMail(val url: String, onInnitSuccess: ((GenericMail) -> Unit)?, onInitFail: (() -> Unit)?) :
-    GenericMail(onInnitSuccess, onInitFail) {
+        GenericMail(onInnitSuccess, onInitFail) {
     val localStorage = LongConnectionLocalStorage(fileName = "TempMalConnection")
 
     var curl = LongConnection()

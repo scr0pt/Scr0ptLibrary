@@ -29,10 +29,10 @@ class AnimeVsub(con: LongConnection, id: Long?) : WebPhrase() {
     }
 
     override fun getSubteam(doc: Document?) =
-        doc?.selectFirst("#list-server .server:has(.list-episode .playing) h3.server-name")?.text()?.trim()
-            ?: doc?.selectFirst("ul.server-list > li.backup-server > ul.list-episode:has(li.episode.playing > a)")?.previousElementSibling()?.selectFirst(
-                "h3.server-title"
-            )?.text()
+            doc?.selectFirst("#list-server .server:has(.list-episode .playing) h3.server-name")?.text()?.trim()
+                    ?: doc?.selectFirst("ul.server-list > li.backup-server > ul.list-episode:has(li.episode.playing > a)")?.previousElementSibling()?.selectFirst(
+                            "h3.server-title"
+                    )?.text()
 
     override fun getAnimeYear(doc: Document?): Long? {
         val year = doc?.selectFirst("p.Info > span.Date")?.text()?.replace("\\s+".toRegex(), "")?.trim() ?: return null
@@ -56,9 +56,9 @@ class AnimeVsub(con: LongConnection, id: Long?) : WebPhrase() {
     fun PhimLe(level: String, filmID: String, linkEp: String): File? {
         try {
             val body = con?.post(
-                "http://animevsub.tv/ajax/player",
-                data = hashMapOf("link" to level, "id" to filmID),
-                headers = hashMapOf("Referer" to linkEp)
+                    "http://animevsub.tv/ajax/player",
+                    data = hashMapOf("link" to level, "id" to filmID),
+                    headers = hashMapOf("Referer" to linkEp)
             )?.body ?: return null
             val jobject = JSONValue.parse(body) as JSONObject
             val link = jobject["link"] as JSONArray
@@ -90,7 +90,7 @@ class AnimeVsub(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getNewEpisodes(doc: Document?): ArrayList<Episode> {
         val eplist = arrayListOf<Episode>()
         val selects =
-            doc?.select(".MovieInfo.TPost li.latest_eps > a[href^='http://animevsub.tv/phim/']") ?: return eplist
+                doc?.select(".MovieInfo.TPost li.latest_eps > a[href^='http://animevsub.tv/phim/']") ?: return eplist
         for (select in selects) {
             val ep = Episode()
             ep.web_link = select.absUrl("href")
@@ -104,8 +104,8 @@ class AnimeVsub(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getNewAnimes(doc: Document?): ArrayList<Anime> {
         val animelist = arrayListOf<Anime>()
         val selects =
-            doc?.select("#single-home > ul.MovieList.Rows > li.TPostMv > article[id^='post-'].post.type-post > a[href^='http://animevsub.tv/phim/']")
-                ?: return animelist
+                doc?.select("#single-home > ul.MovieList.Rows > li.TPostMv > article[id^='post-'].post.type-post > a[href^='http://animevsub.tv/phim/']")
+                        ?: return animelist
 
         for (select in selects) {
             val anime = Anime()

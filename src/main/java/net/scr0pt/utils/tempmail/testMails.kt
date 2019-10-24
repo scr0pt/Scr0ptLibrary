@@ -14,17 +14,17 @@ fun testOnMailReceive() {
     })
 
     val onAnimebentojpSender = MailReceiveEvent(
-        key = "ona1sender",
-        validator = { mail ->
-            Mail.CompareType.SUFFIX_IGNORECASE.compare(
-                mail.from,
-                "gmail.com"
-            )
-        },
-        callback = { it.forEach(::println) },
-        once = false,
-        new = true,
-        fetchContent = true
+            key = "ona1sender",
+            validator = { mail ->
+                Mail.CompareType.SUFFIX_IGNORECASE.compare(
+                        mail.from,
+                        "gmail.com"
+                )
+            },
+            callback = { it.forEach(::println) },
+            once = false,
+            new = true,
+            fetchContent = true
     )
 
     tempmailaddress.onEvent(onAnimebentojpSender)
@@ -33,36 +33,36 @@ fun testOnMailReceive() {
 fun testFilterMail() {
     val mails = arrayListOf<Mail>()
     mails.add(
-        Mail(
-            from = "a1@gmail.com",
-            to = "a2@gmail.com",
-            content = "hello world"
-        )
+            Mail(
+                    from = "a1@gmail.com",
+                    to = "a2@gmail.com",
+                    content = "hello world"
+            )
     )
     mails.add(
-        Mail(
-            from = "a1@gmail.com",
-            to = "a3@gmail.com",
-            content = "hello world 2"
-        )
+            Mail(
+                    from = "a1@gmail.com",
+                    to = "a3@gmail.com",
+                    content = "hello world 2"
+            )
     )
     mails.add(
-        Mail(
-            from = "a2@gmail.com",
-            to = "a3@gmail.com",
-            content = "good morning"
-        )
+            Mail(
+                    from = "a2@gmail.com",
+                    to = "a3@gmail.com",
+                    content = "good morning"
+            )
     )
     mails.add(
-        Mail(
-            from = "a1@gmail.com",
-            to = "a4@gmail.com",
-            content = "i don't care"
-        )
+            Mail(
+                    from = "a1@gmail.com",
+                    to = "a4@gmail.com",
+                    content = "i don't care"
+            )
     )
 
     mails.getMail(query = "A1", propertyType = Mail.PropertyType.FROM, compareType = Mail.CompareType.PREFIX_IGNORECASE)
-        .forEach {
-            println(it)
-        }
+            .forEach {
+                println(it)
+            }
 }

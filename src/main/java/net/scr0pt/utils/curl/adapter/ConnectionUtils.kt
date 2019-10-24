@@ -12,5 +12,5 @@ import javax.net.ssl.X509TrustManager
  */
 
 object ConnectionUtils {
-    
+
 }

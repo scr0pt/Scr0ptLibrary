@@ -21,7 +21,7 @@ fun main() {
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("anime")
     val crawl = Crawl(collection)
     var malId = 0L
-    while (true){
+    while (true) {
         crawl.getAnime(malId++)?.toDocument()?.let { doc ->
             collection.insertOneUnique(doc, org.bson.Document("mal_id", doc.get("mal_id")))
         }

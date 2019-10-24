@@ -45,15 +45,15 @@ class Mail(var from: String?, var to: String?, var subject: String? = null, var 
         },
         PREFIX_IGNORECASE {
             override fun compare(str1: String?, str2: String?): Boolean =
-                PREFIX.compare(str1?.toLowerCase(), str2?.toLowerCase())
+                    PREFIX.compare(str1?.toLowerCase(), str2?.toLowerCase())
         },
         SUFFIX_IGNORECASE {
             override fun compare(str1: String?, str2: String?): Boolean =
-                SUFFIX.compare(str1?.toLowerCase(), str2?.toLowerCase())
+                    SUFFIX.compare(str1?.toLowerCase(), str2?.toLowerCase())
         },
         EQUAL_IGNORECASE {
             override fun compare(str1: String?, str2: String?): Boolean =
-                EQUAL.compare(str1?.toLowerCase(), str2?.toLowerCase())
+                    EQUAL.compare(str1?.toLowerCase(), str2?.toLowerCase())
         };
 
         abstract fun compare(str1: String?, str2: String?): Boolean

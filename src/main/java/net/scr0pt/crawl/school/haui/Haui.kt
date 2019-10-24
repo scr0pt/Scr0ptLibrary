@@ -103,9 +103,9 @@ class Haui {
         it.header("Connection", "keep-alive", isHard = true)
         it.header("Pragma", "no-cache", isHard = true)
         it.header(
-            "User-Agent",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
-            isHard = true
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
+                isHard = true
         )
         it.header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8", isHard = true)
         it.header("Accept", "application/json, text/javascript, */*; q=0.01", isHard = true)
@@ -121,13 +121,13 @@ class Haui {
     private val feesCollection: MongoCollection<Document> = serviceAccountDatabase.getCollection("haui-frees")
     private val schedulesCollection: MongoCollection<Document> = serviceAccountDatabase.getCollection("haui-schedules")
     private val examschedulesCollection: MongoCollection<Document> =
-        serviceAccountDatabase.getCollection("haui-examschedules")
+            serviceAccountDatabase.getCollection("haui-examschedules")
     private val examresultsCollection: MongoCollection<Document> =
-        serviceAccountDatabase.getCollection("haui-examresults")
+            serviceAccountDatabase.getCollection("haui-examresults")
     private val examresultsSextCollection: MongoCollection<Document> =
-        serviceAccountDatabase.getCollection("haui-examresultsext")
+            serviceAccountDatabase.getCollection("haui-examresultsext")
     private val certificateCollection: MongoCollection<Document> =
-        serviceAccountDatabase.getCollection("haui-certificate")
+            serviceAccountDatabase.getCollection("haui-certificate")
 
     init {
 //        serviceAccountDatabase.createCollection("haui-frees")
@@ -176,10 +176,10 @@ class Haui {
         }
 
         val response = conn.post(
-            "https://itc.haui.edu.vn/vn/m/api/$endPoint", hashMapOf(
+                "https://itc.haui.edu.vn/vn/m/api/$endPoint", hashMapOf(
                 "code" to mssv,
                 "__RequestVerificationToken" to token
-            )
+        )
         ) ?: return null
 
         println(response.body)
@@ -217,10 +217,10 @@ class Haui {
     }
 
     data class HauiApiResponse(
-        val current: Long,
-        val data: ArrayList<HashMap<String, String?>?>,
-        val err: Int,
-        val msg: String
+            val current: Long,
+            val data: ArrayList<HashMap<String, String?>?>,
+            val err: Int,
+            val msg: String
     )
 
     fun updateToDatabase(data: ArrayList<HashMap<String, String?>?>?, type: APIEndpoint) {

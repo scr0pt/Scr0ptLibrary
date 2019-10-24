@@ -13,10 +13,10 @@ fun main() {
 
 class InfinityMail(var username: String) {
     data class GenerateInfinityMail(
-        val username: String,
-        val domain: String? = null,
-        var isScan: Boolean = false,
-        var isRead: Boolean = false
+            val username: String,
+            val domain: String? = null,
+            var isScan: Boolean = false,
+            var isRead: Boolean = false
     ) {
         val fullAddress
             get() = username + domain?.run { "@$this" }

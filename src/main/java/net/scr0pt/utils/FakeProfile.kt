@@ -20,10 +20,10 @@ object FakeProfile {
     fun getNewProfile(): Result? {
         try {
             val response =
-                Jsoup.connect("https://randomuser.me/api/").ignoreHttpErrors(true).ignoreContentType(true).execute()
+                    Jsoup.connect("https://randomuser.me/api/").ignoreHttpErrors(true).ignoreContentType(true).execute()
             println(response.body())
             val randomUserResponse =
-                Gson().fromJson<RandomUserResponse>(response.body(), RandomUserResponse::class.java) ?: return null
+                    Gson().fromJson<RandomUserResponse>(response.body(), RandomUserResponse::class.java) ?: return null
             return randomUserResponse.results?.first()
         } catch (e: Exception) {
             return null

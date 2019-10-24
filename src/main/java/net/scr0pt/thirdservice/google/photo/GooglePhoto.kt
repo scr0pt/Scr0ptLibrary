@@ -17,9 +17,9 @@ class PhotoManager(val photoAcc: PhotoAcc) {
         photoAcc.cookie?.let { it1 -> it.header("cookie", it1) }
         it.header("Upgrade-Insecure-Requests", "1")
         it.header(
-            "content-type",
-            "application/x-www-form-urlencoded;charset=UTF-8",
-            method = LongConnection.REQUEST_METHOD.POST
+                "content-type",
+                "application/x-www-form-urlencoded;charset=UTF-8",
+                method = LongConnection.REQUEST_METHOD.POST
         )
         it.header("origin", "https://photos.google.com")
         it.header("pragma", "no-cache")
@@ -35,10 +35,10 @@ class PhotoManager(val photoAcc: PhotoAcc) {
                 return null
             } else {
                 response.url
-                    ?.takeIf { it.contains("photos.google.com/photo/") }
-                    ?.let {
-                        return it.substringAfter("photos.google.com/photo/").removeSuffix("/")
-                    }
+                        ?.takeIf { it.contains("photos.google.com/photo/") }
+                        ?.let {
+                            return it.substringAfter("photos.google.com/photo/").removeSuffix("/")
+                        }
             }
         }
         return null
@@ -47,7 +47,7 @@ class PhotoManager(val photoAcc: PhotoAcc) {
 
     private fun getRealPhotoId(doc: Document): String? {
         var href = doc.selectFirst("link[rel=\"canonical\"][href^='https://photos.google.com/photo/']")?.attr("href")
-            ?: return null
+                ?: return null
         if (href.contains("https://photos.google.com/photo/")) {
             href = href.removePrefix("https://photos.google.com/photo/")
             href = href.removeSuffix("/")
@@ -64,13 +64,13 @@ class PhotoManager(val photoAcc: PhotoAcc) {
                         && it.contains(":") && it.contains("'")
             }?.let { data ->
                 data.split(",".toRegex())
-                    .filter { it.startsWith("'") && it.endsWith("'") && it.contains(":") }
-                    .forEach { s1 ->
-                        val s2 = s1.substring(1, s1.length - 1)
-                        s2.split(":".toRegex())?.get(1)?.toLongOrNull()?.let {
-                            return s2
+                        .filter { it.startsWith("'") && it.endsWith("'") && it.contains(":") }
+                        .forEach { s1 ->
+                            val s2 = s1.substring(1, s1.length - 1)
+                            s2.split(":".toRegex())?.get(1)?.toLongOrNull()?.let {
+                                return s2
+                            }
                         }
-                    }
             }
         }
         return null
@@ -79,14 +79,14 @@ class PhotoManager(val photoAcc: PhotoAcc) {
     fun getSid(doc: Document): String? {
         doc.select("script")?.forEach { script ->
             script.data()
-                ?.takeIf { it.startsWith("window.WIZ_global_data") && it.contains("FdrFJe") }
-                ?.let { data ->
-                    data.split(",".toRegex())
-                        .filter { it.startsWith("\"FdrFJe\":\"") && it.length > 20 && it.endsWith("\"") }
-                        .forEach {
-                            return it.substring(10, it.length - 1)
-                        }
-                }
+                    ?.takeIf { it.startsWith("window.WIZ_global_data") && it.contains("FdrFJe") }
+                    ?.let { data ->
+                        data.split(",".toRegex())
+                                .filter { it.startsWith("\"FdrFJe\":\"") && it.length > 20 && it.endsWith("\"") }
+                                .forEach {
+                                    return it.substring(10, it.length - 1)
+                                }
+                    }
         }
         return null
     }
@@ -94,20 +94,20 @@ class PhotoManager(val photoAcc: PhotoAcc) {
     private fun getSharePhotoId(doc: Document): String? {
         doc.select("script")?.forEach { script ->
             script.data()
-                ?.takeIf {
-                    it.startsWith("AF_initDataCallback") &&
-                            it.contains("video-downloads.googleusercontent.com") &&
-                            it.contains("ds:") &&
-                            it.contains("key:") &&
-                            it.contains("hash")
-                }
-                ?.let { data ->
-                    data.split(",".toRegex())
-                        .filter { it.startsWith("[[\"") && it.length > 20 && it.endsWith("\"") }
-                        .forEach {
-                            return it.substring(3, it.length - 1)
-                        }
-                }
+                    ?.takeIf {
+                        it.startsWith("AF_initDataCallback") &&
+                                it.contains("video-downloads.googleusercontent.com") &&
+                                it.contains("ds:") &&
+                                it.contains("key:") &&
+                                it.contains("hash")
+                    }
+                    ?.let { data ->
+                        data.split(",".toRegex())
+                                .filter { it.startsWith("[[\"") && it.length > 20 && it.endsWith("\"") }
+                                .forEach {
+                                    return it.substring(3, it.length - 1)
+                                }
+                    }
         }
         return null
     }
@@ -127,22 +127,22 @@ class PhotoManager(val photoAcc: PhotoAcc) {
             val sid = getSid(doc) ?: return null
 
             val requestUrl =
-                """${photoAcc.baseUrl}/_/PhotosUi/data/batchexecute?rpcids=V8RKJ&f.sid=$sid&bl=boq_photosuiserver_20190121.06_p0&hl=vi&soc-app=165&soc-platform=1&soc-device=1&_reqid=1084990&rt=c"""
+                    """${photoAcc.baseUrl}/_/PhotosUi/data/batchexecute?rpcids=V8RKJ&f.sid=$sid&bl=boq_photosuiserver_20190121.06_p0&hl=vi&soc-app=165&soc-platform=1&soc-device=1&_reqid=1084990&rt=c"""
 
             conn.post(
-                requestUrl, hashMapOf(
+                    requestUrl, hashMapOf(
                     "f.req" to """[[["V8RKJ","[[\"$sharePhotoId\"],\"$key\",\"$shareAlbum\"]",null,"generic"]]]""",
                     "at" to AF_with_timestamp
-                )
+            )
             )?.let { response2 ->
                 response2.body?.split("\"".toRegex())
-                    ?.filter {
-                        it.length > 20 && !it.startsWith("-")
-                                && it[0].toString().toLongOrNull() == null && it.endsWith("\\")
-                    }
-                    ?.forEach {
-                        return it.removeSuffix("\\")
-                    }
+                        ?.filter {
+                            it.length > 20 && !it.startsWith("-")
+                                    && it[0].toString().toLongOrNull() == null && it.endsWith("\\")
+                        }
+                        ?.forEach {
+                            return it.removeSuffix("\\")
+                        }
             }
         }
         return null
@@ -155,7 +155,7 @@ class PhotoManager(val photoAcc: PhotoAcc) {
         val doc = response.doc ?: return null
         var finalShareUrl = response.url ?: return null
         if (body.contains("video-downloads.googleusercontent.com")
-            && finalShareUrl.contains("share")
+                && finalShareUrl.contains("share")
         ) {
             val finalSharePhotoId = getSharePhotoId(doc) ?: return null
             finalShareUrl = (finalShareUrl.substringBefore("?key=")
@@ -200,16 +200,16 @@ class PhotoManager(val photoAcc: PhotoAcc) {
         }
 
         val requestUrl =
-            photoAcc.baseUrl + "/_/PhotosUi/data/batchexecute?rpcids=SFKp8c&f.sid=" + sid + "&bl=boq_photosuiserver_20190121.06_p0&hl=vi&soc-app=165&soc-platform=1&soc-device=1&_reqid=2338785&rt=c"
+                photoAcc.baseUrl + "/_/PhotosUi/data/batchexecute?rpcids=SFKp8c&f.sid=" + sid + "&bl=boq_photosuiserver_20190121.06_p0&hl=vi&soc-app=165&soc-platform=1&soc-device=1&_reqid=2338785&rt=c"
         conn.post(
-            requestUrl, hashMapOf(
+                requestUrl, hashMapOf(
                 "f.req" to """[[["SFKp8c","[null,null,[null,false,null,null,true,null,[[[1,1],false],[[1,2],false],[[2,1],true],[[2,2],true]]],[2,null,[[[\"${mediaItem.realDocId}\"]]],null,null,[],[1],false,null,null,[]]]",null,"generic"]]]""",
                 "at" to af_with_timestamp
-            )
+        )
         )?.body?.takeIf { it.contains("\\\"https://photos.app.goo.gl/") }
-            ?.let {
-                return MyString.textBetween(it, "\\\"https://photos.app.goo.gl/", "\\\"")
-            }
+                ?.let {
+                    return MyString.textBetween(it, "\\\"https://photos.app.goo.gl/", "\\\"")
+                }
         return null
     }
 }

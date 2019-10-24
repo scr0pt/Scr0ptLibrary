@@ -14,6 +14,7 @@ object MessageUtils {
     fun echoErrorMessage(message: String = "Error", result: Any? = null): Response {
         return echoMessage(message, result, Response.Status.INTERNAL_SERVER_ERROR)
     }
+
     fun echoSuccessMessage(message: String = "OK", result: Any? = null): Response {
         return echoMessage(message, result, Response.Status.OK)
     }
@@ -22,9 +23,9 @@ object MessageUtils {
         val responseBuilder = Response.status(httpCode)
 
         val data = JSONObject()
-            .appendField("status", httpCode.statusCode)
-            .appendField("message", message)
-            .appendField("result", result).toJSONString(JSONStyle(JSONStyle.FLAG_IGNORE_NULL))
+                .appendField("status", httpCode.statusCode)
+                .appendField("message", message)
+                .appendField("result", result).toJSONString(JSONStyle(JSONStyle.FLAG_IGNORE_NULL))
         return responseBuilder.entity(data).build()
     }
 

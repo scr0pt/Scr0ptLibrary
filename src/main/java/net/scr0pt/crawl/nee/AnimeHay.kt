@@ -1,4 +1,5 @@
 package net.scr0pt.crawl.nee
+
 /**
  *
  * @author Long
@@ -11,7 +12,7 @@ constructor() : Web("animehay") {
         this.allEpisodesinWatchPage = ".ah-wf-body .ah-wf-le.ah-bg-bd > ul > li > a[href^='http://animehay.tv/phim/']"
         this.animeNameinAnimeInfoPage = ".ah-pif-fname h1 span[itemprop=\"name\"]"
         this.xemAnimeButtoninAnimeInfo =
-            ".ah-float-left > span > a.button-one[href^='http://animehay.tv/phim/']:containsOwn(Xem phim)"
+                ".ah-float-left > span > a.button-one[href^='http://animehay.tv/phim/']:containsOwn(Xem phim)"
 
         this.conn.cookie("check_vn", "1")
     }

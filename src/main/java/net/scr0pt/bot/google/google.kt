@@ -3,10 +3,8 @@ package net.scr0pt.bot.google
 import net.scr0pt.bot.GooglePageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageResponse
+import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
-import net.scr0pt.utils.webdriver.findElWait
-import net.scr0pt.utils.webdriver.findFirstElWait
 
 
 class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
@@ -18,21 +16,11 @@ class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null)
         return null
     }
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val emailInputs = driver.findElWait(100, 5000, "input#identifierId[type=\"email\"]")
-        if (emailInputs.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            emailInputs.first().sendKeys(email)
-            val nextBtns = driver.findElWait(100, 5000, "div#identifierNext[role=\"button\"]")
-            if (nextBtns.isEmpty()) {
-                return PageResponse.NOT_FOUND_ELEMENT()
-            } else {
-                nextBtns.first().click()
-                return PageResponse.WAITING_FOR_RESULT()
-            }
-        }
+        driver.sendKeysFirstEl(email, "input#identifierId[type=\"email\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("div#identifierNext[role=\"button\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
 
@@ -58,11 +46,6 @@ class LoginEnterPasswordPage(val password: String, onPageFinish: (() -> Unit)? =
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false
         val forgotPassword = doc.selectFirst("#forgotPassword")?.text() ?: return false
-//        val headingSubtext = doc.selectFirst("#headingSubtext")?.text() ?: return false
-//        val passwordInput = doc.selectFirst("input[type=\"password\"]") ?: return false
-//        if (passwordInput.attr("name") == "hiddenPassword") {
-//            return false
-//        }
 
         if (forgotPassword != "Bạn quên mật khẩu?") {
             return false
@@ -84,22 +67,11 @@ class LoginEnterPasswordPage(val password: String, onPageFinish: (() -> Unit)? =
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val passwordInputs = driver.findElWait(100, 5000, "input[name=\"password\"]")
-        if (passwordInputs.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            passwordInputs.first().clear()
-            passwordInputs.first().sendKeys(password)
-            val nextBtns = driver.findElWait(100, 5000, "div[role=\"button\"]#passwordNext")
-            if (nextBtns.isEmpty()) {
-                return PageResponse.NOT_FOUND_ELEMENT()
-            } else {
-                nextBtns.first().click()
-                return PageResponse.WAITING_FOR_RESULT()
-            }
-        }
+        driver.sendKeysFirstEl(password, "input[name=\"password\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("div[role=\"button\"]#passwordNext") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
 }
@@ -112,15 +84,10 @@ class WellcomeToNewAccount(onPageFinish: (() -> Unit)? = null) : Page(onPageFini
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val acceptBtns = driver.findElWait(100, 5000, "input#accept[name=\"accept\"]")
-        if (acceptBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            acceptBtns.first().click()
-            return PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.clickFirstEl("input#accept[name=\"accept\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 }
 
@@ -133,29 +100,12 @@ class ChangePasswordFirstTime(val newPassword: String, onPageFinish: (() -> Unit
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val passwordBtns = driver.findElWait(100, 5000, "input#Password")
-        if (passwordBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            passwordBtns.first().clear()
-            passwordBtns.first().sendKeys(newPassword)
-            val confirmPasswordBtns = driver.findElWait(100, 5000, "input#ConfirmPassword")
-            if (confirmPasswordBtns.isEmpty()) {
-                return PageResponse.NOT_FOUND_ELEMENT()
-            } else {
-                confirmPasswordBtns.first().clear()
-                confirmPasswordBtns.first().sendKeys(newPassword)
-                val submitBtns = driver.findElWait(100, 5000, "input#submit")
-                if (submitBtns.isEmpty()) {
-                    return PageResponse.NOT_FOUND_ELEMENT()
-                } else {
-                    submitBtns.first().click()
-                    return PageResponse.WAITING_FOR_RESULT()
-                }
-            }
-        }
+        driver.sendKeysFirstEl(newPassword, "input#Password") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(newPassword, "input#ConfirmPassword") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("input#submit") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 }
 
@@ -168,22 +118,11 @@ class EnterPasswordFirstTimeChanged(val newPassword: String, onPageFinish: (() -
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val passwordBtns = driver.findElWait(100, 5000, "input[name=\"password\"]")
-        if (passwordBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            passwordBtns.first().clear()
-            passwordBtns.first().sendKeys(newPassword)
-            val submitBtns = driver.findElWait(100, 5000, "div#passwordNext")
-            if (submitBtns.isEmpty()) {
-                return PageResponse.NOT_FOUND_ELEMENT()
-            } else {
-                submitBtns.first().click()
-                return PageResponse.WAITING_FOR_RESULT()
-            }
-        }
+        driver.sendKeysFirstEl(newPassword, "input[name=\"password\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("#passwordNext") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
 }
@@ -204,15 +143,17 @@ class ProtectYourAccount(
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action ~ $defaultAction")
         when (defaultAction) {
             DEFAULT_ACTION.UPDATE -> {
-                driver.findFirstElWait(5000, 120000, "span", jsoup = false, filter = { el ->  ( "Cập nhật".equals(el.text, ignoreCase = true)  || "Update".equals(el.text, ignoreCase = true)) })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
+                driver.clickFirstEl("span", filter = { el -> ("Cập nhật".equals(el.text, ignoreCase = true) || "Update".equals(el.text, ignoreCase = true)) })
+                        ?: return PageResponse.NOT_FOUND_ELEMENT()
                 return PageResponse.WAITING_FOR_RESULT()
             }
             DEFAULT_ACTION.DONE -> {
-                driver.findFirstElWait(5000, 120000, "span", jsoup = false, filter = { el -> ( "Xong".equals(el.text, ignoreCase = true)  || "Done".equals(el.text, ignoreCase = true)) })?.click() ?: return PageResponse.NOT_FOUND_ELEMENT()
+                driver.clickFirstEl("span", filter = { el -> ("Xong".equals(el.text, ignoreCase = true) || "Done".equals(el.text, ignoreCase = true)) })?.click()
+                        ?: return PageResponse.NOT_FOUND_ELEMENT()
                 return PageResponse.WAITING_FOR_RESULT()
             }
         }
@@ -230,15 +171,10 @@ class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(o
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val nextBtns = driver.findElWait(100, 5000, ".n6Gm2e > a:nth-child(1)")
-        if (nextBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            nextBtns.first().click()
-            return PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.clickFirstEl(".n6Gm2e > a:nth-child(1)") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
 }
@@ -253,21 +189,11 @@ class ProtectYourAccountUpdateRecoverEmail(val recoverEmail: String, onPageFinis
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val emailInputs = driver.findElWait(100, 5000, "input.whsOnd")
-        if (emailInputs.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            emailInputs.first().sendKeys(recoverEmail)
-            val nextBtns = driver.findElWait(100, 5000, ".yKBrKe .U26fgb")
-            if (nextBtns.isEmpty()) {
-                return PageResponse.NOT_FOUND_ELEMENT()
-            } else {
-                nextBtns.first().click()
-                return PageResponse.WAITING_FOR_RESULT()
-            }
-        }
+        driver.sendKeysFirstEl(recoverEmail, "input.whsOnd") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl(".yKBrKe .U26fgb") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
 }
@@ -282,17 +208,11 @@ class ProtectYourAccountUpdateRecoverEmailSuccess(onPageFinish: (() -> Unit)? = 
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val nextBtns = driver.findElWait(100, 5000, ".yKBrKe div[role=\"button\"].U26fgb")
-        if (nextBtns.isEmpty()) {
-            return PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            nextBtns.first().click()
-            return PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.clickFirstEl(".yKBrKe div[role=\"button\"].U26fgb") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
-
 }
 
 class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
@@ -303,13 +223,31 @@ class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onP
 
     override fun isEndPage() = true
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
 
 
+//Veryfy it you action
+class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
+        return !doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
+                doc.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
+                doc.selectFirst("#headingSubtext")?.text() == "" &&
+                doc.html().contains("Để bảo mật tài khoản của bạn, Google cần xác minh danh tính của bạn. Vui lòng đăng nhập lại để tiếp tục.") &&
+                doc.selectFirst("#identifierNext")?.text() == "Tiếp theo"
+    }
+
+    override fun isEndPage() = false
+
+    override fun _action(driver: DriverManager): PageResponse {
+        println(this::class.java.simpleName + ": action")
+        driver.clickFirstEl("#identifierNext span", filter = { el -> "Tiếp theo" .equals(el.text, ignoreCase = true)}) ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
+    }
+}
 //Veryfy phone number
 class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -325,7 +263,7 @@ class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageF
 
     override fun isEndPage() = true
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -339,12 +277,11 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "input#knowledge-preregistered-email-response", jsoup = false)?.sendKeys(recoverEmail)
+        driver.sendKeysFirstEl(recoverEmail, "input#knowledge-preregistered-email-response")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
-        Thread.sleep(1000)
-        driver.findFirstElWait(100, 5000, "span", jsoup = false, filter = { el -> el.text == "Tiếp theo" })?.click()
+        driver.clickFirstEl("span", filter = { el -> el.text == "Tiếp theo" })
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -358,7 +295,7 @@ class CanotLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish =
 
     override fun isEndPage() = true
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -373,7 +310,7 @@ class AccountDisable(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = o
 
     override fun isEndPage() = true
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         //RveJvd snByac Cố gắng khôi phục
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
@@ -392,7 +329,7 @@ class CantLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = 
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         //RveJvd snByac Cố gắng khôi phục
         println(this::class.java.simpleName + ": action")
         return GooglePageResponse.CANT_LOGIN_FOR_YOU()

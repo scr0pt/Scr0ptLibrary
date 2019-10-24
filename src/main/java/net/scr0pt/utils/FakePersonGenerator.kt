@@ -7,10 +7,10 @@ fun main() {
 }
 
 object FakePersonGenerator {
-    fun generate(){
+    fun generate() {
         val response = LongConnection().get("https://www.fakepersongenerator.com/")
         val doc = response?.doc ?: return
-        val image = doc.selectFirst(".basic-face .face img")?.attr("src")?.run  {
+        val image = doc.selectFirst(".basic-face .face img")?.attr("src")?.run {
             "https://www.fakepersongenerator.com$this"
         }
         val name = doc.selectFirst(".basic-face .name")?.text()

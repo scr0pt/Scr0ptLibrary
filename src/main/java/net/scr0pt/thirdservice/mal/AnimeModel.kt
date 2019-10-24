@@ -111,9 +111,9 @@ class AnimeModel {
     var related: List<RelatedAnime>? = null
 }
 
-data class Recommendation(@Expose val users: String, @Expose @SerializedName("mal_id") val malId: Long, @Expose  val title: String)
+data class Recommendation(@Expose val users: String, @Expose @SerializedName("mal_id") val malId: Long, @Expose val title: String)
 data class PairIdName(@Expose val name: String, @Expose @SerializedName("mal_id") val malId: Long)
-data class RelatedAnime(@Expose val relationship: String, @Expose val name: String, @Expose @SerializedName("mal_id") val malId: Long, val type: String )//type: Anime or Manga
+data class RelatedAnime(@Expose val relationship: String, @Expose val name: String, @Expose @SerializedName("mal_id") val malId: Long, val type: String)//type: Anime or Manga
 
 fun AnimeModel.toDocument(): Document {
     val doc = Document()

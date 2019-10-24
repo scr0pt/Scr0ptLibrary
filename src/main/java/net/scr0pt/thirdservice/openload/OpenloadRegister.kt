@@ -12,8 +12,6 @@ import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
-import net.scr0pt.utils.webdriver.findFirstElWait
-import net.scr0pt.utils.webdriver.waitUntilUrlChange
 import org.bson.Document
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.util.*
@@ -41,34 +39,22 @@ suspend fun register() {
         loginGoogle(email = gmailUsername, password = gmailPassword, driver = driver, onLoginSuccess = {
             driver.get("https://openload.co/register")
 
-            driver.findFirstElWait(1000, 60000,
-                    "form#register-form input#registerform-email", jsoup = false)
-                    ?.sendKeys(email) ?: return@loginGoogle
-            driver.findFirstElWait(1000, 60000,
-                    "form#register-form input#registerform-password", jsoup = false)
-                    ?.sendKeys(password) ?: return@loginGoogle
-            driver.findFirstElWait(1000, 60000,
-                    "form#register-form input#registerform-passwordconfirm", jsoup = false)
-                    ?.sendKeys(password) ?: return@loginGoogle
-            driver.findFirstElWait(1000, 60000,
-                    "form#register-form input#registerform-iagree", jsoup = false)
-                    ?.click() ?: return@loginGoogle
-            driver.findFirstElWait(1000, 60000,
-                    "form#register-form iframe[src*='https://www.google.com/recaptcha']", jsoup = false)
-                    ?.click() ?: return@loginGoogle
-            driver.waitUntilUrlChange(1000, 300000)
-            println(driver.currentUrl)
-
-            var cookies = ""
-            driver.manage().cookies.forEach {
-                cookies += "${it.name}=${it.value};"
-            }
-            cookies.removeSuffix(";")
+            driver.sendKeysFirstEl(email,
+                    "form#register-form input#registerform-email") ?: return@loginGoogle
+            driver.sendKeysFirstEl(password,
+                    "form#register-form input#registerform-password") ?: return@loginGoogle
+            driver.sendKeysFirstEl(password, "form#register-form input#registerform-passwordconfirm")?.sendKeys(password)
+                    ?: return@loginGoogle
+            driver.clickFirstEl("form#register-form input#registerform-iagree") ?: return@loginGoogle
+            driver.clickFirstEl("form#register-form iframe[src*='https://www.google.com/recaptcha']")
+                    ?: return@loginGoogle
+            driver.waitUntilUrlChange()
+            println(driver.url)
 
             collection.insertOne(
                     Document("email", email).append("password", password).append(
                             "cookies",
-                            cookies
+                            driver.cookieStr
                     ).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
             )
             driver.close()
@@ -86,14 +72,7 @@ fun login(
 ) {//update cookie
 //    val driver = Browser.firefox
 
-    val driver = object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
-        override fun modifyWebClient(client: WebClient): WebClient {
-            val webClient = super.modifyWebClient(client)
-            // you might customize the client here
-            webClient.options.isCssEnabled = false
-            return webClient
-        }
-    }
+    val driver = Browser.htmlUnitDriver
 
     driver.get("https://openload.co/login")
     try {
@@ -146,19 +125,13 @@ fun login(
         )
     }
 
-    driver.waitUntilUrlChange(1000, 180000)
-    println(driver.currentUrl)
+    driver.waitUntilUrlChange()
+    println(driver.url)
     gmail.logout()
-
-    var cookies = ""
-    driver.manage().cookies.forEach {
-        cookies += "${it.name}=${it.value};"
-    }
-    cookies.removeSuffix(";")
 
     collection.updateOne(
             Document("email", openloadEmail), Updates.combine(
-            Updates.set("cookies", cookies),
+            Updates.set("cookies", driver.cookieStr),
             Updates.set("updated_at", Date())
     )
     )

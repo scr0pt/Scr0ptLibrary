@@ -7,23 +7,23 @@ import net.scr0pt.utils.curl.LongConnection
 import net.scr0pt.utils.curl.LongResponse
 
 fun LongConnection.toJsoupConnection(
-    method: LongConnection.REQUEST_METHOD? = null,
-    data: ArrayList<LongConnection.Data>?,
-    headers: ArrayList<LongConnection.Data>?
-    ): org.jsoup.Connection {
+        method: LongConnection.REQUEST_METHOD? = null,
+        data: ArrayList<LongConnection.Data>?,
+        headers: ArrayList<LongConnection.Data>?
+): org.jsoup.Connection {
 
     val conn = Jsoup.connect(url).method(method?.toJsoup() ?: Connection.Method.GET).ignoreContentType(true)
-        .ignoreHttpErrors(true).followRedirects(true)
+            .ignoreHttpErrors(true).followRedirects(true)
 
     val removeHeaders = arrayListOf<LongConnection.Data>()
     this.headers
-        .filter { it.method == null || method == it.method }
-        .forEach {
-            conn.header(it.name, it.value)
-            if (it.once) {
-                removeHeaders.add(it.copy())
+            .filter { it.method == null || method == it.method }
+            .forEach {
+                conn.header(it.name, it.value)
+                if (it.once) {
+                    removeHeaders.add(it.copy())
+                }
             }
-        }
     if (removeHeaders.isNotEmpty()) {
         this.headers.removeIf { removeHeaders.contains(it) }
     }
@@ -33,12 +33,12 @@ fun LongConnection.toJsoupConnection(
     }
 
     this.data
-        .filter { it.method == null || method == it.method }
-        .forEach { (name, value) ->
-            if (name != null && name.isNotEmpty()) {
-                conn.data(name, value)
+            .filter { it.method == null || method == it.method }
+            .forEach { (name, value) ->
+                if (name != null && name.isNotEmpty()) {
+                    conn.data(name, value)
+                }
             }
-        }
 
     if (data != null && data.isNotEmpty()) {
         data.forEach { (name, value) ->

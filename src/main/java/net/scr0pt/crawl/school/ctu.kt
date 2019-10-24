@@ -33,10 +33,10 @@ fun main() {
         type++
         while (!clickFilterButton(firefox)) {
         }
-        val typs = firefox.findElWait(500, 20000, ".v-filterselect-suggestmenu .gwt-MenuItem")
+        val typs = firefox.findEls(".v-filterselect-suggestmenu .gwt-MenuItem")
         if (type >= 10) {
             for (i in 1..(type / 10)) {
-                firefox.findElWait(500, 20000, ".v-filterselect-nextpage")?.get(0)?.click()
+                firefox.clickFirstEl(".v-filterselect-nextpage")
                 Thread.sleep(2000)
                 jse.executeScript("document.querySelectorAll('.v-filterselect-suggestmenu .gwt-MenuItem')[${type - 10}].click()")
             }
@@ -46,17 +46,13 @@ fun main() {
         for (char in "qưertyuioplkjhgfdsazxcvbnmwôơ") {
 
 
-            val input =
-                firefox.findElWait(500, 20000, "tr.v-formlayout-row:has(#gwt-uid-4) td.v-formlayout-contentcell input")
-                    ?.first()
-            input?.clear()
-            input?.sendKeys("$char")
-            firefox.findElWait(500, 20000, ".v-button:has(span.v-button-caption:contains(Tìm kiếm))")?.first()?.click()
-            firefox.waitUmtil(500, 20000) {
-                it.document?.select("table.v-table-table tbody > tr")?.size ?: 0 > 0
-            }
+            firefox.sendKeysFirstEl("$char", "tr.v-formlayout-row:has(#gwt-uid-4) td.v-formlayout-contentcell input")
+            firefox.clickFirstEl(".v-button:has(span.v-button-caption:contains(Tìm kiếm))")
+            firefox.wait(isDone = {
+                firefox.doc?.select("table.v-table-table tbody > tr")?.size ?: 0 > 0
+            })
 
-            if (firefox.document?.select("table.v-table-table tbody > tr")?.size == 0) {
+            if (firefox.doc?.select("table.v-table-table tbody > tr")?.size == 0) {
 
             } else {
 
@@ -65,37 +61,35 @@ fun main() {
                 while (!waitNotificationSuccessDissmiss(firefox)) {
                 }
 
-                firefox.findElWait(500, 20000, ".pagedtable-itemsperpagecombobox .v-filterselect-button")?.first()
-                    ?.click()
-                firefox.findElWait(500, 20000, ".v-filterselect-suggestmenu table tbody td.gwt-MenuItem")?.last()
-                    ?.click()
+                firefox.clickFirstEl(".pagedtable-itemsperpagecombobox .v-filterselect-button")
+                firefox.clickLastEl(".v-filterselect-suggestmenu table tbody td.gwt-MenuItem")
 
-                firefox.waitUmtil(500, 20000) {
-                    it.document?.select("table.v-table-table tbody > tr")?.size ?: 0 > 10
-                }
+                firefox.wait(isDone = {
+                    firefox.doc?.select("table.v-table-table tbody > tr")?.size ?: 0 > 10
+                })
 
 
                 while (true) {
-                    firefox.document?.let { parser(it, collectionQlvbDiploma) }
+                    firefox.doc?.let { parser(it, collectionQlvbDiploma) }
                     Thread.sleep(1000)
-                    firefox.waitUmtilDismiss(500, 20000, ".v-Notification-success")
-                    val nextPage = firefox.findElWait(500, 20000, ".pagedtable-next")?.first()
+                    firefox.waitUntilDismiss(".v-Notification-success")
+                    val nextPage = firefox.findFirstEl(".pagedtable-next") ?: break
                     println(nextPage.getAttribute("aria-disabled"))
                     if (nextPage.getAttribute("aria-disabled") == "true") {
                         break
                     } else {
                         val firstRow =
-                            firefox.document?.selectFirst("table.v-table-table .v-table-row:first-child")
-                                ?.text()
+                                firefox.doc?.selectFirst("table.v-table-table .v-table-row:first-child")
+                                        ?.text()
                         println(firstRow)
                         nextPage.click()
-                        firefox.waitUmtil(500, 60000) { driver: WebDriver ->
+                        firefox.wait(isDone = {
                             val firstRow2 =
-                                firefox.document?.selectFirst("table.v-table-table .v-table-row:first-child")
-                                    ?.text()
+                                    firefox.doc?.selectFirst("table.v-table-table .v-table-row:first-child")
+                                            ?.text()
                             println(firstRow2)
                             firstRow2 != firstRow
-                        }
+                        })
                     }
                 }
             }
@@ -106,27 +100,27 @@ fun main() {
 
 }
 
-fun waitNotificationSuccessDissmiss(firefox: WebDriver): Boolean {
+fun waitNotificationSuccessDissmiss(firefox: DriverManager): Boolean {
     return try {
-        firefox.waitUmtilDismiss(500, 20000, ".v-Notification-success")
+        firefox.waitUntilDismiss(".v-Notification-success")
         true
     } catch (e: Exception) {
         false
     }
 }
 
-fun clickNotificationSuccessButton(firefox: WebDriver): Boolean {
+fun clickNotificationSuccessButton(firefox: DriverManager): Boolean {
     return try {
-        firefox.findElWait(500, 20000, ".v-Notification-success")?.first()?.click()
+        firefox.clickFirstEl(".v-Notification-success")
         true
     } catch (e: Exception) {
         false
     }
 }
 
-fun clickFilterButton(firefox: WebDriver): Boolean {
+fun clickFilterButton(firefox: DriverManager): Boolean {
     return try {
-        firefox.findElWait(500, 20000, ".v-formlayout-contentcell .v-filterselect-button")?.first()?.click()
+        firefox.clickFirstEl(".v-formlayout-contentcell .v-filterselect-button")
         true
     } catch (e: Exception) {
         false
@@ -163,14 +157,14 @@ class CTUSession() {
     var csrfToken: String = ""
     var syncId: Int = 0
     var headers: ArrayList<Pair<String, String>> = arrayListOf(
-        Pair(
-            "User-Agent",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36"
-        ),
-        Pair("Referer", "https://qlvb.ctu.edu.vn/tra-cuu"),
-        Pair("Origin", "https://qlvb.ctu.edu.vn"),
-        Pair("Content-type", "application/x-www-form-urlencoded"),
-        Pair("Sec-Fetch-Mode", "cors")
+            Pair(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36"
+            ),
+            Pair("Referer", "https://qlvb.ctu.edu.vn/tra-cuu"),
+            Pair("Origin", "https://qlvb.ctu.edu.vn"),
+            Pair("Content-type", "application/x-www-form-urlencoded"),
+            Pair("Sec-Fetch-Mode", "cors")
     )
     val client = OkHttpClient.Builder().build()
 //    val client = OkHttpClient.Builder().getUnsafeOkHttpClient().build()
@@ -211,18 +205,18 @@ class CTUSession() {
         builder.addFormDataPart("v-vh", "0")
         builder.addFormDataPart("v-loc", "https://qlvb.ctu.edu.vn/")
         builder.addFormDataPart(
-            "v-wn",
-            "v-timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_LAYOUT_2450949-0.7472867800865768"
+                "v-wn",
+                "v-timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_LAYOUT_2450949-0.7472867800865768"
         )
         builder.addFormDataPart("v-td", "1")
 
 
         val resquestBulider = Request.Builder()
-            .url("https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&v-1570612818271")
+                .url("https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&v-1570612818271")
         this.headers.forEach { resquestBulider.header(it.first, it.second) }
 
         client.newCall(
-            resquestBulider.post(builder.build()).build()
+                resquestBulider.post(builder.build()).build()
         ).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val headers = response.headers
@@ -245,7 +239,7 @@ class CTUSession() {
 
     fun selectDiplomaType(selectedIndex: Int): Int {
         val builder = Request.Builder().url(
-            """
+                """
             https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0
         """.trimIndent()
         )
@@ -268,10 +262,10 @@ class CTUSession() {
 
 
     fun findName(
-        searchQuery: String
+            searchQuery: String
     ) {
         val builder = Request.Builder().url(
-            """
+                """
             https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0
         """.trimIndent()
         )
@@ -297,7 +291,7 @@ class CTUSession() {
                 for (tr in headersJSONArray) {
                     if (tr is JSONArray) {
                         (tr[1] as JSONObject).getAsString("caption")?.takeIf { it != "Chi tiết" }
-                            ?.let { headers.add(it) }
+                                ?.let { headers.add(it) }
                     }
                 }
                 println(headers)
@@ -341,14 +335,14 @@ class CTUSession() {
 
 fun getAlphaBetVietnamese(): ArrayList<String> {
     val alphabet =
-        "a b c d e f g h i j k l m n o p q r s t u v w x y z".replace(" ", "") +
-                "á|à|ả|ã|ạ|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ".replace("|", "") +
-                "đ".replace("|", "") +
-                "é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ".replace("|", "") +
-                "í|ì|ỉ|ĩ|ị".replace("|", "") +
-                "ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ".replace("|", "") +
-                "ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự".replace("|", "") +
-                "ý|ỳ|ỷ|ỹ|ỵ".replace("|", "")
+            "a b c d e f g h i j k l m n o p q r s t u v w x y z".replace(" ", "") +
+                    "á|à|ả|ã|ạ|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ".replace("|", "") +
+                    "đ".replace("|", "") +
+                    "é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ".replace("|", "") +
+                    "í|ì|ỉ|ĩ|ị".replace("|", "") +
+                    "ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ".replace("|", "") +
+                    "ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự".replace("|", "") +
+                    "ý|ỳ|ỷ|ỹ|ỵ".replace("|", "")
     val alphaArra = arrayListOf<String>()
     for (char in alphabet) {
         if (!alphaArra.contains(char.toString())) {

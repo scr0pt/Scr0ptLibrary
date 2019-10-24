@@ -35,7 +35,7 @@ fun main() {
                     }
 
                     collection2.updateOne(
-                        Document("MSSV", mssv), Updates.combine(a)
+                            Document("MSSV", mssv), Updates.combine(a)
                     )
                 } else {
                     collection2.insertOne(old)

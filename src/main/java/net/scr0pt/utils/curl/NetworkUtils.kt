@@ -56,7 +56,7 @@ object NetworkUtils {
 
     fun getFileSize(url: String): Long {
         val connection = Jsoup.connect(url).method(Connection.Method.HEAD).ignoreContentType(true).followRedirects(true)
-            .ignoreContentType(true)
+                .ignoreContentType(true)
         val response: Connection.Response?
         try {
             response = connection.execute()
@@ -80,8 +80,8 @@ object NetworkUtils {
         try {
             val desFile = File(filePath)
             FileUtils.copyURLToFile(
-                URL(fileUrl),
-                desFile
+                    URL(fileUrl),
+                    desFile
             )
             return true
         } catch (e: Exception) {

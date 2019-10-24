@@ -69,7 +69,7 @@ constructor(name: String?) {
         }
 
         phrase = WebPhrase.getInstance(this.name, this.conn, this.id)
-            ?: throw Exception("Can't get web phrase instance for web " + this.name)
+                ?: throw Exception("Can't get web phrase instance for web " + this.name)
 
 
 //        val date_last_update = MyDateTime.convertStringtoDate(last_update, "yyyy-MM-dd HH:mm:ss")
@@ -619,15 +619,15 @@ constructor(name: String?) {
      * Nếu anime có link này đã được get trong vòng 1 giờ thì thôi, không get lại nữa
      */
     fun isGetThisAnime(a: Anime?): Boolean {
-       /* try {
-            return if (a == null || !ParseURL.isValidUrl(a!!.web_link)) false else !db!!.select(
-                "link",
-                "last_update_anime",
-                " link = \"" + DB.validSql(a!!.web_link) + "\" AND last_update > DATE_SUB(NOW(), INTERVAL 1 HOUR)"
-            )
-        } catch (ex: Exception) {
-            return true
-        }*/
+        /* try {
+             return if (a == null || !ParseURL.isValidUrl(a!!.web_link)) false else !db!!.select(
+                 "link",
+                 "last_update_anime",
+                 " link = \"" + DB.validSql(a!!.web_link) + "\" AND last_update > DATE_SUB(NOW(), INTERVAL 1 HOUR)"
+             )
+         } catch (ex: Exception) {
+             return true
+         }*/
         return true
     }
 

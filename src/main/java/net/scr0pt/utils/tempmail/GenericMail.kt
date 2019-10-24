@@ -57,12 +57,12 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
         }
     }
 
-  /*  fun onMailAdded(mails: List<Mail>) {
-        inbox.addAll(mails)
-        events.onReceiveMails(mails) { mail ->
-            this.getMailContent(mail)
-        }
-    }*/
+    /*  fun onMailAdded(mails: List<Mail>) {
+          inbox.addAll(mails)
+          events.onReceiveMails(mails) { mail ->
+              this.getMailContent(mail)
+          }
+      }*/
 
     abstract fun getMailContent(mail: Mail): Element?
 }

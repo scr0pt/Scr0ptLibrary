@@ -14,8 +14,8 @@ constructor() : Web("animetvn") {
         this.xemAnimeButtoninAnimeInfo = "a.btn.play-now[href^='http://animetvn.tv/xem-phim/']:containsOwn(Xem phim)"
 
         this.conn
-            .cookie("animetvn_dh_popup_ads", "1")//add cookie ads
-            .cookie("animetvn_dh_qaa", "1")//add cookie 18+
+                .cookie("animetvn_dh_popup_ads", "1")//add cookie ads
+                .cookie("animetvn_dh_qaa", "1")//add cookie 18+
     }
 
     /**

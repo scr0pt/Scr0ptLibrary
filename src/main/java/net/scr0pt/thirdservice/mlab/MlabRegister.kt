@@ -11,10 +11,8 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.webdriver.Browser
-import net.scr0pt.utils.webdriver.findElWait
-import net.scr0pt.utils.webdriver.findFirstElWait
+import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
 
 /**
  * Created by Long
@@ -28,15 +26,13 @@ suspend fun main() {
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("mlab-account")
     val infinityMail = InfinityMail("tranvananh.200896@gmail.com")
+    val emails = arrayListOf<String>()
+    collection.find().forEach { doc -> doc?.getString("email")?.let { emails.add(it) } }
     do {
         val email = infinityMail.getNext()?.fullAddress ?: break
-        if (collection.countDocuments(
-                        org.bson.Document(
-                                "email",
-                                email
-                        )
-                ) == 0L && email != "t.ranvananh.2.00.896@gmail.com"
-        ) {
+        if (emails.contains(email)) continue
+        emails.add(email)
+        if (email != "t.ranvananh.2.00.896@gmail.com") {
             val result = FakeProfile.getNewProfile()
             val first = result?.name?.first ?: "Bruce"
             val last = result?.name?.last ?: "Lee"
@@ -54,51 +50,51 @@ suspend fun main() {
     } while (true)
 }
 
-suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLoginSuccess: suspend () -> Unit, onLoginFail: (suspend (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+suspend fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: suspend () -> Unit, onLoginFail: (suspend (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
     println("loginGoogle: $email $password")
-    val googlePageManager = PageManager(
-            arrayListOf<Page>(
-                    LoginEnterEmailPage(email) {
-                        println("enter email success")
-                    },
-                    LoginEnterPasswordPage(password) {
-                        println("enter password success")
-                    },
-                    ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
-                        println("ProtectYourAccount success")
-                    },
-                    VerifyItsYouPhoneNumber {
-                        println("VerifyItsYouPhoneNumber success")
-                    },
-                    GoogleSearch {
-                        println("GoogleSearch success")
-                    },
-                    CantLoginForYou {
-                        println("CantLoginForYou success")
-                    }
-            ),
-            driver,
+    PageManager(driver,
             "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
-    )
+    ).apply {
+        addPageList(arrayListOf<Page>(
+                LoginEnterEmailPage(email) {
+                    println("enter email success")
+                },
+                LoginEnterPasswordPage(password) {
+                    println("enter password success")
+                },
+                ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
+                    println("ProtectYourAccount success")
+                },
+                VerifyItsYouPhoneNumber {
+                    println("VerifyItsYouPhoneNumber success")
+                },
+                GoogleSearch {
+                    println("GoogleSearch success")
+                },
+                CantLoginForYou {
+                    println("CantLoginForYou success")
+                }
+        ))
 
-    recoverEmail?.let {
-        googlePageManager.pageList.add(VerifyItsYouRecoverEmail(it) {
-            println("VerifyItsYouRecoverEmail success")
-        })
-    }
+        recoverEmail?.let {
+            addPage(VerifyItsYouRecoverEmail(it) {
+                println("VerifyItsYouRecoverEmail success")
+            })
+        }
 
-    googlePageManager.generalWatingResult = { jsoupDoc, currentUrl ->
-        if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
-            PageResponse.RECAPTCHA()
-        } else PageResponse.WAITING_FOR_RESULT()
-    }
+        generalWatingResult = { jsoupDoc, currentUrl ->
+            if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
+                PageResponse.RECAPTCHA()
+            } else PageResponse.WAITING_FOR_RESULT()
+        }
 
-    googlePageManager.run { pageResponse ->
-        if (pageResponse is PageResponse.OK) {
-            onLoginSuccess()
-        } else {
-            driver.close()
-            onLoginFail?.let { it(pageResponse) }
+        run { pageResponse ->
+            if (pageResponse is PageResponse.OK) {
+                onLoginSuccess()
+            } else {
+                driver.close()
+                onLoginFail?.let { it(pageResponse) }
+            }
         }
     }
 }
@@ -108,36 +104,39 @@ suspend fun registerMlab(
         email: String,
         firstName: String,
         lastName: String,
-        driver: WebDriver,
+        driver: DriverManager,
         collection: MongoCollection<org.bson.Document>
 ) {
     val password = "XinChaoVietnam"
 
-    val pageManager = PageManager(
-            arrayListOf<Page>(
-                    TryMongoDBAtlasPage(email, password, firstName, lastName) {
-                        collection.insertOne(
-                                org.bson.Document("email", email)
-                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                        )
-                        println("register success")
-                    },
-                    BuildClusterPage() {
-                        println("BuildClusterPage success")
-                    }
-            ),
-            driver,
+    PageManager(driver,
             "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
-    )
-    pageManager.run { pageResponse ->
-        println(pageResponse)
-        Thread.sleep(60000)
-        driver.close()
-        Thread.sleep(180000)
+    ).apply {
+        addPageList(
+                arrayListOf<Page>(
+                        TryMongoDBAtlasPage(email, password, firstName, lastName) {
+                            collection.insertOne(
+                                    org.bson.Document("email", email)
+                                            .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                            )
+                            println("register success")
+                        },
+                        BuildClusterPage() {
+                            println("BuildClusterPage success")
+                        }
+                )
+        )
+
+        run { pageResponse ->
+            println(pageResponse)
+            Thread.sleep(60000)
+            driver.close()
+            Thread.sleep(180000)
+        }
     }
 }
 
-suspend fun loginMlab(driver: WebDriver, collection: MongoCollection<org.bson.Document>) {
+suspend fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
     val email = "v.a.n.a.n.ngu.y.en.0.8.3@gmail.com"
     val password = "XinChaoVietnam"
     val firstName = "Bruce"
@@ -145,52 +144,54 @@ suspend fun loginMlab(driver: WebDriver, collection: MongoCollection<org.bson.Do
     val db_username = "root"
     val db_password = "mongo"
 
-    val pageManager = PageManager(
-            arrayListOf<Page>(
-                    TryMongoDBAtlasPage(email, password, firstName, lastName) {
-                        collection.insertOne(
-                                org.bson.Document("email", email)
-                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                        )
-                        println("register success")
-                    },
-                    BuildClusterPage() {
-                        println("BuildClusterPage success")
-                    },
-                    CreateClusterTypePage {
-                        println("BuildClusterPage success")
-                    },
-                    ClusterCreatingPage() {
-                        println("ClusterCreatingPage success")
-                    },
-                    CreatingDatabaseUserPage() {
-                        println("CreatingDatabaseUserPage success")
-                    },
-                    AddNewUserPage(db_username, db_password) {
-                        println("AddNewUserPage success")
-                    },
-                    CreatingDatabaseUserDonePage() {
-                        println("CreatingDatabaseUserDonePage success")
-                    },
-                    NetworkAccessPage() {
-                        println("NetworkAccessPage success")
-                    },
-                    NetworkAccessAddWhitelistPage {
-                        println("NetworkAccessAddWhitelistPage success")
-                    },
-                    NetworkAccessAddWhitelistDonePage {
-                        println("NetworkAccessAddWhitelistDonePage success")
-                    }
-            ),
-            driver,
+    PageManager(driver,
             "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
-    )
-    pageManager.run { pageResponse ->
-        when (pageResponse) {
-            is MlabPageResponse.LOGIN_ERROR -> println(pageResponse.msg)
-        }
+    ).apply {
+        addPageList(
+                arrayListOf<Page>(
+                        TryMongoDBAtlasPage(email, password, firstName, lastName) {
+                            collection.insertOne(
+                                    org.bson.Document("email", email)
+                                            .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                            )
+                            println("register success")
+                        },
+                        BuildClusterPage() {
+                            println("BuildClusterPage success")
+                        },
+                        CreateClusterTypePage {
+                            println("BuildClusterPage success")
+                        },
+                        ClusterCreatingPage() {
+                            println("ClusterCreatingPage success")
+                        },
+                        CreatingDatabaseUserPage() {
+                            println("CreatingDatabaseUserPage success")
+                        },
+                        AddNewUserPage(db_username, db_password) {
+                            println("AddNewUserPage success")
+                        },
+                        CreatingDatabaseUserDonePage() {
+                            println("CreatingDatabaseUserDonePage success")
+                        },
+                        NetworkAccessPage() {
+                            println("NetworkAccessPage success")
+                        },
+                        NetworkAccessAddWhitelistPage {
+                            println("NetworkAccessAddWhitelistPage success")
+                        },
+                        NetworkAccessAddWhitelistDonePage {
+                            println("NetworkAccessAddWhitelistDonePage success")
+                        }
+                )
+        )
+        run { pageResponse ->
+            if (pageResponse is MlabPageResponse.LOGIN_ERROR) {
+                 println(pageResponse.msg)
+            }
 
-        println(pageResponse)
+            println(pageResponse)
+        }
     }
 }
 
@@ -211,20 +212,14 @@ class TryMongoDBAtlasPage(
         return null
     }
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "input#email")?.sendKeys(email)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input#first_name")?.sendKeys(firstName)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input#last_name")?.sendKeys(lastName)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input#password")?.sendKeys(password)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input#atlasCheckbox")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input#atlas-submit-btn")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(email, "input#email") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(firstName, "input#first_name") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(lastName, "input#last_name") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(password, "input#password") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("input#atlasCheckbox") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("input#atlas-submit-btn") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -237,9 +232,9 @@ class BuildClusterPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".path-selector-door-footer-starter .path-selector-door-submit", jsoup = false)?.click()
+        driver.clickFirstEl(".path-selector-door-footer-starter .path-selector-door-submit")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -256,9 +251,9 @@ class CreateClusterTypePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "button[type=\"button\"]:containsOwn(Create Cluster)")?.click()
+        driver.clickFirstEl("button[type=\"button\"]:containsOwn(Create Cluster)")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -275,10 +270,9 @@ class ClusterCreatingPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Database Access)")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl(".left-nav a:containsOwn(Database Access)") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -293,9 +287,9 @@ class CreatingDatabaseUserPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")?.click()
+        driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -315,14 +309,11 @@ class AddNewUserPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "input[name=\"user\"]")?.sendKeys(username)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "input[name=\"password\"]")?.sendKeys(password)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "button[type=\"submit\"]:containsOwn(Add User)")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(username, "input[name=\"user\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(password, "input[name=\"password\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("button[type=\"submit\"]:containsOwn(Add User)") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -339,10 +330,9 @@ class CreatingDatabaseUserDonePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Network Access)")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl(".left-nav a:containsOwn(Network Access)") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -359,9 +349,9 @@ class NetworkAccessPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")?.click()
+        driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -378,12 +368,10 @@ class NetworkAccessAddWhitelistPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, "button[name=\"allowAccessAnywhere\"]")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(100, 5000, "button[name=\"confirm\"]")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("button[name=\"allowAccessAnywhere\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("button[name=\"confirm\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 
@@ -398,10 +386,9 @@ class NetworkAccessAddWhitelistDonePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Clusters)")?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl(".left-nav a:containsOwn(Clusters)") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 

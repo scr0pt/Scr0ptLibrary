@@ -20,19 +20,19 @@ object GoogleParser {
         link ?: return null
         try {
             var driveid: String? =
-                fromStream(link)
-                    ?: fromDownload(link)
-                    ?: fromDocEmbed(link)
-                    ?: fromDriveEmbed(link)
-                    ?: fromApiDrivev2(
-                        link
-                    )
+                    fromStream(link)
+                            ?: fromDownload(link)
+                            ?: fromDocEmbed(link)
+                            ?: fromDriveEmbed(link)
+                            ?: fromApiDrivev2(
+                                    link
+                            )
             if (driveid != null) {
                 return driveid
             }
 
             //xuống bước này
-            val finalLink = NetworkUtils.followRedirect(url = link)  ?: return null
+            val finalLink = NetworkUtils.followRedirect(url = link) ?: return null
             if (link == finalLink) {
                 return null
             }

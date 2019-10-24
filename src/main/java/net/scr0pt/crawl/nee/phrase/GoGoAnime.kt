@@ -34,11 +34,11 @@ class GoGoAnime(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getAnimeStream(doc: Document?): File? {
         if (doc == null) return null
         val src = "http://vidstreaming.io/streaming.php?id=" + MyString.textBetween(
-            doc.html(),
-            "vidstreaming.io/streaming.php?id=",
-            "\"",
-            4,
-            100
+                doc.html(),
+                "vidstreaming.io/streaming.php?id=",
+                "\"",
+                4,
+                100
         ) ?: return null
         if (!src.contains("http")) return null
         val docVidstreamingIO = con?.get(src)?.doc ?: return null
@@ -80,7 +80,7 @@ class GoGoAnime(con: LongConnection, id: Long?) : WebPhrase() {
 
         fun getgetAnimeStream__VidstreamingIO(doc: Document): File? {
             var playerInstanceSetup =
-                MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
+                    MyString.textBetween(doc.html(), "playerInstance.setup(", "});") ?: return null
             playerInstanceSetup = playerInstanceSetup + "}"
             val jo = JSONValue.parse(playerInstanceSetup) as JSONObject
             val sources = jo["sources"] as JSONArray

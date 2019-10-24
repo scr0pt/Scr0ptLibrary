@@ -15,8 +15,8 @@ fun main() {
 
     val mailService = MailService()
     mailService.login(
-        "imap.gmail.com", MailConfig.APP_EMAIL,
-        MailConfig.APP_PASSWORD
+            "imap.gmail.com", MailConfig.APP_EMAIL,
+            MailConfig.APP_PASSWORD
     )
     var messageCount = mailService.messageCount
     if (messageCount > 5)
@@ -51,8 +51,8 @@ object SendMailSSL {
         email.hostName = MailConfig.HOST_NAME
         email.setSmtpPort(MailConfig.SSL_PORT)
         email.setAuthenticator(DefaultAuthenticator(
-            MailConfig.APP_EMAIL,
-            MailConfig.APP_PASSWORD
+                MailConfig.APP_EMAIL,
+                MailConfig.APP_PASSWORD
         ))
         email.isSSLOnConnect = true
         email.setFrom(MailConfig.APP_EMAIL)

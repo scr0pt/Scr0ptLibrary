@@ -10,10 +10,10 @@ import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-import net.scr0pt.utils.webdriver.*
+import net.scr0pt.utils.webdriver.Browser
+import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.types.ObjectId
 import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 
 
@@ -48,49 +48,50 @@ suspend fun main() {
 
         val driver = Browser.chrome
         val gmail = Gmail(gmailUsername, gmailPassword)
-        val startTime = System.currentTimeMillis()
         val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT) {
             println("HerokuDashboardPage click first app")
         }
-        val pageManager = PageManager(arrayListOf(
-                HerokuLoginPage(email, password) {
-                    println("HerokuLoginPage success")
-                }, herokuDashboardPage
-                ,
-                HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)) {
-                    println("HerokuAccountPage success")
-                },
-                HerokuAccountConfirmPasswordDonePage() {
-                    println("HerokuAccountConfirmPasswordDonePage success")
+        PageManager(driver, "https://id.heroku.com/login").apply {
+            addPageList(
+                    arrayListOf(
+                            HerokuLoginPage(email, password) {
+                                println("HerokuLoginPage success")
+                            }, herokuDashboardPage
+                            ,
+                            HerokuAccountConfirmPasswordPage(password) {
+                                println("HerokuAccountConfirmPasswordPage success")
+                                installGmail(gmail, driver, this, startTime) { confirmLink ->
+                                    println("confirmLink: $confirmLink")
+                                    driver.get(confirmLink)
+                                    gmail.logout()
+                                    herokuDashboardPage.onPageDetect = {
+                                        this.success()
+                                    }
+                                }
+                            },
+                            HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)) {
+                                println("HerokuAccountPage success")
+                            },
+                            HerokuAccountConfirmPasswordDonePage() {
+                                println("HerokuAccountConfirmPasswordDonePage success")
+                            }
+                    )
+            )
+            run {
+                if (it is PageResponse.OK) {
+                    herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            Updates.set("original_email", email),
+                            Updates.set("email", newEmail)
+                    ))
                 }
-        ), driver, "https://id.heroku.com/login")
-
-        pageManager.pageList.add(HerokuAccountConfirmPasswordPage(password) {
-            println("HerokuAccountConfirmPasswordPage success")
-            installGmail(gmail, driver, pageManager, startTime) { confirmLink ->
-                println("confirmLink: $confirmLink")
-                driver.get(confirmLink)
-                gmail.logout()
-                herokuDashboardPage.onPageDetect = {
-                    pageManager.success()
-                }
+                println("Login Heroku response $it")
+                driver.close()
             }
-        })
-
-        pageManager.run {
-            if (it is PageResponse.OK) {
-                herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
-                        Updates.set("original_email", email),
-                        Updates.set("email", newEmail)
-                ))
-            }
-            println("Login Heroku response $it")
-            driver.close()
         }
     }
 }
 
-fun installGmail(gmail: Gmail, driver: ChromeDriver, pageManager: PageManager, startTime: Long, onSuccess: (String) -> Unit) {
+fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, startTime: Long, onSuccess: (String) -> Unit) {
     gmail.onEvent(
             MailReceiveEvent(
                     key = "ona1sender",
@@ -140,57 +141,46 @@ suspend fun main2() {
         var appName = randomAppname()
         val driver = Browser.chrome
 
-        PageManager(arrayListOf(
-                HerokuLoginPage(email, password) {
-                    println("HerokuLoginPage success")
-                }, HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CLICK_FIRST_APP) {
-            println("HerokuDashboardPage click first app")
-        }
-        ), driver,
-                "https://id.heroku.com/login")
-                .run { pageresponse ->
-                    println(pageresponse)
-                    if (pageresponse is PageResponse.OK) {
+        PageManager(driver, "https://id.heroku.com/login")
+                .apply {
+                    addPageList(arrayListOf(
+                            HerokuLoginPage(email, password) {
+                                println("HerokuLoginPage success")
+                            }, HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CLICK_FIRST_APP) {
+                        println("HerokuDashboardPage click first app")
+                    }
+                    ))
 
-                        driver.get(driver.currentUrlTrim + "/settings")
-                        if (it.getString("appName").startsWith("bruce") == false) {
-                            driver.findFirstElWait(1000, 60000, "#app-rename-input", jsoup = false)?.click()
-                            driver.findFirstElWait(1000, 120000, "input.input-reset.lh-copy")?.let {
-                                it.clear()
-                                it.sendKeys(appName)
+                    run { pageresponse ->
+                        println(pageresponse)
+                        if (pageresponse is PageResponse.OK) {
+
+                            driver.get(driver.url + "/settings")
+                            if (it.getString("appName").startsWith("bruce") == false) {
+                                driver.clickFirstEl("#app-rename-input")
+                                driver.sendKeysFirstEl(appName, "input.input-reset.lh-copy")
+                                driver.clickFirstEl(".__hk-inline-edit-submit-button__.async-button")
+                                driver.waitUntilUrlChange()
                             }
-                            driver.findFirstElWait(1000, 120000, ".__hk-inline-edit-submit-button__.async-button")?.click()
-                            driver.waitUntilUrlChange(1000, 120000)
+
+                            driver.get(driver.url + "/access")
+                            driver.clickFirstEl("button", filter = { el -> el.text.trim().equals("Add collaborator", ignoreCase = true) })
+
+                            driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> el.getAttribute("placeholder") == "user@domain.com" })
+                            driver.clickFirstEl("button", filter = { el -> el.text.trim().equals("Save changes", ignoreCase = true) })
+                            driver.findEls(".collaborator-item", filter = { el -> el.text.contains(collaboratorEmail) })
+                            val nameOfApp = driver.url.substringBeforeLast("/access").substringAfterLast("/")
+                            herokuCollection.updateOne(
+                                    org.bson.Document("email", email),
+                                    Updates.push("collaborators", collaboratorEmail)
+                            )
+                            herokuCollection.updateOne(
+                                    org.bson.Document("email", email),
+                                    Updates.set("appName", nameOfApp)
+                            )
+                            Thread.sleep(5000)
+                            driver.close()
                         }
-
-
-                        driver.get(driver.currentUrlTrim!!.substringBeforeLast("/") + "/access")
-                        val addCollaboratorBtns =
-                                driver.findFirstElWait(1000, 60000, "button", jsoup = false, filter = { el -> el.text.trim().equals("Add collaborator", ignoreCase = true) })
-
-                        addCollaboratorBtns?.click()
-                        println("passwordConfirmInputs")
-                        val passwordConfirmInputs = driver.findFirstElWait(1000, 60000, "input", jsoup = false, filter = { el -> el.getAttribute("placeholder") == "user@domain.com" })
-
-                        passwordConfirmInputs?.sendKeys(collaboratorEmail)
-                        println("saveChangesBtns")
-                        val saveChangesBtns =
-                                driver.findFirstElWait(1000, 60000, "button", jsoup = false, filter = { el -> el.text.trim().equals("Save changes", ignoreCase = true) })
-                        saveChangesBtns?.click()
-
-                        driver.findElWait(1000, 180000, ".collaborator-item", filter = { el -> el.text.contains(collaboratorEmail) })
-
-                        val nameOfApp = driver.currentUrlTrim!!.substringBeforeLast("/access").substringAfterLast("/")
-                        herokuCollection.updateOne(
-                                org.bson.Document("email", email),
-                                Updates.push("collaborators", collaboratorEmail)
-                        )
-                        herokuCollection.updateOne(
-                                org.bson.Document("email", email),
-                                Updates.set("appName", nameOfApp)
-                        )
-                        Thread.sleep(5000)
-                        driver.close()
                     }
                 }
     }
@@ -205,15 +195,12 @@ class HerokuLoginPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
 
-        driver.findElWait(1000, 120000, "input#email", jsoup = false).firstOrNull()?.sendKeys(email)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findElWait(1000, 120000, "input#password", jsoup = false).firstOrNull()?.sendKeys(password)
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findElWait(1000, 120000, "button[value=\"Log In\"]", jsoup = false).firstOrNull()?.click()
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(email, "input#email") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.sendKeysFirstEl(password, "input#password") ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("button[value=\"Log In\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
 
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -234,13 +221,13 @@ class HerokuDashboardPage(
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
 
         when (action) {
             HerokuDashboardAction.CREATE_NEW_APP -> driver.get("https://dashboard.heroku.com/new-app")
             HerokuDashboardAction.CLICK_FIRST_APP -> {
-                driver.document?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black")?.let {
+                driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black")?.let {
                     val appName = it.text()
                     println("appName: $appName")
                     driver.get("https://dashboard.heroku.com/apps/$appName")
@@ -270,17 +257,14 @@ class HerokuAccountPage(
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
 
         when (action) {
             is HerokuAccountAction.CHANGE_EMAIL -> {
-                driver.findFirstElWait(1000, 120000, ".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit button")?.click()
-                driver.findFirstElWait(1000, 120000, "input#new-e-mail")?.let {
-                    it.clear()
-                    it.sendKeys(action.newEmail)
-                }
-                driver.findFirstElWait(1000, 120000, ".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit .__hk-inline-edit-submit-button__")?.click()
+                driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit button")
+                driver.sendKeysFirstEl(action.newEmail, "input#new-e-mail")
+                driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit .__hk-inline-edit-submit-button__")
             }
         }
 
@@ -301,11 +285,11 @@ class HerokuAccountConfirmPasswordPage(
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.findFirstElWait(1000, 120000, ".modal-overlay .modal-box .modal-content input[type=\"password\"]")?.sendKeys(password)
+        driver.sendKeysFirstEl(password, ".modal-overlay .modal-box .modal-content input[type=\"password\"]")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.findFirstElWait(1000, 120000, ".modal-overlay .modal-box .modal-footer button[type=\"submit\"]")?.click()
+        driver.clickFirstEl(".modal-overlay .modal-box .modal-footer button[type=\"submit\"]")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
@@ -323,7 +307,7 @@ class HerokuAccountConfirmPasswordDonePage(
 
     override fun isEndPage() = false
 
-    override fun _action(driver: WebDriver): PageResponse {
+    override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
         return PageResponse.WAITING_FOR_RESULT()
     }

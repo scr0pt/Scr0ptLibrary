@@ -29,7 +29,7 @@ class AnimeTVN(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getSubteam(doc: Document?) = doc?.selectFirst(".svep:has(.playing) > span.svname")?.text()?.trim()
 
     override fun getAnimeYear(doc: Document?) =
-        extractAnimeYear(doc?.selectFirst("li.has-color > span:containsOwn(Năm phát sóng:)")?.parent()?.text())
+            extractAnimeYear(doc?.selectFirst("li.has-color > span:containsOwn(Năm phát sóng:)")?.parent()?.text())
 
     override fun getAnimeStream(doc: Document?): File? = getAnimeStream1(doc) ?: getAnimeStream2(doc)
 
@@ -56,7 +56,7 @@ class AnimeTVN(con: LongConnection, id: Long?) : WebPhrase() {
     fun getAnimeStream2(doc: Document?): File? {
         doc ?: return null
         var playerInstanceSetup = MyString.textBetween(doc.html(), "jwplayer(\"myElement\").setup(", "});")
-            ?: return null
+                ?: return null
         playerInstanceSetup += "}"
         val jo = JSONValue.parse(playerInstanceSetup) as JSONObject
         if (!jo.containsKey("sources")) {
@@ -103,7 +103,8 @@ class AnimeTVN(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getNewAnimes(doc: Document?): ArrayList<Anime> {
         val animelist = arrayListOf<Anime>()
         val selects =
-            doc?.select(".home-film-list > .anime > .film-list > .item.film_item > .film_item_inner > .data > h3.title > a[href^='http://animetvn.tv/thong-tin-phim/']") ?: return animelist
+                doc?.select(".home-film-list > .anime > .film-list > .item.film_item > .film_item_inner > .data > h3.title > a[href^='http://animetvn.tv/thong-tin-phim/']")
+                        ?: return animelist
         for (select in selects) {
             val anime = Anime()
             //get anime link

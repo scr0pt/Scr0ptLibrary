@@ -8,7 +8,7 @@ import net.scr0pt.crawl.school.random
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.webdriver.Browser
-import net.scr0pt.utils.webdriver.findFirstElWait
+import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.Document
 import org.openqa.selenium.firefox.FirefoxDriver
 
@@ -35,7 +35,7 @@ suspend fun main() {
             loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
                 println(1)
                 driver.get("https://myaccount.google.com/lesssecureapps?utm_source=google-account&utm_medium=web")
-                var accessTxt = driver.findFirstElWait(1000, 180000, "div", jsoup = false, filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
+                var accessTxt = driver.findFirstEl("div", filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
                         ?: return@loginGoogle
                 println(1.5)
                 if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
@@ -43,12 +43,12 @@ suspend fun main() {
                     onSuccess(gmailUsername, collection, driver)
                 } else if (accessTxt == "Allow less secure apps: OFF" || accessTxt == "Cho phép ứng dụng kém an toàn: TẮT") {
                     println(3)
-                    driver.findFirstElWait(1000, 120000, ".LsSwGf", jsoup = false)?.click()
+                    driver.findFirstEl(".LsSwGf")?.click()
                     Thread.sleep(2000)
-                    driver.navigate().refresh()
+                    driver.refresh()
                     Thread.sleep(2000)
 
-                    accessTxt = driver.findFirstElWait(1000, 180000, "div", jsoup = false, filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
+                    accessTxt = driver.findFirstEl("div", filter = { el -> el.text.startsWith("Allow less secure apps: ") || el.text.startsWith("Cho phép ứng dụng kém an toàn: ") })?.text
                             ?: return@loginGoogle
                     println(4)
                     if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
@@ -76,7 +76,7 @@ suspend fun main() {
     }
 }
 
-fun onSuccess(gmailUsername: String, collection: MongoCollection<Document>, driver: FirefoxDriver) {
+fun onSuccess(gmailUsername: String, collection: MongoCollection<Document>, driver: DriverManager) {
     println("Allow less secure apps true")
     collection.updateOne(Document("email", gmailUsername), Updates.set("Allow less secure apps", true))
     driver.close()

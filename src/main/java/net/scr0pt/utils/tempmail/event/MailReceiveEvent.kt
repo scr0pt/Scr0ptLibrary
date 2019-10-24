@@ -8,12 +8,12 @@ import net.scr0pt.utils.tempmail.models.Mail
  * Time: 10:58 PM
  */
 class MailReceiveEvent(
-    val key: String,
-    val validator: (Mail) -> Boolean,//filter inboxs
-    private val callback: (List<Mail>) -> Unit,
-    val once: Boolean = true,//only run callback once
-    val fetchContent: Boolean = false,
-    val new: Boolean = true//only get new emails
+        val key: String,
+        val validator: (Mail) -> Boolean,//filter inboxs
+        private val callback: (List<Mail>) -> Unit,
+        val once: Boolean = true,//only run callback once
+        val fetchContent: Boolean = false,
+        val new: Boolean = true//only get new emails
 ) {
     var done: Boolean = false//is this MailReceiveEvent called
     private val mails = arrayListOf<Mail>()//list mails that go throught validator

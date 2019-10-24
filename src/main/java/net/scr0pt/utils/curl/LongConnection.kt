@@ -26,7 +26,7 @@ class LongConnection {
         }
 
     val jsoup: org.jsoup.Connection =
-        org.jsoup.Jsoup.connect("http://127.0.0.1").ignoreContentType(true).ignoreHttpErrors(true).followRedirects(true)
+            org.jsoup.Jsoup.connect("http://127.0.0.1").ignoreContentType(true).ignoreHttpErrors(true).followRedirects(true)
 
     fun headers(headers: HashMap<String, String>) {
         headers.forEach { (key, value) ->
@@ -71,10 +71,10 @@ class LongConnection {
     }
 
     fun execute(
-        url: String? = null,
-        method: REQUEST_METHOD = REQUEST_METHOD.GET,
-        data: ArrayList<Data>? = null,
-        headers: ArrayList<Data>? = null
+            url: String? = null,
+            method: REQUEST_METHOD = REQUEST_METHOD.GET,
+            data: ArrayList<Data>? = null,
+            headers: ArrayList<Data>? = null
     ): LongResponse? {
         return try {
             url?.let { this.url = url }
@@ -101,24 +101,25 @@ class LongConnection {
     }
 
     fun get(url: String? = null, headers: HashMap<String, String>? = null): LongResponse? = execute(url,
-        REQUEST_METHOD.GET, headers = headers?.toLongConnectionData())
+            REQUEST_METHOD.GET, headers = headers?.toLongConnectionData())
+
     fun post(
-        url: String? = null,
-        data: HashMap<String, String>? = null,
-        headers: HashMap<String, String>? = null
+            url: String? = null,
+            data: HashMap<String, String>? = null,
+            headers: HashMap<String, String>? = null
     ): LongResponse? =
-        execute(
-            url,
-            REQUEST_METHOD.POST,
-            data = data?.toLongConnectionData(),
-            headers = headers?.toLongConnectionData()
-        )
+            execute(
+                    url,
+                    REQUEST_METHOD.POST,
+                    data = data?.toLongConnectionData(),
+                    headers = headers?.toLongConnectionData()
+            )
 
     fun put(url: String? = null, data: HashMap<String, String>? = null): LongResponse? =
-        execute(url, REQUEST_METHOD.PUT, data = data?.toLongConnectionData())
+            execute(url, REQUEST_METHOD.PUT, data = data?.toLongConnectionData())
 
     fun delete(url: String? = null): LongResponse? = execute(url,
-        REQUEST_METHOD.DELETE
+            REQUEST_METHOD.DELETE
     )
 
     enum class REQUEST_METHOD {
@@ -135,11 +136,11 @@ class LongConnection {
     var changeResponseBodyFunc: ((String?) -> String?)? = null
 
     data class Data(
-        var name: String,
-        var value: String,
-        var isHard: Boolean = false,
-        var method: REQUEST_METHOD? = null,
-        var once: Boolean = false
+            var name: String,
+            var value: String,
+            var isHard: Boolean = false,
+            var method: REQUEST_METHOD? = null,
+            var once: Boolean = false
     )
 
     fun Data.equals(other: Any?): Boolean = when (other) {

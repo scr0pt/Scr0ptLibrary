@@ -10,7 +10,7 @@ class LongConnectionLocalStorage(val fileName: String) {
     fun save(longConnection: LongConnection) {
         val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
         val json = gson.toJson(longConnection)
-        localStorage.setItem(URL(longConnection.url).host,json)
+        localStorage.setItem(URL(longConnection.url).host, json)
     }
 
     fun load(url: String): LongConnection? {

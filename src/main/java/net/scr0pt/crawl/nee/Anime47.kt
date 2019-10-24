@@ -15,7 +15,7 @@ constructor() : Web("anime47") {
         this.allEpisodesinWatchPage = ".server .episodes > ul > li > a[href*='anime47.com/xem-phim-']"
         this.animeNameinAnimeInfoPage = "h1.movie-title > span.title-1[itemprop=\"name\"]"
         this.xemAnimeButtoninAnimeInfo =
-            "ul.btn-block > li.item > a#btn-film-watch.btn-red[href]:containsOwn(Xem Anime)"
+                "ul.btn-block > li.item > a#btn-film-watch.btn-red[href]:containsOwn(Xem Anime)"
         //    this.con.cookie("", newPage) khong biet phai them cookie gi de location la viet nam
 
     }

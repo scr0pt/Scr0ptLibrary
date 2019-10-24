@@ -53,7 +53,7 @@ class File {
     var sourceLink: String? = null
         set(link) {
             field = link
-            GoogleParser.getDriveIdfromURL(link)?.let{ driveid ->
+            GoogleParser.getDriveIdfromURL(link)?.let { driveid ->
                 this.server = "Google Drive"
                 this.fileId = driveid
             }
@@ -77,14 +77,14 @@ class File {
 }
 
 
-fun ArrayList<File>.sortLabel(){
+fun ArrayList<File>.sortLabel() {
     for (i in 0 until this.size - 1) {
         for (j in i + 1 until this.size) {
             val fi = this[i]
             val fj = this[j]
             if (File.getIntLabel(fi.label) < File.getIntLabel(
-                    fj.label
-                )
+                            fj.label
+                    )
             ) {
                 this[i] = fj
                 this[j] = fi

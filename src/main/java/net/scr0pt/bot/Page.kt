@@ -1,31 +1,53 @@
 package net.scr0pt.bot
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
-import org.openqa.selenium.WebDriver
-import net.scr0pt.utils.webdriver.document
+import java.time.LocalDateTime
+import kotlin.collections.ArrayList
 
 
-class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val originUrl: String) {
+class PageManager(val driver: DriverManager, val originUrl: String) {
+    val startTime = System.currentTimeMillis()
     var prevPage: Page? = null
     var currentPage: Page? = null
-    var hhhhhhhh = 0
-    val INTERVAL_SLEEP_TIME = 1000L//1 second
-    val MAX_SLEEP_TIME = 180000L//3 min
-    var isSuccess = false
 
+
+    var sleepCounting = 0
+    val INTERVAL_SLEEP_TIME = 1000L//1 second
+    val MAX_SLEEP_TIME = 120000L//2 min
+    var sleepTime: Double = INTERVAL_SLEEP_TIME.toDouble()
+    var linearSleep = true
+
+
+    var isSuccess = false
     var generalWatingResult: ((doc: Document, currentUrl: String) -> PageResponse)? = null
+    private val pageList = arrayListOf<Page>()
+
+    fun addPage(page: Page) {
+        this.pageList.add(page)
+    }
+
+    fun addPageList(pageList: ArrayList<Page>) {
+        this.pageList.addAll(pageList)
+    }
+
 
     suspend fun run(onRunFinish: suspend (pageResponse: PageResponse?) -> Unit) {
+        if (this.pageList.isEmpty()) {
+            println("Page list is empty")
+            return
+        }
+
         driver.get(originUrl)
         val job = GlobalScope.launch {
             var pageResponse: PageResponse? = null
             loop@ while (currentPage?.isEndPage() != true) {
-                var waitTime = 0L
+                var waitTime = 0.0
                 while (waitTime < MAX_SLEEP_TIME) {
-
                     pageResponse = if (isSuccess) {
                         PageResponse.OK("Force success")
                     } else {
@@ -33,15 +55,21 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
                     }
 
                     if (pageResponse is PageResponse.WAITING_FOR_RESULT) {
-                        waitTime += INTERVAL_SLEEP_TIME
-                        delay(INTERVAL_SLEEP_TIME)
+                        if (linearSleep) {
+                            waitTime += INTERVAL_SLEEP_TIME
+                            delay(INTERVAL_SLEEP_TIME)
+                        } else {
+                            sleepTime *= 2
+                            waitTime += sleepTime
+                            delay(sleepTime.toLong())
+                        }
                     } else {
                         break@loop
                     }
                 }
             }
 
-            println("onRunFinish running")
+            println("onRunFinish running with pageResponse $pageResponse ${(pageResponse?.msg) ?: ""}")
             onRunFinish(pageResponse)
         }
         job.join()
@@ -49,15 +77,19 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
 
 
     fun waiting(): PageResponse {
-        println("waiting ${hhhhhhhh++}")
-        val doc = driver.document ?: return PageResponse.NOT_OK()
-        val currentUrl = driver.currentUrl ?: return PageResponse.NOT_OK()
+        val now = LocalDateTime.now()
+        println("waiting ${sleepCounting++} ${now.hour}:${now.minute}:${now.second}")
+        val doc = driver.doc ?: return PageResponse.NOT_OK()
+        val currentUrl = driver.url ?: return PageResponse.NOT_OK()
         val title = driver.title ?: return PageResponse.NOT_OK()
 
         //is go to next page
         pageList.filter { it != currentPage }
                 .forEach { page ->
                     if (page.detect(doc, currentUrl, title)) {
+                        if (!linearSleep) {
+                            sleepTime = INTERVAL_SLEEP_TIME.toDouble()
+                        }
                         prevPage = currentPage
                         prevPage?.onPageFinish?.let { onPageFinish -> onPageFinish() }
                         currentPage = page
@@ -118,9 +150,9 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     open fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? = null
     abstract fun isEndPage(): Boolean
 
-    abstract fun _action(driver: WebDriver): PageResponse
+    abstract fun _action(driver: DriverManager): PageResponse
 
-    fun action(driver: WebDriver): PageResponse {
+    fun action(driver: DriverManager): PageResponse {
         if (isDone) return PageResponse.WAITING_FOR_RESULT(this::class.java.simpleName + " done")
 
         val response = _action(driver)

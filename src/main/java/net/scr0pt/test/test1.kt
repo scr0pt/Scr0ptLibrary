@@ -25,6 +25,7 @@ fun main() {
     print(" done with implicit label")
 
 }
+
 fun main44() {
     val mongoClient = MongoClients.create(MongoConnection.malConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mal")
@@ -91,33 +92,33 @@ class CTUSession() {
     fun initCsrfToken() {
         val doc = conn.get("https://qlvb.ctu.edu.vn/")?.doc
         val script = doc?.select("script")
-            ?.filter { it.data().contains("or press ESC to continue") && it.data().contains("click here") }
-            ?.first()
+                ?.filter { it.data().contains("or press ESC to continue") && it.data().contains("click here") }
+                ?.first()
 
         val layout = (doc?.selectFirst(".timkiemvanbang")?.id() ?: "")
 //        endPointUrl = """https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-wsver=7.5.2&v-uiId=0"""
         browserDetailsUrl = script.toString().substringAfter("browserDetailsUrl:\"").substringBefore("\"")
         serviceUrl = script.toString().substringAfter("serviceUrl:\"").substringBefore("\"")
         val postResponse = conn.post(
-            browserDetailsUrl,
-            hashMapOf(
-                "v-browserDetails" to "1",
-                "theme" to "valo",
-                "v-appId" to layout,
-                "v-sh" to "768",
-                "v-sw" to "1366",
-                "v-cw" to "625",
-                "v-curdate" to System.currentTimeMillis().toString(),
-                "v-tzo" to "-420",
-                "v-dstd" to "0",
-                "v-rtzo" to "-420",
-                "v-dston" to "false",
-                "v-vw" to "1179",
-                "v-vh" to "0",
-                "v-loc" to "https://qlvb.ctu.edu.vn/",
-                "v-wn" to layout,
-                "v-td" to "1"
-            )
+                browserDetailsUrl,
+                hashMapOf(
+                        "v-browserDetails" to "1",
+                        "theme" to "valo",
+                        "v-appId" to layout,
+                        "v-sh" to "768",
+                        "v-sw" to "1366",
+                        "v-cw" to "625",
+                        "v-curdate" to System.currentTimeMillis().toString(),
+                        "v-tzo" to "-420",
+                        "v-dstd" to "0",
+                        "v-rtzo" to "-420",
+                        "v-dston" to "false",
+                        "v-vw" to "1179",
+                        "v-vh" to "0",
+                        "v-loc" to "https://qlvb.ctu.edu.vn/",
+                        "v-wn" to layout,
+                        "v-td" to "1"
+                )
         )
 
         val body = postResponse?.body ?: return
@@ -131,9 +132,9 @@ class CTUSession() {
 
     fun selectDiplomaType(selectedIndex: Int) {
         val postResponse = conn.post(
-            serviceUrl + "&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+                serviceUrl + "&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0",
 //            data = """{"csrfToken":"$csrfToken","rpc":[["2021","v","v",["selected",["S",["$selectedIndex"]]]]],"syncId":${syncId}"""
-            data = hashMapOf("""{"csrfToken":"$csrfToken","rpc":[["0","com.vaadin.shared.ui.ui.UIServerRpc","resize",[236,1179,1349,625]],["3","v","v",["filter",["s",""]]],["3","v","v",["page",["i",-1]]]],"syncId":${syncId}}""" to "")
+                data = hashMapOf("""{"csrfToken":"$csrfToken","rpc":[["0","com.vaadin.shared.ui.ui.UIServerRpc","resize",[236,1179,1349,625]],["3","v","v",["filter",["s",""]]],["3","v","v",["page",["i",-1]]]],"syncId":${syncId}}""" to "")
         )
 
         val body = postResponse?.body ?: return
@@ -148,7 +149,7 @@ class CTUSession() {
 
 
     fun findName(
-        searchQuery: String
+            searchQuery: String
     ) {
 
         var postData = if (syncId % 2 == 0) {
@@ -166,9 +167,9 @@ class CTUSession() {
         """.trimIndent()
 
         val response = conn.post(
-            "https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+                "https://qlvb.ctu.edu.vn/tra-cuu?p_p_id=timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0",
 //            serviceUrl + "&_timkiemvanbang_WAR_ctueduvnquanlyvanbangportlet_v-resourcePath=%2FUIDL%2F&v-uiId=0",
-            data = hashMapOf(postData to "")
+                data = hashMapOf(postData to "")
         )
 
         val body = response?.body ?: return
@@ -183,7 +184,7 @@ class CTUSession() {
         for (tr in headersJSONArray) {
             if (tr is JSONArray) {
                 (tr[1] as JSONObject).getAsString("caption")?.takeIf { it != "Chi tiết" }
-                    ?.let { headers.add(it) }
+                        ?.let { headers.add(it) }
             }
         }
         println(headers)
@@ -226,14 +227,14 @@ class CTUSession() {
 
 fun getAlphaBetVietnamese(): ArrayList<String> {
     val alphabet =
-        "a b c d e f g h i j k l m n o p q r s t u v w x y z".replace(" ", "") +
-                "á|à|ả|ã|ạ|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ".replace("|", "") +
-                "đ".replace("|", "") +
-                "é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ".replace("|", "") +
-                "í|ì|ỉ|ĩ|ị".replace("|", "") +
-                "ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ".replace("|", "") +
-                "ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự".replace("|", "") +
-                "ý|ỳ|ỷ|ỹ|ỵ".replace("|", "")
+            "a b c d e f g h i j k l m n o p q r s t u v w x y z".replace(" ", "") +
+                    "á|à|ả|ã|ạ|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ".replace("|", "") +
+                    "đ".replace("|", "") +
+                    "é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ".replace("|", "") +
+                    "í|ì|ỉ|ĩ|ị".replace("|", "") +
+                    "ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ".replace("|", "") +
+                    "ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự".replace("|", "") +
+                    "ý|ỳ|ỷ|ỹ|ỵ".replace("|", "")
     val alphaArra = arrayListOf<String>()
     for (char in alphabet) {
         if (!alphaArra.contains(char.toString())) {

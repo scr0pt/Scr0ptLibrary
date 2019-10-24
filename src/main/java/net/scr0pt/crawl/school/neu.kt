@@ -6,8 +6,6 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
 import org.openqa.selenium.By
 import net.scr0pt.utils.webdriver.Browser
-import net.scr0pt.utils.webdriver.document
-import net.scr0pt.utils.webdriver.findElWait
 
 fun main() {
     val mongoClient = MongoClients.create(MongoConnection.eduConnection)
@@ -16,19 +14,19 @@ fun main() {
 
     val firefox = Browser.firefox
     firefox.get("http://vanbang.neu.edu.vn/#mainResult")
-    firefox.findElement(By.id("ctl00_phd_slices_VanBangListViewOnly__searchButton")).click()
+    firefox.clickFirstEl(By.id("ctl00_phd_slices_VanBangListViewOnly__searchButton"))
     Thread.sleep(500)
     while (true) {
-        firefox.document?.let { parserResult(it, collection) }
-        firefox.findElWait(1000, 20000, ".rgPageNext")?.first()?.click()
+        firefox.doc?.let { parserResult(it, collection) }
+        firefox.clickFirstEl(".rgPageNext")
         Thread.sleep(500)
     }
 }
 
 
 fun parserResult(
-    doc: org.jsoup.nodes.Document,
-    collection: MongoCollection<Document>
+        doc: org.jsoup.nodes.Document,
+        collection: MongoCollection<Document>
 ) {
     val headers = arrayListOf<String>()
     doc.select("table.rgMasterTable  th.header-text.rgHeader")?.forEach {
@@ -54,9 +52,9 @@ fun parserResult(
                 }
             }
             println(
-                "Inserting doc: " + doc.getString("Họ đệm") + " " + doc.getString("Tên") + " " + doc.getString(
-                    "Ngày sinh"
-                )
+                    "Inserting doc: " + doc.getString("Họ đệm") + " " + doc.getString("Tên") + " " + doc.getString(
+                            "Ngày sinh"
+                    )
             )
             collection.insertOneUnique(doc)
         }

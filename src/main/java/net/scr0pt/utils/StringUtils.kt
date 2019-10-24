@@ -4,11 +4,11 @@ import org.apache.commons.lang3.StringUtils
 
 object MyString {
     fun textBetween(
-        _word: String?,
-        startWord: String,
-        endWord: String,
-        minlen: Int? = null,
-        maxlen: Int? = null
+            _word: String?,
+            startWord: String,
+            endWord: String,
+            minlen: Int? = null,
+            maxlen: Int? = null
     ): String? {
         var word = _word ?: return null
         val startWordlength = startWord.length

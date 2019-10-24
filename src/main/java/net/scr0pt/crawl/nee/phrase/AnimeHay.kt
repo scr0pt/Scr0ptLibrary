@@ -25,11 +25,12 @@ class AnimeHay(con: LongConnection, id: Long?) : WebPhrase() {
     }
 
     override fun getSubteam(doc: Document?) =
-        doc?.selectFirst(".ah-bg-bd > ul:has(li > a[href].active)")?.previousElementSibling()?.selectFirst("span")?.text()?.trim()
+            doc?.selectFirst(".ah-bg-bd > ul:has(li > a[href].active)")?.previousElementSibling()?.selectFirst("span")?.text()?.trim()
 
     override fun getAnimeYear(doc: Document?): Long? {
         val parent =
-            doc?.selectFirst(".ah-pif-fdetails > ul > li > strong:containsOwn(Năm phát hành)")?.parent() ?: return null
+                doc?.selectFirst(".ah-pif-fdetails > ul > li > strong:containsOwn(Năm phát hành)")?.parent()
+                        ?: return null
         var text = parent.text()
         val strong = parent.selectFirst("strong").text()
         text = text.replace(strong, "").trim().replace("\\s+".toRegex(), "").trim()
@@ -43,16 +44,17 @@ class AnimeHay(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getAnimeStream(doc: Document?): File? {
         val e = doc?.selectFirst("script[src^='http://animehay.tv/load-episode.php']") ?: return null
         val linkLoadEpisode = e.absUrl("src")
-        val body  = con?.get(linkLoadEpisode, headers = hashMapOf("Referer" to doc.baseUri(), "User-Agent" to
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"))?.body ?: return null
+        val body = con?.get(linkLoadEpisode, headers = hashMapOf("Referer" to doc.baseUri(), "User-Agent" to
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"))?.body
+                ?: return null
         return if (body.length < 10) null else parse_Jwplayer_Setup(body)
     }
 
     override fun getNewEpisodes(doc: Document?): ArrayList<Episode> {
         val eplist = arrayListOf<Episode>()
         val selects =
-            doc?.select(".ah-pif-body .ah-pif-fdetails.ah-bg-bd ul > li.ah-pif-ne > a[href^='http://animehay.tv/phim/']")
-                ?: return eplist
+                doc?.select(".ah-pif-body .ah-pif-fdetails.ah-bg-bd ul > li.ah-pif-ne > a[href^='http://animehay.tv/phim/']")
+                        ?: return eplist
         for (select in selects) {
             val ep = Episode()
             ep.web_link = select.absUrl("href")
@@ -66,8 +68,8 @@ class AnimeHay(con: LongConnection, id: Long?) : WebPhrase() {
     override fun getNewAnimes(doc: Document?): ArrayList<Anime> {
         val animelist = arrayListOf<Anime>()
         val selects =
-            doc?.select(".ah-row-film.ah-clear-both .ah-col-film[data-id] .ah-pad-film > a[href^='http://animehay.tv/phim/']")
-                ?: return animelist
+                doc?.select(".ah-row-film.ah-clear-both .ah-col-film[data-id] .ah-pad-film > a[href^='http://animehay.tv/phim/']")
+                        ?: return animelist
         for (select in selects) {
             val anime = Anime()
             anime.web_link = select.absUrl("href")
@@ -91,22 +93,22 @@ class AnimeHay(con: LongConnection, id: Long?) : WebPhrase() {
             val arrVideo = arrayListOf<File>()
 
             split.filter { it.length > 5 && it.contains("http") && it.contains("//") }
-                ?.forEach {
-                    val string = it.trim()
-                    val split1 = string.split("\":\"".toRegex())
-                    var label = split1[0]
-                    var link: String? = split1[1]
-                    if ((link?.length ?: 0) > 10 && link?.contains("http") == true) {
-                        link = MyString.cleanJsonLink(link)
-                        if (label.contains("z")) {
-                            label = label.substring(label.indexOf("z") + 1)
+                    ?.forEach {
+                        val string = it.trim()
+                        val split1 = string.split("\":\"".toRegex())
+                        var label = split1[0]
+                        var link: String? = split1[1]
+                        if ((link?.length ?: 0) > 10 && link?.contains("http") == true) {
+                            link = MyString.cleanJsonLink(link)
+                            if (label.contains("z")) {
+                                label = label.substring(label.indexOf("z") + 1)
+                            }
+                            val v = File()
+                            v.sourceLink = (link)
+                            v.label = label
+                            arrVideo.add(v)
                         }
-                        val v = File()
-                        v.sourceLink = (link)
-                        v.label = label
-                        arrVideo.add(v)
                     }
-                }
 
             return when {
                 arrVideo.isEmpty() -> null

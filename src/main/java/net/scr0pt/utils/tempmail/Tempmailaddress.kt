@@ -7,9 +7,9 @@ import net.scr0pt.utils.tempmail.models.Mail
 import java.lang.reflect.Type;
 
 class Tempmailaddress(onInnitSuccess: ((Tempmailaddress) -> Unit)? = null, onInitFail: (() -> Unit)? = null) : TempMail(
-    url = "https://www.tempmailaddress.com",
-    onInnitSuccess = onInnitSuccess as ((GenericMail) -> Unit)?,
-    onInitFail = onInitFail
+        url = "https://www.tempmailaddress.com",
+        onInnitSuccess = onInnitSuccess as ((GenericMail) -> Unit)?,
+        onInitFail = onInitFail
 ) {
     init {
         with(curl) {
@@ -17,8 +17,8 @@ class Tempmailaddress(onInnitSuccess: ((Tempmailaddress) -> Unit)? = null, onIni
             header("Sec-Fetch-Mode", "cors")
             header("X-Requested-With", "XMLHttpRequest")
             userAgent(
-                "Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1",
-                isHard = true
+                    "Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1",
+                    isHard = true
             )
             referrer("https://www.tempmailaddress.com/", isHard = true)
         }
@@ -38,21 +38,21 @@ class Tempmailaddress(onInnitSuccess: ((Tempmailaddress) -> Unit)? = null, onIni
         for (inboxResponse in list) {
             val from = inboxResponse.od.split("<")[1].split(">")[0]
             mails.add(
-                Mail(
-                    from = from,
-                    to = this.emailAddress,
-                    subject = inboxResponse.predmet
-                ).also {
-                it.id = inboxResponse.id
-            })
+                    Mail(
+                            from = from,
+                            to = this.emailAddress,
+                            subject = inboxResponse.predmet
+                    ).also {
+                        it.id = inboxResponse.id
+                    })
         }
         return mails
     }
 
     override fun getMailContent(mail: Mail): Element? {
         val body = curl(
-            "https://www.tempmailaddress.com/email/id/${mail.id}",
-            referer = "https://www.tempmailaddress.com/window/id/${mail.id}"
+                "https://www.tempmailaddress.com/email/id/${mail.id}",
+                referer = "https://www.tempmailaddress.com/window/id/${mail.id}"
         ) ?: return null
         return body.doc?.selectFirst("body > div[dir='ltr']")
     }
@@ -69,13 +69,13 @@ class Tempmailaddress(onInnitSuccess: ((Tempmailaddress) -> Unit)? = null, onIni
 
     data class InitMailAdressResponse(val email: String, val heslo: String)
     data class UpdateInboxResponse(
-        val akce: String,
-        val id: Long,
-        val kdy: String,
-        val od: String,
-        val precteno: String,
-        val predmet: String,
-        val predmetZkraceny: String
+            val akce: String,
+            val id: Long,
+            val kdy: String,
+            val od: String,
+            val precteno: String,
+            val predmet: String,
+            val predmetZkraceny: String
     )
 }
 

@@ -19,7 +19,7 @@ fun main2() {
 
     var i = 0
 
-        val longConnection = LongConnection()
+    val longConnection = LongConnection()
     while (true) {
         Thread.sleep(2000)
         i++
@@ -27,14 +27,14 @@ fun main2() {
         val url = arr[i]
 
         val response = longConnection.post(
-            "https://postimages.org/json/rr",
-            hashMapOf(
-                "token" to "61aa06d6116f7331ad7b2ba9c7fb707ec9b182e8",
-                "upload_session" to "XpmWNtKoit1PeLrbBSAsCiIftrMzqe6B",
-                "url" to url,
-                "numfiles" to "1",
-                "gallery" to "",
-                "token" to "61aa06d6116f7331ad7b2ba9c7fb707ec9b182e8"
+                "https://postimages.org/json/rr",
+                hashMapOf(
+                        "token" to "61aa06d6116f7331ad7b2ba9c7fb707ec9b182e8",
+                        "upload_session" to "XpmWNtKoit1PeLrbBSAsCiIftrMzqe6B",
+                        "url" to url,
+                        "numfiles" to "1",
+                        "gallery" to "",
+                        "token" to "61aa06d6116f7331ad7b2ba9c7fb707ec9b182e8"
                 )
         )
 
@@ -73,13 +73,13 @@ fun main() {
 fun getImage(i: Int): ArrayList<String> {
     val arr = arrayListOf<String>()
     Jsoup.connect("https://wall.alphacoders.com/by_category.php?id=3&name=Anime+Wallpapers&page=$i").get()
-        ?.body()
-        ?.select(".thumb-container-big .boxgrid img")
-        ?.forEach {
-            it?.attr("data-src")?.let {
-                arr.add(it)
+            ?.body()
+            ?.select(".thumb-container-big .boxgrid img")
+            ?.forEach {
+                it?.attr("data-src")?.let {
+                    arr.add(it)
+                }
             }
-        }
     return arr
 }
 
@@ -105,8 +105,8 @@ class ImgurManager(var imgurAcc: ImgurAcc) {
 
     fun checkCaptcha(): CheckCaptchaResponse? {
         val body = conn.post(
-            "https://imgur.com/upload/checkcaptcha",
-            hashMapOf("total_uploads" to "1", "create_album" to "true")
+                "https://imgur.com/upload/checkcaptcha",
+                hashMapOf("total_uploads" to "1", "create_album" to "true")
         )?.body
         //        {"data":{"overLimits":0,"upload_count":0,"new_album_id":"vP6yRUn","deletehash":"O1xIdRqfN0yPIn4"},"success":true,"status":200}
         return gson.fromJson<CheckCaptchaResponse>(body, CheckCaptchaResponse::class.java)
