@@ -319,6 +319,10 @@ class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageF
                 doc.selectFirst("input#phoneNumberId") != null
     }
 
+    override fun responseWhenDetect(): PageResponse? {
+        return GooglePageResponse.VERIFY_PHONE_NUMBER_DETECT()
+    }
+
     override fun isEndPage() = true
 
     override fun _action(driver: WebDriver): PageResponse {

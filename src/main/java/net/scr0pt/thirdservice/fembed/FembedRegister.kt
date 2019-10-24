@@ -39,16 +39,16 @@ suspend fun main() {
         if (collection.countDocuments(Document("email", email)) > 0L) continue
 
         val result = FakeProfile.getNewProfile()
-        val first = result?.name?.first ?: "Bruce"
-        val last = result?.name?.last ?: "Lee"
+        val first = result?.name?.first ?: continue
+        val last = result?.name?.last ?: continue
 
         registerFembed(
             "${first} $last", email,
-            "IAmLegend2002",
+            "Bruce${System.currentTimeMillis()}",
             gmailUsername,
             gmailPassword,
             collection,
-            Browser.firefox
+            Browser.chrome
         )
     } while (true)
 }

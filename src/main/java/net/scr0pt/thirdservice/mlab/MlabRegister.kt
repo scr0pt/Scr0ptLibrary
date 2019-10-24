@@ -12,6 +12,7 @@ import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.findElWait
+import net.scr0pt.utils.webdriver.findFirstElWait
 import org.jsoup.nodes.Document
 import org.openqa.selenium.WebDriver
 
@@ -66,7 +67,7 @@ suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLo
                     ProtectYourAccount(defaultAction = ProtectYourAccount.DEFAULT_ACTION.DONE) {
                         println("ProtectYourAccount success")
                     },
-                    VerifyItsYouPhoneNumber(){
+                    VerifyItsYouPhoneNumber {
                         println("VerifyItsYouPhoneNumber success")
                     },
                     GoogleSearch {
@@ -81,7 +82,7 @@ suspend fun loginGoogle(email: String, password: String, driver: WebDriver, onLo
     )
 
     recoverEmail?.let {
-        googlePageManager.pageList.add(VerifyItsYouRecoverEmail(it){
+        googlePageManager.pageList.add(VerifyItsYouRecoverEmail(it) {
             println("VerifyItsYouRecoverEmail success")
         })
     }
@@ -212,23 +213,19 @@ class TryMongoDBAtlasPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val emailInputs = driver.findElWait(100, 5000, "input#email")
-        val firstNameInputs = driver.findElWait(100, 5000, "input#first_name")
-        val lastNameInputs = driver.findElWait(100, 5000, "input#last_name")
-        val passwordInputs = driver.findElWait(100, 5000, "input#password")
-        val atlasCheckboxInputs = driver.findElWait(100, 5000, "input#atlasCheckbox")
-        val submitBtns = driver.findElWait(100, 5000, "input#atlas-submit-btn")
-        return if (emailInputs.isEmpty() || firstNameInputs.isEmpty() || lastNameInputs.isEmpty() || passwordInputs.isEmpty() || atlasCheckboxInputs.isEmpty() || submitBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            emailInputs.first().sendKeys(email)
-            firstNameInputs.first().sendKeys(firstName)
-            lastNameInputs.first().sendKeys(lastName)
-            passwordInputs.first().sendKeys(password)
-            atlasCheckboxInputs.first().click()
-            submitBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, "input#email")?.sendKeys(email)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#first_name")?.sendKeys(firstName)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#last_name")?.sendKeys(lastName)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#password")?.sendKeys(password)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#atlasCheckbox")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input#atlas-submit-btn")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
@@ -242,15 +239,9 @@ class BuildClusterPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val submitBtns =
-                driver.findElWait(100, 5000, ".path-selector-door-footer-starter .path-selector-door-submit", jsoup = false)
-//            driver.findElWait(100, 5000, ".path-selector-door-hourly-price-free ~ .path-selector-door-submit")
-        return if (submitBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            submitBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".path-selector-door-footer-starter .path-selector-door-submit", jsoup = false)?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -267,13 +258,9 @@ class CreateClusterTypePage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val submitBtns = driver.findElWait(100, 5000, "button[type=\"button\"]:containsOwn(Create Cluster)")
-        return if (submitBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            submitBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, "button[type=\"button\"]:containsOwn(Create Cluster)")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -290,13 +277,9 @@ class ClusterCreatingPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val databaseAccessBtns = driver.findElWait(100, 5000, ".left-nav a:containsOwn(Database Access)")
-        return if (databaseAccessBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            databaseAccessBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Database Access)")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -312,13 +295,9 @@ class CreatingDatabaseUserPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val databaseAccessBtns = driver.findElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")
-        return if (databaseAccessBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            databaseAccessBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -338,17 +317,13 @@ class AddNewUserPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val usernameInputs = driver.findElWait(100, 5000, "input[name=\"user\"]")
-        val passwordInputs = driver.findElWait(100, 5000, "input[name=\"password\"]")
-        val submitBtns = driver.findElWait(100, 5000, "button[type=\"submit\"]:containsOwn(Add User)")
-        return if (usernameInputs.isEmpty() || passwordInputs.isEmpty() || submitBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            usernameInputs.first().sendKeys(username)
-            passwordInputs.first().sendKeys(password)
-            submitBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, "input[name=\"user\"]")?.sendKeys(username)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "input[name=\"password\"]")?.sendKeys(password)
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "button[type=\"submit\"]:containsOwn(Add User)")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -366,13 +341,9 @@ class CreatingDatabaseUserDonePage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val networkAccessBtns = driver.findElWait(100, 5000, ".left-nav a:containsOwn(Network Access)")
-        return if (networkAccessBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            networkAccessBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Network Access)")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -390,13 +361,9 @@ class NetworkAccessPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val addIpAddressBtns = driver.findElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")
-        return if (addIpAddressBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            addIpAddressBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".section-controls-is-end-justified .button-is-primary")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -413,15 +380,11 @@ class NetworkAccessAddWhitelistPage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val allowAccessAnywhereBtns = driver.findElWait(100, 5000, "button[name=\"allowAccessAnywhere\"]")
-        val confirmBtns = driver.findElWait(100, 5000, "button[name=\"confirm\"]")
-        return if (allowAccessAnywhereBtns.isEmpty() || confirmBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            allowAccessAnywhereBtns.first().click()
-            confirmBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, "button[name=\"allowAccessAnywhere\"]")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.findFirstElWait(100, 5000, "button[name=\"confirm\"]")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -437,13 +400,9 @@ class NetworkAccessAddWhitelistDonePage(
 
     override fun _action(driver: WebDriver): PageResponse {
         println(this::class.java.simpleName + ": action")
-        val clustersBtns = driver.findElWait(100, 5000, ".left-nav a:containsOwn(Clusters)")
-        return if (clustersBtns.isEmpty()) {
-            PageResponse.NOT_FOUND_ELEMENT()
-        } else {
-            clustersBtns.first().click()
-            PageResponse.WAITING_FOR_RESULT()
-        }
+        driver.findFirstElWait(100, 5000, ".left-nav a:containsOwn(Clusters)")?.click()
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        return PageResponse.WAITING_FOR_RESULT()
     }
 
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {

@@ -8,6 +8,8 @@ import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import java.util.*
 import javax.mail.*
+import javax.mail.event.MessageCountAdapter
+import javax.mail.event.MessageCountEvent
 import javax.mail.internet.MimeMultipart
 import kotlin.text.StringBuilder
 
@@ -18,36 +20,33 @@ fun main() {
     val registerTime = 1571290983527
     val gmail = Gmail("vinhnguyen4h4@gmail.com", "eHK;HyL.e=2k1704FgqN").apply {
         onEvent(
-            MailReceiveEvent(
-                key = "ona1sender",
-                validator = { mail ->
-                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                        mail.from,
-                        "admin@openload.co"
-                    )
-                },
-                callback = { mails ->
-                    val mail =
-                        mails.firstOrNull { it.content?.contains("Please log in using your login code below:") == true }
-                    val code = mail?.content?.substringAfter("Please log in using your login code below:")?.trim()
-                        ?.substringBefore(" ")?.trim()
-                },
-                once = false,
-                new = true,
-                fetchContent = true
-            )
+                MailReceiveEvent(
+                        key = "ona1sender",
+                        validator = { mail ->
+                            Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                    mail.from,
+                                    "animebentojp@gmail.com"
+                            )
+                        },
+                        callback = { mails ->
+                            mails.forEach { println(it.content) }
+                        },
+                        once = false,
+                        new = true,
+                        fetchContent = true
+                )
         )
     }
 }
 
 
 class Gmail(
-    val username: String,
-    val password: String,
-    onInnitSuccess: ((GenericMail) -> Unit)? = null,
-    onInitFail: (() -> Unit)? = null
+        val username: String,
+        val password: String,
+        onInnitSuccess: ((GenericMail) -> Unit)? = null,
+        onInitFail: (() -> Unit)? = null
 ) :
-    GenericMail(onInnitSuccess, onInitFail) {
+        GenericMail(onInnitSuccess, onInitFail) {
     object MailConfig {
         val IMAP_PORT: Int = 993
         val HOST_NAME = "smtp.gmail.com"
@@ -66,7 +65,7 @@ class Gmail(
     // hardcoding protocol and the folder
     // it can be parameterized and enhanced as required
     private val inboxFolderName = "INBOX"
-    private val spamFolderName = "in:SPAM"
+    private val spamFolderName = "[Gmail]/Spam"
 
     val isLoggedIn: Boolean
         get() = store?.isConnected ?: false
@@ -74,11 +73,11 @@ class Gmail(
     override fun init(): Boolean {
         this.emailAddress = username
         return login(
-            MailConfig.IMAP_PROTOCOL,
-            MailConfig.IMAP_HOST,
-            username,
-            password,
-            MailConfig.IMAP_PORT
+                MailConfig.IMAP_PROTOCOL,
+                MailConfig.IMAP_HOST,
+                username,
+                password,
+                MailConfig.IMAP_PORT
         )
     }
 
@@ -87,21 +86,26 @@ class Gmail(
     override fun updateInbox(): List<Mail>? {
         val list = arrayListOf<Mail>()
         messages = arrayListOf<Message>()
-//        spamFolder?.messages?.reversed()?.let {
-//            messages.addAll(it)
-//        }
+        spamFolder?.messages?.reversed()?.let {
+            messages.addAll(it)
+        }
         inboxFolder?.messages?.reversed()?.let {
             messages.addAll(it)
         }
         for (message in messages) {
-            if (list.size >= 10) break
-            val from = message.from?.first()?.toString()?.substringAfter("<")?.substringBefore(">")
-            val receivedDate = message.receivedDate.time
-            val mail = Mail(from, emailAddress, message.subject)
-            mail.id = receivedDate
+            if (list.size >= 50) break
+            val mail = message.toMail()
             list.add(mail)
         }
         return list
+    }
+
+    fun Message.toMail(): Mail {
+        val from = this.from?.first()?.toString()?.substringAfter("<")?.substringBefore(">")
+        val receivedDate = this.receivedDate.time
+        val mail = Mail(from, emailAddress, this.subject)
+        mail.id = receivedDate
+        return mail
     }
 
     override fun getMailContent(mail: Mail): Element? {
@@ -151,13 +155,32 @@ class Gmail(
             store = session?.getStore(url)
             if (!isLoggedIn) store?.connect(host, port, username, password)
 
+//            store?.defaultFolder.list("*")
+            inboxFolder = store?.getFolder(inboxFolderName)?.apply {
+                open(Folder.READ_ONLY)
 
-            inboxFolder = store?.getFolder(inboxFolderName)?.also {
-                it.open(Folder.READ_ONLY)
+                /*addMessageCountListener(object: MessageCountAdapter(){
+                    override fun messagesRemoved(e: MessageCountEvent?) {
+                        e?.messages?.forEach {
+                            it.receivedDate
+                            println("Remove email: ${it.from.first()?.toString()}")
+                        }
+                    }
+
+                    override fun messagesAdded(e: MessageCountEvent?) {
+                        val list = arrayListOf<Mail>()
+                        e?.messages?.forEach {
+                            println("Added email: ${it.from.first()?.toString()}")
+                            list.add(it.toMail())
+                        }
+                        onMailAdded(list)
+                    }
+                })*/
             }
-//            spamFolder = store?.getFolder(spamFolderName)?.also {
-//                it.open(Folder.READ_ONLY)
-//            }
+            spamFolder = store?.getFolder(spamFolderName)?.apply {
+                open(Folder.READ_ONLY)
+            }
+
             true
         } catch (e: Exception) {
             e.printStackTrace()

@@ -12,7 +12,7 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
     var prevPage: Page? = null
     var currentPage: Page? = null
     var hhhhhhhh = 0
-    val INTERVAL_SLEEP_TIME =1000L//1 second
+    val INTERVAL_SLEEP_TIME = 1000L//1 second
     val MAX_SLEEP_TIME = 180000L//3 min
     var isSuccess = false
 
@@ -26,7 +26,7 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
                 var waitTime = 0L
                 while (waitTime < MAX_SLEEP_TIME) {
 
-                    pageResponse = if(isSuccess){
+                    pageResponse = if (isSuccess) {
                         PageResponse.OK("Force success")
                     } else {
                         waiting()
@@ -55,34 +55,39 @@ class PageManager(val pageList: ArrayList<Page>, val driver: WebDriver, val orig
         val title = driver.title ?: return PageResponse.NOT_OK()
 
         //is go to next page
-        pageList.forEach { page ->
-            if (page != currentPage && page.detect(doc, currentUrl,title)) {
-                prevPage = currentPage
-                prevPage?.onPageFinish?.let { onPageFinish -> onPageFinish() }
-                currentPage = page
+        pageList.filter { it != currentPage }
+                .forEach { page ->
+                    if (page.detect(doc, currentUrl, title)) {
+                        prevPage = currentPage
+                        prevPage?.onPageFinish?.let { onPageFinish -> onPageFinish() }
+                        currentPage = page
 
-                val response = page.action(driver)
-                if (response !is PageResponse.WAITING_FOR_RESULT) {
-                    return response
+                        page.responseWhenDetect()?.let {
+                            return@waiting it
+                        }
+
+                        val response = page.action(driver)
+                        if (response !is PageResponse.WAITING_FOR_RESULT) {
+                            return@waiting response
+                        }
+
+                        if (page.isEndPage()) return@waiting PageResponse.OK()
+                    }
                 }
-
-                if (page.isEndPage()) return PageResponse.OK()
-            }
-        }
 
         generalWatingResult?.let { generalWatingResult ->
             val response = generalWatingResult(doc, currentUrl)
             if (response !is PageResponse.WAITING_FOR_RESULT) {
-                return response
+                return@waiting response
             }
         }
 
         currentPage?.watingResult(doc, currentUrl, title)?.let {
             if (it !is PageResponse.WAITING_FOR_RESULT) {
-                return it
+                return@waiting it
             }
         }
-        return PageResponse.WAITING_FOR_RESULT()
+        return@waiting PageResponse.WAITING_FOR_RESULT()
     }
 
     fun success() {
@@ -95,14 +100,18 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     public var onPageDetect: (() -> Unit) = {
         println(this::class.java.simpleName + ": detect")
     }
+
+    open fun responseWhenDetect(): PageResponse? = null
+
     //check if driver is in this page
     abstract fun _detect(doc: Document, currentUrl: String, title: String): Boolean
 
     fun detect(doc: Document?, currentUrl: String, title: String): Boolean {
         doc ?: return false
         val result = _detect(doc, currentUrl, title)
-        if (result)
+        if (result) {
             onPageDetect()
+        }
         return result
     }
 
@@ -112,7 +121,7 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     abstract fun _action(driver: WebDriver): PageResponse
 
     fun action(driver: WebDriver): PageResponse {
-        if(isDone) return PageResponse.WAITING_FOR_RESULT(this::class.java.simpleName + " done")
+        if (isDone) return PageResponse.WAITING_FOR_RESULT(this::class.java.simpleName + " done")
 
         val response = _action(driver)
         isDone = true
@@ -139,6 +148,7 @@ sealed class PageResponse(val msg: String? = null) {
 //GooglePageResponse
 sealed class GooglePageResponse(msg: String? = null) : PageResponse(msg) {
     class CANT_LOGIN_FOR_YOU(msg: String? = null) : GooglePageResponse(msg)
+    class VERIFY_PHONE_NUMBER_DETECT(msg: String? = null) : GooglePageResponse(msg)
 }
 
 //MlabPageResponse

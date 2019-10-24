@@ -15,6 +15,7 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
         events.removeIf { it.key == event.key }
         events.add(event)
     }
+
     var emailAddress: String? = null
 
     init {
@@ -28,7 +29,7 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
         }).start()
     }
 
-    fun startSchedule(){
+    fun startSchedule() {
         schedule = Timer().also { timer ->
             timer.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
@@ -44,9 +45,9 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
 
     fun onUpdateInbox() {
         println("onUpdateInbox")
-        updateInbox()?.let { newInboxs ->
+        updateInbox()?.takeIf { it.isNotEmpty() }?.let { newInboxs ->
             val filter =
-                newInboxs.filter { newInbox -> inbox.none { it.id != null && newInbox.id != null && it.id == newInbox.id } }//new inbox mails that not in old inbox mails
+                    newInboxs.filter { newInbox -> inbox.none { it.id != null && newInbox.id != null && it.id == newInbox.id } }//new inbox mails that not in old inbox mails
             if (filter.isNotEmpty()) {
                 inbox.addAll(filter)
                 events.onReceiveMails(filter) { mail ->
@@ -55,6 +56,13 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
             }
         }
     }
+
+  /*  fun onMailAdded(mails: List<Mail>) {
+        inbox.addAll(mails)
+        events.onReceiveMails(mails) { mail ->
+            this.getMailContent(mail)
+        }
+    }*/
 
     abstract fun getMailContent(mail: Mail): Element?
 }
