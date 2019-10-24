@@ -229,7 +229,6 @@ class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onP
     }
 }
 
-
 //Veryfy it you action
 class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {

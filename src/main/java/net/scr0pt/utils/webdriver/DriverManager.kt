@@ -2,20 +2,39 @@ package net.scr0pt.utils.webdriver
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.openqa.selenium.By
-import org.openqa.selenium.JavascriptExecutor
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
+import org.openqa.selenium.*
 
-class DriverManager(private var driver: WebDriver) {
+fun main() {
+    val driver = Browser.firefox
+    val tab2 = driver.driver.switchTo().newWindow(WindowType.TAB)
+    driver.driver.switchTo().newWindow(WindowType.TAB)
+}
+
+
+class DriverManager(public var driver: WebDriver) {
+//class DriverManager(private var driver: WebDriver) {
     companion object {
         @JvmStatic
         var INTERVAL_SLEEP_TIME = 1000L//1 second
         var MAX_SLEEP_TIME = 180000L//3 min
     }
 
-    fun get(url: String) = driver.get(url)
-    fun close() = driver.close()
+    fun get(url: String) =  driver.get(url)
+
+    /*fun get(url: String) {
+        try {
+            driver.get(url)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Thread.sleep(5000)
+            get(url)
+        }
+    }*/
+    fun close() {
+        driver.close()
+    }
+
+
     fun renew(newDriver: Any) {
         this.driver.close()
         if (newDriver is WebDriver) {
@@ -23,6 +42,8 @@ class DriverManager(private var driver: WebDriver) {
         } else if (newDriver is DriverManager) {
             this.driver = newDriver.driver
         }
+
+        Thread.sleep(2000)
     }
 
 
