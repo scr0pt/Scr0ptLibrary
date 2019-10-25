@@ -30,36 +30,36 @@ suspend fun register() {
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("openload")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("openload-account")
+
+    val emails = arrayListOf<String>()
+    collection.find().forEach { doc -> doc?.getString("email")?.let { emails.add(it) } }
+
     do {
         val email = infinityMail.getNext()?.fullAddress ?: break
         if (email.contains("vanlethi74")) continue
-        if (collection.countDocuments(org.bson.Document("email", email)) > 0L) continue
+
+        if (emails.contains(email)) continue
+        emails.add(email)
+
+
         val password = "XinChaoVietNam@1990"
         val driver = Browser.firefox
-        loginGoogle(email = gmailUsername, password = gmailPassword, driver = driver, onLoginSuccess = {
-            driver.get("https://openload.co/register")
+        driver.get("https://openload.co/register")
+        driver.sendKeysFirstEl(email, "form#register-form input#registerform-email") ?: continue
+        driver.sendKeysFirstEl(password, "form#register-form input#registerform-password") ?: continue
+        driver.sendKeysFirstEl(password, "form#register-form input#registerform-passwordconfirm") ?: continue
+        driver.clickFirstEl("form#register-form input#registerform-iagree") ?: continue
+        driver.clickFirstEl("form#register-form iframe[src*='https://www.google.com/recaptcha']") ?: continue
+        driver.waitUntilUrlChange()
+        println(driver.url)
 
-            driver.sendKeysFirstEl(email,
-                    "form#register-form input#registerform-email") ?: return@loginGoogle
-            driver.sendKeysFirstEl(password,
-                    "form#register-form input#registerform-password") ?: return@loginGoogle
-            driver.sendKeysFirstEl(password, "form#register-form input#registerform-passwordconfirm")?.sendKeys(password)
-                    ?: return@loginGoogle
-            driver.clickFirstEl("form#register-form input#registerform-iagree") ?: return@loginGoogle
-            driver.clickFirstEl("form#register-form iframe[src*='https://www.google.com/recaptcha']")
-                    ?: return@loginGoogle
-            driver.waitUntilUrlChange()
-            println(driver.url)
-
-            collection.insertOne(
-                    Document("email", email).append("password", password).append(
-                            "cookies",
-                            driver.cookieStr
-                    ).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
-            )
-            driver.close()
-
-        })
+        collection.insertOne(
+                Document("email", email).append("password", password).append(
+                        "cookies",
+                        driver.cookieStr
+                ).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
+        )
+        driver.close()
     } while (true)
 }
 

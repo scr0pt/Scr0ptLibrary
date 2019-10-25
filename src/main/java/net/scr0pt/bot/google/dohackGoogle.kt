@@ -95,6 +95,9 @@ class DoHackGoogle() {
                         //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
                         println("VerifyItsYou success")
                     },
+                    VerifyItsYouPhoneNumberRecieveMessage {
+                        println("VerifyItsYouPhoneNumberRecieveMessage success")
+                    },
                     CanotLoginForYou {
                         //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
                         println("CanotLoginForYou success")

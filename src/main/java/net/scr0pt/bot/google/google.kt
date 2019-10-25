@@ -247,6 +247,7 @@ class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
+
 //Veryfy phone number
 class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
@@ -254,6 +255,34 @@ class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageF
                 doc.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
                 doc.selectFirst("#headingSubtext")?.text() == "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm" &&
                 doc.selectFirst("input#phoneNumberId") != null
+    }
+
+    override fun responseWhenDetect(): PageResponse? {
+        return GooglePageResponse.VERIFY_PHONE_NUMBER_DETECT()
+    }
+
+    override fun isEndPage() = true
+
+    override fun _action(driver: DriverManager): PageResponse {
+        println(this::class.java.simpleName + ": action")
+        return PageResponse.WAITING_FOR_RESULT()
+    }
+}
+
+//Nhận mã xác minh tại ••• ••• •• 68
+//Gọi vào số điện thoại của bạn trong hồ sơ ••• ••• •• 68
+//Xác nhận số điện thoại khôi phục của bạn
+class VerifyItsYouPhoneNumberRecieveMessage(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
+        return !doc.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
+                doc.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
+                doc.selectFirst("#headingSubtext")?.text() == "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm" &&
+                doc.selectFirst("input#phoneNumberId") == null &&
+                doc.html().contains("Thử cách đăng nhập khác") &&
+                (doc.html().contains("Nhận mã xác minh tại") ||
+                        doc.html().contains("Gọi vào số điện thoại của bạn trong hồ sơ") ||
+                        doc.html().contains("Xác nhận số điện thoại khôi phục của bạn"))
+
     }
 
     override fun responseWhenDetect(): PageResponse? {
@@ -280,11 +309,13 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
         println(this::class.java.simpleName + ": action")
         driver.sendKeysFirstEl(recoverEmail, "input#knowledge-preregistered-email-response")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("div[role=\"button\"] > span > span", equals = "Tiếp theo")?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("div[role=\"button\"] > span > span", equals = "Tiếp theo")
+                ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
-class VerifyItsYouPhoneDevice( onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+
+class VerifyItsYouPhoneDevice(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false
         return "Xác minh đó là bạn" == headingText
@@ -301,6 +332,7 @@ class VerifyItsYouPhoneDevice( onPageFinish: (() -> Unit)? = null) : Page(onPage
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
+
 class CanotLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false

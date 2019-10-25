@@ -10,9 +10,11 @@ import org.openqa.selenium.firefox.FirefoxProfile
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.awt.Toolkit
 import java.awt.Toolkit.getDefaultToolkit
+import java.io.File
 
-
-
+fun main() {
+    Browser.chrome
+}
 
 object Browser {
     val htmlUnitDriver: DriverManager
@@ -35,7 +37,7 @@ object Browser {
             }
 
             val firefoxOptions = FirefoxOptions().apply {
-                profile = FirefoxProfile().apply {
+                profile = FirefoxProfile(File("C:\\Users\\Administrator\\Documents\\firefox_profile")).apply {
                     setPreference("browser.helperApps.neverAsk.saveToDisk", "application/excel")
                     setAcceptUntrustedCertificates(true)
                     setAssumeUntrustedCertificateIssuer(false)
@@ -51,9 +53,8 @@ object Browser {
         get() {
             //file config phai dat o desktop
             val options = ChromeOptions()
-            options.addArguments("--start-maximized")
-            options.addArguments("--ignore-certificate-errors")
-            options.addArguments("--disable-popup-blocking")
+//            options.addArguments("user-data-dir=C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\User Data")
+            options.addArguments("--start-maximized", "--incognito", "--ignore-certificate-errors", "--disable-popup-blocking")
             options.addArguments("disable-infobars") //disable chrome is being controlled by automated test software
 //        options.addArguments("user-data-dir=" + Config.getInstance().get("chrome_profile"))
             if (ChromeDriverUtils.getChromeDriver()) {

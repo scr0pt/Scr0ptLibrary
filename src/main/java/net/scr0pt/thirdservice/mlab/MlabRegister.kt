@@ -68,6 +68,9 @@ suspend fun loginGoogle(email: String, password: String, driver: DriverManager, 
                 VerifyItsYouPhoneNumber {
                     println("VerifyItsYouPhoneNumber success")
                 },
+                VerifyItsYouPhoneNumberRecieveMessage {
+                    println("VerifyItsYouPhoneNumberRecieveMessage success")
+                },
                 GoogleSearch {
                     println("GoogleSearch success")
                 },
@@ -190,7 +193,7 @@ suspend fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bso
         )
         run { pageResponse ->
             if (pageResponse is MlabPageResponse.LOGIN_ERROR) {
-                 println(pageResponse.msg)
+                println(pageResponse.msg)
             }
 
             println(pageResponse)

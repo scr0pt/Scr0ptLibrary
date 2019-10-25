@@ -72,6 +72,8 @@ suspend fun outlookRegister(email: String, collection: MongoCollection<org.bson.
                 )
             }
 
+            driver.get("https://outlook.live.com")
+
             Thread.sleep(20000)
 //        outlookRegisterPageManager.driver.close()
             Thread.sleep(600000)
