@@ -147,12 +147,12 @@ class ProtectYourAccount(
         println(this::class.java.simpleName + ": action ~ $defaultAction")
         when (defaultAction) {
             DEFAULT_ACTION.UPDATE -> {
-                driver.clickFirstEl("span", filter = { el -> ("Cập nhật".equals(el.text, ignoreCase = true) || "Update".equals(el.text, ignoreCase = true)) })
+                driver.clickFirstEl("span", equals = "Cập nhật")
                         ?: return PageResponse.NOT_FOUND_ELEMENT()
                 return PageResponse.WAITING_FOR_RESULT()
             }
             DEFAULT_ACTION.DONE -> {
-                driver.clickFirstEl("span", filter = { el -> ("Xong".equals(el.text, ignoreCase = true) || "Done".equals(el.text, ignoreCase = true)) })?.click()
+                driver.clickFirstEl("span", equals = "Xong")?.click()
                         ?: return PageResponse.NOT_FOUND_ELEMENT()
                 return PageResponse.WAITING_FOR_RESULT()
             }
@@ -243,7 +243,7 @@ class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish
 
     override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl("#identifierNext span", filter = { el -> "Tiếp theo" .equals(el.text, ignoreCase = true)}) ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("#identifierNext span", equals = "Tiếp theo") ?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
@@ -280,8 +280,7 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
         println(this::class.java.simpleName + ": action")
         driver.sendKeysFirstEl(recoverEmail, "input#knowledge-preregistered-email-response")
                 ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("span", filter = { el -> el.text == "Tiếp theo" })
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
+        driver.clickFirstEl("div[role=\"button\"] > span > span", equals = "Tiếp theo")?: return PageResponse.NOT_FOUND_ELEMENT()
         return PageResponse.WAITING_FOR_RESULT()
     }
 }

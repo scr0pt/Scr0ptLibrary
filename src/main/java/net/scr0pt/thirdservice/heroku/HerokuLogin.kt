@@ -164,11 +164,11 @@ suspend fun main2() {
                             }
 
                             driver.get(driver.url + "/access")
-                            driver.clickFirstEl("button", filter = { el -> el.text.trim().equals("Add collaborator", ignoreCase = true) })
+                            driver.clickFirstEl("button", equals = "Add collaborator")
 
                             driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> el.getAttribute("placeholder") == "user@domain.com" })
-                            driver.clickFirstEl("button", filter = { el -> el.text.trim().equals("Save changes", ignoreCase = true) })
-                            driver.findEls(".collaborator-item", filter = { el -> el.text.contains(collaboratorEmail) })
+                            driver.clickFirstEl("button", equals = "Save changes")
+                            driver.findEls(".collaborator-item", contains = collaboratorEmail)
                             val nameOfApp = driver.url.substringBeforeLast("/access").substringAfterLast("/")
                             herokuCollection.updateOne(
                                     org.bson.Document("email", email),
