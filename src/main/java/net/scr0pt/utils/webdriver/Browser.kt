@@ -5,7 +5,13 @@ import com.gargoylesoftware.htmlunit.WebClient
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.firefox.FirefoxProfile
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
+import java.awt.Toolkit
+import java.awt.Toolkit.getDefaultToolkit
+
+
 
 
 object Browser {
@@ -27,7 +33,18 @@ object Browser {
             } else {
                 println("Cant get getko driver")
             }
-            return DriverManager(FirefoxDriver())
+
+            val firefoxOptions = FirefoxOptions().apply {
+                profile = FirefoxProfile().apply {
+                    setPreference("browser.helperApps.neverAsk.saveToDisk", "application/excel")
+                    setAcceptUntrustedCertificates(true)
+                    setAssumeUntrustedCertificateIssuer(false)
+                }
+//                val screenSize = Toolkit.getDefaultToolkit().getScreenSize()
+//                addArguments("--width=${screenSize.width}","--height=${screenSize.height/2}")
+            }
+
+            return DriverManager(FirefoxDriver(firefoxOptions))
         }
 
     val chrome: DriverManager

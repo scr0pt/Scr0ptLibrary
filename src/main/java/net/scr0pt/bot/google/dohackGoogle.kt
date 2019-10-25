@@ -107,6 +107,8 @@ class DoHackGoogle() {
                 } else PageResponse.WAITING_FOR_RESULT()
             }
 
+            linearSleep = false
+
             run { pageResponse ->
                 when (pageResponse) {
                     is PageResponse.NOT_OK -> {
@@ -133,6 +135,7 @@ class DoHackGoogle() {
                     }
                 }
                 println(pageResponse)
+                Thread.sleep(10000)
             }
         }
     }

@@ -284,7 +284,23 @@ class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Un
         return PageResponse.WAITING_FOR_RESULT()
     }
 }
+class VerifyItsYouPhoneDevice( onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
+        val headingText = doc.selectFirst("#headingText")?.text() ?: return false
+        return "Xác minh đó là bạn" == headingText
+                && doc.html().contains("Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn.")
+                && doc.html().contains("Bạn có điện thoại của mình chứ?")
+                && doc.html().contains("Google sẽ gửi thông báo đến điện thoại của bạn để xác minh đó là bạn")
+                && doc.html().contains("Thử cách khác")
+    }
 
+    override fun isEndPage() = true
+
+    override fun _action(driver: DriverManager): PageResponse {
+        println(this::class.java.simpleName + ": action")
+        return PageResponse.WAITING_FOR_RESULT()
+    }
+}
 class CanotLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         val headingText = doc.selectFirst("#headingText")?.text() ?: return false

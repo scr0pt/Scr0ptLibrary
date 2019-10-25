@@ -18,9 +18,18 @@ class DriverManager(var driver: WebDriver) {
     }
 
     fun get(url: String) = driver.get(url)
-    fun close() = driver.close()
+
+
+    fun close() {
+        try {
+            driver.close()
+        } catch (e: Exception) {
+        }
+    }
+
+
     fun renew(newDriver: Any) {
-        this.driver.close()
+        this.close()
         if (newDriver is WebDriver) {
             this.driver = newDriver
         } else if (newDriver is DriverManager) {
@@ -77,18 +86,20 @@ class DriverManager(var driver: WebDriver) {
     }
 
 
-    fun findFirstElOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return this.findElsOneTime(selector, filter = filter, contains = contains, equals = equals).firstOrNull()
+    fun findFirstElOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return this.findElsOneTime(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).firstOrNull()
     }
 
-    fun findElsOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): ArrayList<WebElement> {
+    fun findElsOneTime(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): ArrayList<WebElement> {
         val list = arrayListOf<WebElement>()
         try {
             parseSelector(selector)?.let { parserd ->
                 this.driver.findElements(parserd)?.forEach { element ->
+                    val text = element.text
                     if (element != null && filter(element)
-                            && (contains == null || (element.text.contains(contains, ignoreCase = true)))
-                            && (equals == null || (equals.equals(element.text, ignoreCase = true)))) {
+                            && (contains == null || (text.contains(contains, ignoreCase = true)))
+                            && (startWithsOneOf == null || (startWithsOneOf.firstOrNull { text.startsWith(it, ignoreCase = true) } != null))
+                            && (equals == null || (equals.equals(text, ignoreCase = true)))) {
                         list.add(element)
                     }
                 }
@@ -108,41 +119,41 @@ class DriverManager(var driver: WebDriver) {
     }
 
 
-    fun findFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return findEls(selector, filter = filter, contains = contains, equals = equals).firstOrNull()
+    fun findFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).firstOrNull()
     }
 
 
-    fun sendKeysFirstEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return findEls(selector, filter = filter, contains = contains, equals = equals).firstOrNull()?.apply {
+    fun sendKeysFirstEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).firstOrNull()?.apply {
             clear()
             sendKeys(txt)
         }
     }
 
-    fun sendKeysLastEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return findEls(selector, filter = filter, contains = contains, equals = equals).lastOrNull()?.apply {
+    fun sendKeysLastEl(txt: String, selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).lastOrNull()?.apply {
             clear()
             sendKeys(txt)
         }
     }
 
 
-    fun clickFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return findEls(selector, filter = filter, contains = contains, equals = equals).firstOrNull()?.apply {
+    fun clickFirstEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).firstOrNull()?.apply {
             click()
         }
     }
 
-    fun clickLastEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): WebElement? {
-        return findEls(selector, filter = filter, contains = contains, equals = equals).lastOrNull()?.apply {
+    fun clickLastEl(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): WebElement? {
+        return findEls(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf).lastOrNull()?.apply {
             click()
         }
     }
 
-    fun findEls(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null): ArrayList<WebElement> {
+    fun findEls(selector: Any, filter: (WebElement) -> Boolean = { _ -> true }, contains: String? = null, equals: String? = null, startWithsOneOf: List<String>? = null): ArrayList<WebElement> {
         wait(isDone = { findElsOneTime(selector, filter = filter, contains = contains, equals = equals).isNotEmpty() })
-        return findElsOneTime(selector, filter = filter, contains = contains, equals = equals)
+        return findElsOneTime(selector, filter = filter, contains = contains, equals = equals, startWithsOneOf = startWithsOneOf)
     }
 
 

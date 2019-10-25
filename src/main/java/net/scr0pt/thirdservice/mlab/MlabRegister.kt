@@ -71,6 +71,9 @@ suspend fun loginGoogle(email: String, password: String, driver: DriverManager, 
                 GoogleSearch {
                     println("GoogleSearch success")
                 },
+                VerifyItsYouPhoneDevice {
+                    println("VerifyItsYouPhoneDevice success")
+                },
                 CantLoginForYou {
                     println("CantLoginForYou success")
                 }
