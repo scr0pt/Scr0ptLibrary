@@ -26,7 +26,7 @@ import java.awt.event.KeyEvent
  * Time: 11:07 AM
  */
 
- fun main() {
+fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
@@ -67,7 +67,7 @@ fun processRegister(collection: MongoCollection<org.bson.Document>) {
     } while (true)
 }
 
-fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess:  () -> Unit, onLoginFail: ( (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: () -> Unit, onLoginFail: ((pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
     println("loginGoogle: $email $password")
     PageManager(driver,
             "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
@@ -123,7 +123,7 @@ fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginS
 }
 
 
- fun registerMlab(
+fun registerMlab(
         email: String,
         firstName: String,
         lastName: String,
@@ -159,7 +159,7 @@ fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginS
     }
 }
 
- fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
+fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
     val email = "v.a.n.a.n.ngu.y.en.0.8.3@gmail.com"
     val password = "XinChaoVietnam"
     val firstName = "Bruce"
@@ -420,6 +420,7 @@ class NetworkAccessAddWhitelistDonePage(
                 doc.selectFirst("td.plain-table-cell")?.text() == "0.0.0.0/0 (includes your current IP address)"
     }
 }
+
 fun login(email: String, password: String, collection: MongoCollection<org.bson.Document>) {
     RobotManager().apply {
         openBrowser()
@@ -464,10 +465,10 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
                 longSleep()
                 click(screenSize.width / 2, 130)//click safe point
                 val txt = printScreenText()
-                if(txt.contains("Your cluster name is used to generate your hostname and cannot be changed later") && txt.contains("Enter cluster name")){
-                    click((screenSize.width/(2.6)).toInt(), (screenSize.height/(2.33)).toInt())
+                if (txt.contains("Your cluster name is used to generate your hostname and cannot be changed later") && txt.contains("Enter cluster name")) {
+                    click((screenSize.width / (2.6)).toInt(), (screenSize.height / (2.33)).toInt())
                     clearAndPasteInput("MyCluster")
-                    click((screenSize.width/(1.43)).toInt(), (screenSize.height/(1.92)).toInt())
+                    click((screenSize.width / (1.43)).toInt(), (screenSize.height / (1.92)).toInt())
                     longSleep()
                 }
 
@@ -487,32 +488,12 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
                 }, onFail = {
 
                 }, onSpecialCase = {
-                println(6)
+                    println(6)
                     click(screenSize.width / 2, 130)//click safe point
                     val text = printScreenText()
                     if (text.contains("Your cluster is being created") && text.contains("New clusters take between 7-10 minutes to provision.")) {
-
-
-                        robot.keyPress(KeyEvent.VK_F12)
-                        robot.keyRelease(KeyEvent.VK_F12)
-                        click(4 * screenSize.width / 5, 4 / screenSize.height / 5)
-
-                        SystemClipboard.copy("")
-
-                        clearAndPasteInput("""
-                            const copyToClipboard = str => {
-                              const el = document.createElement('textarea');
-                              el.value = str;
-                              document.body.appendChild(el);
-                              el.select();
-                              document.execCommand('copy');
-                              document.body.removeChild(el);
-                            };
-                            copyToClipboard(document.cookie)
-                        """.trimIndent())
-                        enter()
-
-                        val cookieStr = SystemClipboard.get()
+                        println("Your cluster is being created")
+                        val cookieStr = getCookieStr(this)
 
                         if (cookieStr != "") {
                             collection.updateOne(org.bson.Document("email", email), Updates.combine(
@@ -527,12 +508,43 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
                         closeWindow()
                     }
                 })
-
-
-            }  else {
+            } else {
+                val cookieStr = getCookieStr(this)
+                if (cookieStr != "") {
+                    collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            Updates.set("cookies", cookieStr)
+                    ))
+                }
                 closeWindow()
             }
         })
 
+    }
+}
+
+fun getCookieStr(robotManager: RobotManager): String {
+    println("getCookieStr")
+    with(robotManager) {
+
+        robot.keyPress(KeyEvent.VK_F12)
+        robot.keyRelease(KeyEvent.VK_F12)
+        click(4 * screenSize.width / 5, 4 / screenSize.height / 5)
+
+        SystemClipboard.copy("")
+
+        clearAndPasteInput("""
+                            const copyToClipboard = str => {
+                              const el = document.createElement('textarea');
+                              el.value = str;
+                              document.body.appendChild(el);
+                              el.select();
+                              document.execCommand('copy');
+                              document.body.removeChild(el);
+                            };
+                            copyToClipboard(document.cookie)
+                        """.trimIndent())
+        enter()
+
+        return SystemClipboard.get()
     }
 }
