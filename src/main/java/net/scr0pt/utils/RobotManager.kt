@@ -5,6 +5,13 @@ import java.awt.Toolkit
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 
+fun main() {
+    RobotManager().apply {
+        switchWindow()
+
+        mouseMove(280, 510)
+    }
+}
 
 class RobotManager {
     val CLIPBOARD_DELETED = "SystemClipboardDeleted"
@@ -89,7 +96,7 @@ class RobotManager {
         ctrV()
     }
 
-    fun waitUntilUrlChangedTo(url: String){
+    fun waitUntilUrlChangedTo(url: String) {
         var _url: String
         do {
             sleep()
@@ -128,7 +135,7 @@ class RobotManager {
     }
 
     fun click(x: Int, y: Int) {
-        mouseMove(x,y)
+        mouseMove(x, y)
         click()
     }
 

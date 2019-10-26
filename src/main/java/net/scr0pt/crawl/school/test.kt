@@ -3,7 +3,6 @@ package net.scr0pt.crawl.school
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
 import java.awt.Toolkit
 

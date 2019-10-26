@@ -6,6 +6,7 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.RobotManager
 import org.bson.Document
+import java.awt.event.KeyEvent
 import java.util.*
 
 /**
@@ -16,8 +17,7 @@ import java.util.*
 
 
 fun main() {
-    val gmailUsername = "vanlethi74@gmail.com"
-    val gmailPassword = "XinChaoVietNam@@2000"
+    val gmailUsername = "rmargotd98e774be42153db0d49afa@gmail.com"
 
     val infinityMail = InfinityMail(gmailUsername)
     val mongoClient =
@@ -30,11 +30,10 @@ fun main() {
 
     do {
         val email = infinityMail.getNext()?.fullAddress ?: break
-        if (email.contains("vanlethi74")) continue
 
         if (emails.contains(email)) continue
         emails.add(email)
-        val password = "XinChaoVietNam@1990"
+        val password = "Alan_${System.currentTimeMillis()}"
 
         openloadRegister(RobotManager(), email, password, collection)
 
@@ -57,11 +56,16 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
         browserGoTo("openload.co/register")
 
         val emailInput = Pair(500, 260 + browerType.baseY())
-        val ckeckBoxAgree = Pair(400, 630 + browerType.baseY())
-        val multipleCorrect = Pair(563, 690 + browerType.baseY())
-        val newCapthchaBtn = Pair(563, 570 + browerType.baseY())
-        val initialResolveCaptchaBtn = Pair(563, 835 + browerType.baseY())
-        val submitBtn = Pair(440, 665 + robotManager.browerType.baseY())
+        val ckeckBoxAgree = Pair(110, 630 + browerType.baseY())
+//        val ckeckBoxAgree = Pair(400, 630 + browerType.baseY())
+        val multipleCorrect = Pair(280, 480 + browerType.baseY())
+//        val multipleCorrect = Pair(563, 480 + browerType.baseY())
+        val newCapthchaBtn = Pair(563, 440 + browerType.baseY())
+//        val newCapthchaBtn = Pair(563, 570 + browerType.baseY())
+        val initialResolveCaptchaBtn = Pair(280, 640 + browerType.baseY())
+//        val initialResolveCaptchaBtn = Pair(563, 835 + browerType.baseY())
+        val submitBtn = Pair(160, 425 + robotManager.browerType.baseY())
+//        val submitBtn = Pair(440, 665 + robotManager.browerType.baseY())
 
 
         click(emailInput)
@@ -77,6 +81,9 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
 
 
         click(ckeckBoxAgree)//I agree on Openload terms.  You must agree to the Openload Terms of Service
+
+        robot.keyPress(KeyEvent.VK_END)
+        robot.keyRelease(KeyEvent.VK_END)
 
         shiftTab()
         shiftTab()
@@ -95,7 +102,7 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
                 collection.insertOne(
                         Document("email", email).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
                 )
-            } else if(txt.contains("OpenloadUpload User Panel Support Logout")) {
+            } else if (txt.contains("OpenloadUpload User Panel Support Logout")) {
                 collection.insertOne(
                         Document("email", email).append("password", password).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
                 )
@@ -109,13 +116,14 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
 }
 
 
-fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null,multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit) {
+fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit) {
     with(robotManager) {
         longSleep()
-        initialResolveCaptchaBtn?.let { click(it) }
+        initialResolveCaptchaBtn?.let {
+            click(it)
+            realylongSleep()
+        }
 
-        realylongSleep()
-        realylongSleep()
         var text: String
         do {
             sleep()
