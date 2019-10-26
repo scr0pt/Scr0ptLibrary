@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent
 
 class RobotManager {
     val CLIPBOARD_DELETED = "SystemClipboardDeleted"
+    val screenResolution = Toolkit.getDefaultToolkit().screenResolution
+    val screenSize = Toolkit.getDefaultToolkit().screenSize
 
     enum class BrowserType {
         CHROME {
@@ -59,9 +61,17 @@ class RobotManager {
         sleep()
     }
 
-    fun leftClick() {
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+    fun shiftTab() {
+        robot.keyPress(KeyEvent.VK_SHIFT)
+        robot.keyPress(KeyEvent.VK_TAB)
+        robot.keyRelease(KeyEvent.VK_SHIFT)
+        robot.keyRelease(KeyEvent.VK_TAB)
+        sleep()
+    }
+
+    fun enter() {
+        robot.keyPress(KeyEvent.VK_ENTER)
+        robot.keyRelease(KeyEvent.VK_ENTER)
         sleep()
     }
 
@@ -117,6 +127,22 @@ class RobotManager {
         sleep()
     }
 
+    fun click(x: Int, y: Int) {
+        mouseMove(x,y)
+        click()
+    }
+
+    fun click(position: Pair<Int, Int>) {
+        mouseMove(position.first, position.second)
+        click()
+    }
+
+    fun click() {
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+        sleep()
+    }
+
     fun mouseMove(position: Pair<Int, Int>) {
         mouseMove(position.first, position.second)
     }
@@ -139,7 +165,7 @@ class RobotManager {
 
     fun moveToAddressBarAndClick() {
         mouseMove(500, 50)
-        leftClick()
+        click()
     }
 
     fun browserGoTo(url: String) {
@@ -156,7 +182,7 @@ class RobotManager {
 
     fun closeWindow() {
         mouseMove(Toolkit.getDefaultToolkit().getScreenSize().width - 13, 13)
-        leftClick()
+        click()
     }
 
 }

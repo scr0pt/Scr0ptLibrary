@@ -157,9 +157,7 @@ class HerokuRegister {
             robot.keyRelease(KeyEvent.VK_END)
             sleep()
 
-            mouseMove(470, windwHeight - 75)//captcha button solver
-            leftClick()
-
+            val initialResolveCaptchaBtn = Pair<Int, Int>(470, windwHeight - 75)
             val newCapthchaBtn = Pair<Int, Int>(595, 580)
             val multipleCorrect = Pair<Int, Int>(590, 590)
 
@@ -212,17 +210,17 @@ class HerokuRegister {
             val registerTime = System.currentTimeMillis()
 
 
-            bypassCaptcha(multipleCorrect, newCapthchaBtn, this, onSuccess = {
+            bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, this, onSuccess = {
                 println("Success")
 
                 mouseMove(baseX, 135 + inputHeight * 3 + 180)//create btn
-                leftClick()
+                click()
 
                 realylongSleep()
 
 
                 mouseMove(windwWidth / 4, windwHeight / 2)
-                leftClick()
+                click()
                 sleep()
 
 

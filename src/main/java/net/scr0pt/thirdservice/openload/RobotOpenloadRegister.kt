@@ -5,9 +5,7 @@ import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.RobotManager
-import net.scr0pt.utils.SystemClipboard
 import org.bson.Document
-import java.awt.event.KeyEvent
 import java.util.*
 
 /**
@@ -17,7 +15,7 @@ import java.util.*
  */
 
 
- fun main() {
+fun main() {
     val gmailUsername = "vanlethi74@gmail.com"
     val gmailPassword = "XinChaoVietNam@@2000"
 
@@ -46,7 +44,7 @@ import java.util.*
 }
 
 
- fun openloadRegister(robotManager: RobotManager, email: String, password: String, collection: MongoCollection<Document>) {
+fun openloadRegister(robotManager: RobotManager, email: String, password: String, collection: MongoCollection<Document>) {
     with(robotManager) {
         run.exec("\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" -incognito -start-maximized")
 
@@ -56,90 +54,66 @@ import java.util.*
 //        switchWindow()
 
 
-        mouseMove(500, 50)
+        browserGoTo("openload.co/register")
 
-        leftClick()
-        ctrA()
+        val emailInput = Pair(500, 260 + browerType.baseY())
+        val ckeckBoxAgree = Pair(400, 630 + browerType.baseY())
+        val multipleCorrect = Pair(563, 690 + browerType.baseY())
+        val newCapthchaBtn = Pair(563, 570 + browerType.baseY())
+        val initialResolveCaptchaBtn = Pair(563, 835 + browerType.baseY())
+        val submitBtn = Pair(440, 665 + robotManager.browerType.baseY())
 
-        robot.keyPress(KeyEvent.VK_DELETE)
 
-//        openload.co/register
-        robot.keyPress(KeyEvent.VK_O)
-        robot.keyPress(KeyEvent.VK_P)
-        robot.keyPress(KeyEvent.VK_E)
-        robot.keyPress(KeyEvent.VK_N)
-        robot.keyPress(KeyEvent.VK_L)
-        robot.keyPress(KeyEvent.VK_O)
-        robot.keyPress(KeyEvent.VK_A)
-        robot.keyPress(KeyEvent.VK_D)
-        robot.keyPress(KeyEvent.VK_PERIOD)
-        robot.keyPress(KeyEvent.VK_C)
-        robot.keyPress(KeyEvent.VK_O)
-        robot.keyPress(KeyEvent.VK_SLASH)
-        robot.keyPress(KeyEvent.VK_R)
-        robot.keyPress(KeyEvent.VK_E)
-        robot.keyPress(KeyEvent.VK_G)
-        robot.keyPress(KeyEvent.VK_I)
-        robot.keyPress(KeyEvent.VK_S)
-        robot.keyPress(KeyEvent.VK_T)
-        robot.keyPress(KeyEvent.VK_E)
-        robot.keyPress(KeyEvent.VK_R)
-        sleep()
+        click(emailInput)
+        clearAndPasteInput(email)
 
-        robot.keyPress(KeyEvent.VK_ENTER)
-        longSleep()
+        tab()
+        clearAndPasteInput(password)
 
-        mouseMove(500, 260 + browerType.baseY())
-        leftClick()
-        SystemClipboard.copy(email)
-        clearInput()
-        ctrV()
-
-        mouseMove(500, 360 + browerType.baseY())
-        leftClick()
-        SystemClipboard.copy(password)
-        clearInput()
-        ctrV()
-
-        mouseMove(500, 460 + browerType.baseY())
-        leftClick()
-        SystemClipboard.copy(password)
-        clearInput()
-        ctrV()
+        tab()
+        clearAndPasteInput(password)
 
         clearClipboard()
 
-        mouseMove(400, 630 + browerType.baseY())
-        leftClick()
 
+        click(ckeckBoxAgree)//I agree on Openload terms.  You must agree to the Openload Terms of Service
 
-        mouseMove(500, 570 + browerType.baseY())
-        leftClick()
+        shiftTab()
+        shiftTab()
+        shiftTab()
+        shiftTab()
+        enter()
 
-        mouseMove(563, 835 + browerType.baseY())
-        leftClick()
+        bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, robotManager, onSuccess = {
+            robotManager.click(submitBtn)
+            longSleep()
 
-        bypassCaptcha(Pair(563, 690 + browerType.baseY()), Pair(563, 570 + browerType.baseY()), robotManager, onSuccess =  {
-            robotManager.mouseMove(440, 665 + robotManager.browerType.baseY())
-            robotManager.leftClick()
+            robotManager.click(5 * robotManager.screenSize.width / 6, robotManager.screenSize.height / 2)//safe screen point
 
-            var url: String
-            do {
-                Thread.sleep(1000)
-                url = robotManager.getCurrentUrl()
-            } while (url != "https://openload.co/")
+            val txt = robotManager.printScreenText()
+            if (txt.contains("An Account with this Email exists already.")) {
+                collection.insertOne(
+                        Document("email", email).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
+                )
+            } else if(txt.contains("OpenloadUpload User Panel Support Logout")) {
+                collection.insertOne(
+                        Document("email", email).append("password", password).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
+                )
+            } else {
 
-            collection.insertOne(
-                    Document("email", email).append("password", password).append("temp_ban", null).append("created_at", Date()).append("updated_at", Date())
-            )
+            }
             robotManager.closeWindow()
+
         }, onFail = {})
     }
 }
 
 
- fun bypassCaptcha(multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit) {
+fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null,multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit) {
     with(robotManager) {
+        longSleep()
+        initialResolveCaptchaBtn?.let { click(it) }
+
         realylongSleep()
         realylongSleep()
         var text: String
@@ -155,8 +129,7 @@ import java.util.*
             onSuccess()
 
         } else if (text == CLIPBOARD_DELETED) {
-            mouseMove(newCapthchaBtn)
-            leftClick()
+            click(newCapthchaBtn)
 
             if (printScreenText().trim() == "I'm not a robot\nPrivacy - Terms") {
                 onSuccess()
@@ -170,10 +143,9 @@ import java.util.*
 
 //            onFail()
         } else if (text == "Multiple correct solutions required - please solve more.\nPress PLAY and enter the words you hear\nPLAY\nVERIFY") {
-            mouseMove(multipleCorrect)
-            leftClick()
+            click(multipleCorrect)
 
-            bypassCaptcha(multipleCorrect, newCapthchaBtn, robotManager, onSuccess,onFail)
+            bypassCaptcha(null, multipleCorrect, newCapthchaBtn, robotManager, onSuccess, onFail)
 
         } else if (text == "Press PLAY and enter the words you hear\nPLAY\nVERIFY") {
             onFail()
