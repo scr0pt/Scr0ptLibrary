@@ -17,11 +17,11 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.util.*
 
 
-suspend fun main() {
+ fun main() {
     register()
 }
 
-suspend fun register() {
+ fun register() {
     val gmailUsername = "vanlethi74@gmail.com"
     val gmailPassword = "XinChaoVietNam@@2000"
 

@@ -19,7 +19,7 @@ import org.openqa.selenium.firefox.FirefoxDriver
  */
 
 
-suspend fun main() {
+ fun main() {
     val mongoClient = MongoClients.create(MongoConnection.eduConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")

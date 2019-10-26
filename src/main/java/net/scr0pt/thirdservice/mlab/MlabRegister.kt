@@ -20,7 +20,7 @@ import org.jsoup.nodes.Document
  * Time: 11:07 AM
  */
 
-suspend fun main() {
+ fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
@@ -50,7 +50,7 @@ suspend fun main() {
     } while (true)
 }
 
-suspend fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: suspend () -> Unit, onLoginFail: (suspend (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+ fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess:  () -> Unit, onLoginFail: ( (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
     println("loginGoogle: $email $password")
     PageManager(driver,
             "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
@@ -106,7 +106,7 @@ suspend fun loginGoogle(email: String, password: String, driver: DriverManager, 
 }
 
 
-suspend fun registerMlab(
+ fun registerMlab(
         email: String,
         firstName: String,
         lastName: String,
@@ -142,7 +142,7 @@ suspend fun registerMlab(
     }
 }
 
-suspend fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
+ fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
     val email = "v.a.n.a.n.ngu.y.en.0.8.3@gmail.com"
     val password = "XinChaoVietnam"
     val firstName = "Bruce"

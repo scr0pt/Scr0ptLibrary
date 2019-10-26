@@ -23,7 +23,7 @@ import java.util.*
  * Time: 9:36 PM
  */
 
-suspend fun main() {
+ fun main() {
     val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
     val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
 
@@ -154,7 +154,7 @@ class FembedWellcomeBackPage(
                     doc.selectFirst(".container .title")?.text() == "Welcome Back!"
 }
 
-suspend fun registerFembed(
+ fun registerFembed(
         name: String,
         email: String,
         password: String,

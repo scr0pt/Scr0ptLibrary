@@ -5,9 +5,13 @@ import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
+import java.awt.Toolkit
 
 
 fun main() {
+    println(Toolkit.getDefaultToolkit().screenSize.width)
+    println(Toolkit.getDefaultToolkit().screenSize.height)
+    println(Toolkit.getDefaultToolkit().screenResolution)
     val url = "https://dashboard.heroku.com/apps/anigoo-news/access"
     val a = 1
 }

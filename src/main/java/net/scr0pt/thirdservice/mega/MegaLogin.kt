@@ -20,7 +20,7 @@ import java.util.*
  * Time: 11:02 PM
  */
 
-suspend fun main() {
+ fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mega")
@@ -44,7 +44,7 @@ suspend fun main() {
 }
 
 
-suspend fun loginMega(
+ fun loginMega(
         email: String,
         password: String,
         driver: DriverManager,

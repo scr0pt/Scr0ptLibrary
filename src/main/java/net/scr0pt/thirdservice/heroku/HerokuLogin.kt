@@ -24,7 +24,7 @@ fun randomAppname(prefix: String? = null): String {
 }
 
 
-suspend fun main() {
+ fun main() {
     val mongoClient2 =
             MongoClients.create(MongoConnection.megaConnection)
     val herokuDatabase = mongoClient2.getDatabase("heroku")
@@ -122,7 +122,7 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
 }
 
 
-suspend fun main2() {
+ fun main2() {
     val collaboratorEmail = "alphahoai@gmail.com"
 //    val collaboratorEmail = "brucealmighty5daeae612ce205583fda39d5@gmail.com"
     val mongoClient2 =

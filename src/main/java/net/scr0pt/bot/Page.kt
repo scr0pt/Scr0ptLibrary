@@ -1,13 +1,8 @@
 package net.scr0pt.bot
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
 import java.time.LocalDateTime
-import kotlin.collections.ArrayList
 
 
 class PageManager(val driver: DriverManager, val originUrl: String) {
@@ -23,6 +18,7 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
     var linearSleep = true
 
 
+    var isFinish = false
     var isSuccess = false
     var generalWatingResult: ((doc: Document, currentUrl: String) -> PageResponse)? = null
     private val pageList = arrayListOf<Page>()
@@ -36,14 +32,15 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
     }
 
 
-    suspend fun run(onRunFinish: suspend (pageResponse: PageResponse?) -> Unit) {
+    fun run(onRunFinish: (pageResponse: PageResponse?) -> Unit) {
         if (this.pageList.isEmpty()) {
             println("Page list is empty")
             return
         }
+        println("Running")
 
         driver.get(originUrl)
-        val job = GlobalScope.launch {
+        Thread(Runnable {
             var pageResponse: PageResponse? = null
             loop@ while (currentPage?.isEndPage() != true) {
                 var waitTime = 0.0
@@ -57,11 +54,11 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
                     if (pageResponse is PageResponse.WAITING_FOR_RESULT) {
                         if (linearSleep) {
                             waitTime += INTERVAL_SLEEP_TIME
-                            delay(INTERVAL_SLEEP_TIME)
+                            Thread.sleep(INTERVAL_SLEEP_TIME)
                         } else {
                             sleepTime *= 2
                             waitTime += sleepTime
-                            delay(sleepTime.toLong())
+                            Thread.sleep(sleepTime.toLong())
                         }
                     } else {
                         break@loop
@@ -70,9 +67,9 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
             }
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse?.msg) ?: ""}")
+            isFinish = true
             onRunFinish(pageResponse)
-        }
-        job.join()
+        }).start()
     }
 
 

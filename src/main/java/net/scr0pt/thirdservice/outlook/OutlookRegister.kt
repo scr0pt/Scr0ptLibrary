@@ -17,7 +17,7 @@ import net.scr0pt.utils.webdriver.DriverManager
 import java.util.*
 
 
-suspend fun main() {
+ fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
@@ -29,7 +29,7 @@ suspend fun main() {
     outlookRegister(email = email, collection = collection)
 }
 
-suspend fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
+ fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
     val password = "TheOutlook22001@22"
     val result = FakeProfile.getNewProfile()
     val firstName = result?.name?.first ?: "Bruce"

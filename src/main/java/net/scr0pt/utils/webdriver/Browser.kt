@@ -37,7 +37,7 @@ object Browser {
             }
 
             val firefoxOptions = FirefoxOptions().apply {
-                profile = FirefoxProfile(File("C:\\Users\\Administrator\\Documents\\firefox_profile")).apply {
+                profile = FirefoxProfile().apply {
                     setPreference("browser.helperApps.neverAsk.saveToDisk", "application/excel")
                     setAcceptUntrustedCertificates(true)
                     setAssumeUntrustedCertificateIssuer(false)
