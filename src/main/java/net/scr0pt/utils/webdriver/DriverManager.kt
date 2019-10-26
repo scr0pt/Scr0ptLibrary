@@ -60,6 +60,12 @@ class DriverManager(var driver: WebDriver) {
             return cookies
         }
 
+    fun addCookies(cookieStr: String){
+        cookieStr.split(";").forEach {
+            driver.manage().addCookie(Cookie(it.substringBefore("="), it.substringAfter("=")))
+        }
+    }
+
     fun wait(isDone: () -> Boolean, onWait: (() -> Unit)? = null) {
         var waitTime = 0.0
         var sleepTime: Double = INTERVAL_SLEEP_TIME.toDouble()
