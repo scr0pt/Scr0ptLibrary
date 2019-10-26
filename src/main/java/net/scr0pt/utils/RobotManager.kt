@@ -190,6 +190,7 @@ class RobotManager {
     fun closeWindow() {
         mouseMove(Toolkit.getDefaultToolkit().getScreenSize().width - 13, 13)
         click()
+        longSleep()
     }
 
 }

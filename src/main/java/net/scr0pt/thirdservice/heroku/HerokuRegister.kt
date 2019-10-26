@@ -3,6 +3,7 @@ package net.scr0pt.thirdservice.heroku
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
+import net.bytebuddy.utility.RandomString
 import net.scr0pt.bot.HerokuPageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageManager
@@ -18,6 +19,8 @@ import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
+import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.RandomUtils
 import org.jsoup.nodes.Document
 import java.awt.Toolkit
 import java.awt.event.KeyEvent
@@ -99,7 +102,7 @@ class HerokuRegister {
 
     fun registerHerokuRobot(gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         isDone = false
-        val driver = Browser.firefox
+
         RobotManager().apply {
             openBrowser()
             browserGoTo("https://signup.heroku.com")
@@ -111,7 +114,7 @@ class HerokuRegister {
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
 
-            val baseX = 900
+
             val inputHeight = 80
 
 //        mouseMove(baseX, 500)//firstname
@@ -129,25 +132,32 @@ class HerokuRegister {
 //ignore company name
 
             tab()//role
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
-            sleep()
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
+            robot.keyPress(KeyEvent.VK_HOME)
+            robot.keyRelease(KeyEvent.VK_HOME)
+            for (i in 0..(RandomUtils.nextInt(1, 7))) {
+                robot.keyPress(KeyEvent.VK_DOWN)
+                robot.keyRelease(KeyEvent.VK_DOWN)
+                sleep()
+            }
 
-            tab()//country
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
-            sleep()
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
+
+            tab()//country default VN
+//            robot.keyPress(KeyEvent.VK_HOME)
+//            robot.keyRelease(KeyEvent.VK_HOME)
+//            for (i in 0..(RandomUtils.nextInt(1, 242))) {
+//                robot.keyPress(KeyEvent.VK_DOWN)
+//                robot.keyRelease(KeyEvent.VK_DOWN)
+//                sleep()
+//            }
 
             tab()//programing language
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
-            sleep()
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
+            robot.keyPress(KeyEvent.VK_HOME)
+            robot.keyRelease(KeyEvent.VK_HOME)
+            for (i in 0..(RandomUtils.nextInt(1, 12))) {
+                robot.keyPress(KeyEvent.VK_DOWN)
+                robot.keyRelease(KeyEvent.VK_DOWN)
+                sleep()
+            }
 
             tab()//captcha button
             robot.keyPress(KeyEvent.VK_ENTER)
@@ -157,76 +167,46 @@ class HerokuRegister {
             robot.keyRelease(KeyEvent.VK_END)
             sleep()
 
-            val initialResolveCaptchaBtn = Pair<Int, Int>(470, windwHeight - 75)
-            val newCapthchaBtn = Pair<Int, Int>(595, 580)
-            val multipleCorrect = Pair<Int, Int>(590, 590)
+            doooo(this, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
+        }
+    }
 
-            val pageManager = PageManager(driver, "http://google.com")
-            pageManager.addPageList(arrayListOf<Page>(
-                    HerokuSetYourPasswordPage(password = password) {
-                        herokuCollection.updateOne(
-                                org.bson.Document("email", email),
-                                Updates.set("verify", true)
-                        )
-                        println("HerokuSetYourPasswordPage success")
-                    }.apply {
-                        onPageDetect = {
-                            herokuCollection.insertOne(
-                                    org.bson.Document("email", email)
-                                            .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                                            .append("verify", true)
-                            )
-                        }
-                    },
-                    HerokuWelcomePage {
-                        println("HerokuWelcomePage success")
-                    },
-                    HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
-                        println("HerokuDashboardPage success")
-                    },
-                    HerokuCreateNewAppPage(appName = appName) {
-                        herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))
-                        println("HerokuCreateNewAppPage ${appName} success")
-                    },
-                    HerokuDeployPagePage {
-                        println("HerokuDeployPagePage success")
-                    },
-                    HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
-                        println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
-                    }
-            ))
-
-            pageManager.run { pageResponse ->
-                println(pageResponse)
-                if (pageResponse is HerokuPageResponse.COLLABORATOR_ADDED) {
-                    herokuCollection.updateOne(
-                            org.bson.Document("email", email),
-                            Updates.pushEach("collaborators", collaboratorEmailList)
-                    )
-                }
-                isDone = true
-                pageManager.driver.close()
-            }
+    private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
+        with(robotManager) {
+            val baseX = 1170
+//            val baseX = 900
+            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
+//            val initialResolveCaptchaBtn = Pair<Int, Int>(470, windwHeight - 75)
+            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
+//            val newCapthchaBtn = Pair<Int, Int>(595, 580)
+            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
+//            val multipleCorrect = Pair<Int, Int>(590, 590)
+            val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
+//            val createNewAccountBtn = Pair<Int, Int>(baseX, 135 + inputHeight * 3 + 180)
             val registerTime = System.currentTimeMillis()
 
-
-            bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, this, onSuccess = {
+            bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, robotManager, onSuccess = {
                 println("Success")
 
-                mouseMove(baseX, 135 + inputHeight * 3 + 180)//create btn
-                click()
+                click(createNewAccountBtn)//create btn
 
                 realylongSleep()
 
+                click(screenSize.width / 4, screenSize.height / 2)//safe point screen
 
-                mouseMove(windwWidth / 4, windwHeight / 2)
-                click()
                 sleep()
 
-
                 val txt = printScreenText()
-                if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")
-                        || txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")
+                if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
+                    robot.keyPress(KeyEvent.VK_END)
+                    robot.keyRelease(KeyEvent.VK_END)
+                    sleep()
+
+                    //capthca position
+                    click(1170, screenSize.height - 300)
+
+                    doooo(robotManager, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
+                } else if (txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")
                         || txt.contains("Help us make some avocado toast!")
                 ) {
                     robot.keyPress(KeyEvent.VK_ALT)
@@ -234,7 +214,6 @@ class HerokuRegister {
                     robot.keyRelease(KeyEvent.VK_ALT)
                     robot.keyRelease(KeyEvent.VK_F4)
                     sleep()
-                    driver.close()
                     isDone = true
                     return@bypassCaptcha
                 } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
@@ -254,12 +233,9 @@ class HerokuRegister {
                                 if (acceptLink != null) {
                                     println(acceptLink)
                                     gmail.logout()
-                                    robot.keyPress(KeyEvent.VK_ALT)
-                                    robot.keyPress(KeyEvent.VK_F4)
-                                    robot.keyRelease(KeyEvent.VK_ALT)
-                                    robot.keyRelease(KeyEvent.VK_F4)
+                                    closeWindow()
                                     sleep()
-                                    driver.get(acceptLink)
+                                    installDriver(acceptLink, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
                                 }
                             },
                             once = false,
@@ -270,8 +246,56 @@ class HerokuRegister {
             }, onFail = {
                 isDone = true
                 closeWindow()
-                driver.close()
             })
+        }
+    }
+
+    private fun installDriver(acceptLink: String, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
+        val pageManager = PageManager(Browser.firefox, acceptLink)
+        pageManager.addPageList(arrayListOf<Page>(
+                HerokuSetYourPasswordPage(password = password) {
+                    herokuCollection.updateOne(
+                            org.bson.Document("email", email),
+                            Updates.set("verify", true)
+                    )
+                    println("HerokuSetYourPasswordPage success")
+                }.apply {
+                    onPageDetect = {
+                        herokuCollection.insertOne(
+                                org.bson.Document("email", email)
+                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                                        .append("verify", true)
+                        )
+                    }
+                },
+                HerokuWelcomePage {
+                    println("HerokuWelcomePage success")
+                },
+                HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
+                    println("HerokuDashboardPage success")
+                },
+                HerokuCreateNewAppPage(appName = appName) {
+                    herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))
+                    println("HerokuCreateNewAppPage ${appName} success")
+                },
+                HerokuDeployPagePage {
+                    println("HerokuDeployPagePage success")
+                },
+                HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
+                    println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
+                }
+        ))
+
+        pageManager.run { pageResponse ->
+            println(pageResponse)
+            if (pageResponse is HerokuPageResponse.COLLABORATOR_ADDED) {
+                herokuCollection.updateOne(
+                        org.bson.Document("email", email),
+                        Updates.pushEach("collaborators", collaboratorEmailList)
+                )
+            }
+            isDone = true
+            pageManager.driver.close()
         }
     }
 
