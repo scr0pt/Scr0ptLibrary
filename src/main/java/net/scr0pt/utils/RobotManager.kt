@@ -1,16 +1,16 @@
 package net.scr0pt.utils
 
+import java.awt.BorderLayout
+import java.awt.MouseInfo
 import java.awt.Robot
 import java.awt.Toolkit
-import java.awt.event.InputEvent
-import java.awt.event.KeyEvent
+import java.awt.event.*
+import javax.swing.JFrame
+import javax.swing.JTextField
+import javax.swing.event.MouseInputAdapter
 
 fun main() {
-    RobotManager().apply {
-        switchWindow()
-
-        mouseMove(900, screenSize.height -300)
-    }
+   detectMousePosition()
 }
 
 class RobotManager {
@@ -104,6 +104,22 @@ class RobotManager {
         } while (_url != url)
     }
 
+    fun waitUntilUrlStartWith(url: String) {
+        var _url: String
+        do {
+            sleep()
+            _url = getCurrentUrl()
+        } while (!_url.startsWith(url))
+    }
+
+    fun waitUntilUrlEndWith(url: String) {
+        var _url: String
+        do {
+            sleep()
+            _url = getCurrentUrl()
+        } while (!_url.endsWith(url))
+    }
+
     fun ctrA() {
         robot.keyPress(KeyEvent.VK_CONTROL)
         robot.keyPress(KeyEvent.VK_A)
@@ -193,4 +209,35 @@ class RobotManager {
         longSleep()
     }
 
+
+
 }
+fun detectMousePosition(){
+    val frame = JFrame("Key Listener")
+    val contentPane = frame.contentPane
+    val listener = object : KeyListener {
+        override fun keyReleased(e: KeyEvent?) {
+        }
+
+        override fun keyTyped(e: KeyEvent?) {
+        }
+
+        override fun keyPressed(event: KeyEvent) {
+            if(event.extendedKeyCode == KeyEvent.VK_SPACE)
+            {
+                val location = MouseInfo.getPointerInfo().location
+                println("")
+                println("Pair<Int, Int>(${location.x}, ${location.y})")
+                println("")
+                println("val position = Pair<Int, Int>(${location.x}, ${location.y})")
+            }
+        }
+    }
+
+    val textField = JTextField()
+    textField.addKeyListener(listener)
+    contentPane.add(textField, BorderLayout.NORTH)
+    frame.pack()
+    frame.isVisible = true
+}
+

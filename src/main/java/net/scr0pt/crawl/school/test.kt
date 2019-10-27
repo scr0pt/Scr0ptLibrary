@@ -6,10 +6,20 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.webdriver.Browser
 import org.bson.Document
 import java.awt.Toolkit
+import java.awt.BorderLayout
+import java.awt.MouseInfo
+import javax.swing.JTextField
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
+import javax.swing.JFrame
 
 
 fun main() {
-    Browser.firefox
+    println(Toolkit.getDefaultToolkit().screenSize.width)
+    println(Toolkit.getDefaultToolkit().screenSize.height)
+    println(Toolkit.getDefaultToolkit().screenResolution)
+    val url = "https://dashboard.heroku.com/apps/anigoo-news/access"
+    val a = 1
 }
 
 fun main22() {

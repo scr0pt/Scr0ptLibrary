@@ -2,17 +2,23 @@ package net.scr0pt.thirdservice.mlab
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
 import net.scr0pt.bot.MlabPageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageManager
 import net.scr0pt.bot.PageResponse
 import net.scr0pt.bot.google.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
+import net.scr0pt.thirdservice.openload.bypassCaptcha
 import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
+import net.scr0pt.utils.RobotManager
+import net.scr0pt.utils.SystemClipboard
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
+import java.awt.event.KeyEvent
 
 /**
  * Created by Long
@@ -20,11 +26,22 @@ import org.jsoup.nodes.Document
  * Time: 11:07 AM
  */
 
- fun main() {
+fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("mlab-account")
+    processLogin(collection)
+//    processRegister(collection)
+}
+
+fun processLogin(collection: MongoCollection<org.bson.Document>) {
+    collection.find(Filters.exists("cluster_builded", false)).forEach {
+        login(it.getString("email"), it.getString("password"), collection)
+    }
+}
+
+fun processRegister(collection: MongoCollection<org.bson.Document>) {
     val infinityMail = InfinityMail("tranvananh.200896@gmail.com")
     val emails = arrayListOf<String>()
     collection.find().forEach { doc -> doc?.getString("email")?.let { emails.add(it) } }
@@ -50,7 +67,7 @@ import org.jsoup.nodes.Document
     } while (true)
 }
 
- fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess:  () -> Unit, onLoginFail: ( (pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: () -> Unit, onLoginFail: ((pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
     println("loginGoogle: $email $password")
     PageManager(driver,
             "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
@@ -106,7 +123,7 @@ import org.jsoup.nodes.Document
 }
 
 
- fun registerMlab(
+fun registerMlab(
         email: String,
         firstName: String,
         lastName: String,
@@ -142,7 +159,7 @@ import org.jsoup.nodes.Document
     }
 }
 
- fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
+fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Document>) {
     val email = "v.a.n.a.n.ngu.y.en.0.8.3@gmail.com"
     val password = "XinChaoVietnam"
     val firstName = "Bruce"
@@ -401,5 +418,133 @@ class NetworkAccessAddWhitelistDonePage(
     override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
         return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("network/whitelist") &&
                 doc.selectFirst("td.plain-table-cell")?.text() == "0.0.0.0/0 (includes your current IP address)"
+    }
+}
+
+fun login(email: String, password: String, collection: MongoCollection<org.bson.Document>) {
+    RobotManager().apply {
+        openBrowser()
+        browserGoTo("https://cloud.mongodb.com/user#/atlas/login")
+
+        clearAndPasteInput(email)
+        enter()
+        sleep()
+        enter()
+
+        longSleep()
+
+        clearAndPasteInput(password)
+        enter()
+
+
+        val initialResolveCaptchaBtn = Pair(885, 915)
+        bypassCaptcha(initialResolveCaptchaBtn, initialResolveCaptchaBtn, initialResolveCaptchaBtn, this, onSuccess = {
+
+        }, onFail = {
+            println("Fail")
+        }, onSpecialCase = {
+
+            if (printScreenText().contains("Clusters\n" +
+                            "Find a cluster...\n" +
+                            "Create a cluster\n" +
+                            "Create a cluster\n" +
+                            "Choose your cloud provider, region, and specs.\n" +
+                            "Build a Cluster")) {
+
+                println(1)
+                val buildAClusterPosition = Pair(1050, 540)
+                click(buildAClusterPosition)
+                println(2)
+                waitUntilUrlEndWith("#clusters/pathSelector")
+                println(3)
+
+                val createACluserPosition = Pair(630, 880)
+                click(createACluserPosition)
+                println(4)
+
+                longSleep()
+                click(screenSize.width / 2, 130)//click safe point
+                val txt = printScreenText()
+                if (txt.contains("Your cluster name is used to generate your hostname and cannot be changed later") && txt.contains("Enter cluster name")) {
+                    click((screenSize.width / (2.6)).toInt(), (screenSize.height / (2.33)).toInt())
+                    clearAndPasteInput("MyCluster")
+                    click((screenSize.width / (1.43)).toInt(), (screenSize.height / (1.92)).toInt())
+                    longSleep()
+                }
+
+                robot.keyPress(KeyEvent.VK_END)
+                robot.keyRelease(KeyEvent.VK_END)
+                println(5)
+
+                val finalcreateACluserPosition = Pair(1300, 1000)
+                click(finalcreateACluserPosition)
+                println(6)
+
+
+                val initialResolveCaptchaBtn = Pair(875, 1000)
+                val multipleCorrect = Pair(900, 1000)
+                bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, initialResolveCaptchaBtn, this, onSuccess = {
+
+                }, onFail = {
+
+                }, onSpecialCase = {
+                    println(6)
+                    click(screenSize.width / 2, 130)//click safe point
+                    val text = printScreenText()
+                    if (text.contains("Your cluster is being created") && text.contains("New clusters take between 7-10 minutes to provision.")) {
+                        println("Your cluster is being created")
+                        val cookieStr = getCookieStr(this)
+
+                        if (cookieStr != "") {
+                            collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                                    Updates.set("cookies", cookieStr),
+                                    Updates.set("cluster_builded", true)
+                            ))
+                        } else {
+                            collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                                    Updates.set("cluster_builded", true)
+                            ))
+                        }
+                        closeWindow()
+                    }
+                })
+            } else {
+                val cookieStr = getCookieStr(this)
+                if (cookieStr != "") {
+                    collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            Updates.set("cookies", cookieStr)
+                    ))
+                }
+                closeWindow()
+            }
+        })
+
+    }
+}
+
+fun getCookieStr(robotManager: RobotManager): String {
+    println("getCookieStr")
+    with(robotManager) {
+
+        robot.keyPress(KeyEvent.VK_F12)
+        robot.keyRelease(KeyEvent.VK_F12)
+        click(4 * screenSize.width / 5, 4 / screenSize.height / 5)
+
+        SystemClipboard.copy("")
+
+        clearAndPasteInput("""
+                            const copyToClipboard = str => {
+                              const el = document.createElement('textarea');
+                              el.value = str;
+                              document.body.appendChild(el);
+                              el.select();
+                              document.execCommand('copy');
+                              document.body.removeChild(el);
+                            };
+                            copyToClipboard(document.cookie)
+                        """.trimIndent())
+        enter()
+
+        return SystemClipboard.get()
     }
 }

@@ -155,8 +155,8 @@ class OutlookRegisterEnterBirthdatePage(
 
         val BirthYear = Select(driver.findFirstEl(By.id("BirthYear")))
         BirthYear.selectByValue(RandomUtils.nextInt(1980, 2001).toString())//exclude 2001
-        val BirthDay = Select(driver.findFirstEl(By.id("BirthDay")))
-        BirthDay.selectByIndex(RandomUtils.nextInt(1, BirthDay.options.size))//exclude Day value empty
+        val BirthDay = Select(driver.findFirstEl(By.id("BirthDay")))//except 31, 30
+        BirthDay.selectByIndex(RandomUtils.nextInt(1, BirthDay.options.size - 2))//exclude Day value empty
         val BirthMonth = Select(driver.findFirstEl(By.id("BirthMonth")))
         BirthMonth.selectByIndex(RandomUtils.nextInt(1, BirthMonth.options.size))//exclude Month value empty
 

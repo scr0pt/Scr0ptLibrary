@@ -116,7 +116,7 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
 }
 
 
-fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit) {
+fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit, onSpecialCase: (() -> Unit)? = null) {
     with(robotManager) {
         longSleep()
         initialResolveCaptchaBtn?.let {
@@ -160,6 +160,7 @@ fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorr
             onFail()
         } else {
             print("sdfsdfsdfsdf: $text")
+            onSpecialCase?.let { it() }
         }
     }
 }
