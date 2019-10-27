@@ -177,6 +177,7 @@ class OutlookRegisterEnterCaptchaPage(
 
     override fun _action(driver: DriverManager): PageResponse {
         println(this::class.java.simpleName + ": action")
+        driver.findFirstEl(".form-group.template-input", contains = "Enter the characters you see")?.findElement(By.tagName("input"))?.click()
         Thread.sleep(10000)//10 seconds
         return PageResponse.WAITING_FOR_RESULT()
     }

@@ -55,11 +55,11 @@ class HerokuRegister {
                 val gmailPassword = doc.getString("new_pass") ?: doc.getString("pass")
                 val gmail_recover_email: String? = doc.getString("recover_email")
 
-                if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) return
+                if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) continue
 
                 val appName = randomAppname()
                 val collaboratorEmailList = arrayListOf(
-                        "brucealmighty5daeae612ce205583fda39d5@gmail.com",
+                        "brucealmighty5daeae612ce20558@gmail.com",
                         "alphahoai@gmail.com"
                 )
                 val result = FakeProfile.getNewProfile()
@@ -106,29 +106,21 @@ class HerokuRegister {
         RobotManager().apply {
             openBrowser()
             browserGoTo("https://signup.heroku.com")
-//        switchWindow()
-            val screenSize = Toolkit.getDefaultToolkit().screenSize
-            val windwHeight = screenSize.height
-            val windwWidth = screenSize.width
 
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
 
 
-            val inputHeight = 80
-
-//        mouseMove(baseX, 500)//firstname
-//        leftClick()
             clearAndPasteInput(firstName)
 
             tab()
             clearAndPasteInput(lastName)
 
-
             tab()
             clearAndPasteInput(email)
 
             tab()
+
 //ignore company name
 
             tab()//role
@@ -173,16 +165,15 @@ class HerokuRegister {
 
     private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         with(robotManager) {
-            val baseX = 1170
-//            val baseX = 900
-            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
-//            val initialResolveCaptchaBtn = Pair<Int, Int>(470, windwHeight - 75)
-            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
-//            val newCapthchaBtn = Pair<Int, Int>(595, 580)
-            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
-//            val multipleCorrect = Pair<Int, Int>(590, 590)
+//            val baseX = 1170
+            val baseX = 900
+//            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
+            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
+//            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
+            val newCapthchaBtn = Pair<Int, Int>(595, 580)
+//            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
+            val multipleCorrect = Pair<Int, Int>(590, 590)
             val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
-//            val createNewAccountBtn = Pair<Int, Int>(baseX, 135 + inputHeight * 3 + 180)
             val registerTime = System.currentTimeMillis()
 
             bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, robotManager, onSuccess = {
@@ -203,7 +194,7 @@ class HerokuRegister {
                     sleep()
 
                     //capthca position
-                    click(1170, screenSize.height - 300)
+                    click(baseX, screenSize.height - 300)
 
                     doooo(robotManager, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
                 } else if (txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")

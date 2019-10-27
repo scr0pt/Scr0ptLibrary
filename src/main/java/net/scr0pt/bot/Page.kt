@@ -70,6 +70,10 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
             isFinish = true
             onRunFinish(pageResponse)
         }).start()
+
+        while (!isFinish) {
+            Thread.sleep(INTERVAL_SLEEP_TIME)
+        }
     }
 
 

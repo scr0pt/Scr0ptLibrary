@@ -122,6 +122,7 @@ fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorr
         initialResolveCaptchaBtn?.let {
             click(it)
             realylongSleep()
+            realylongSleep()
         }
 
         var text: String

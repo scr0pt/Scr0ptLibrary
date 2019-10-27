@@ -122,9 +122,9 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
 }
 
 
- fun main2() {
-    val collaboratorEmail = "alphahoai@gmail.com"
-//    val collaboratorEmail = "brucealmighty5daeae612ce205583fda39d5@gmail.com"
+ fun main22() {
+//    val collaboratorEmail = "alphahoai@gmail.com"
+    val collaboratorEmail = "brucealmighty5daeae612ce20558@gmail.com"
     val mongoClient2 =
             MongoClients.create(MongoConnection.megaConnection)
     val herokuDatabase = mongoClient2.getDatabase("heroku")
@@ -133,6 +133,7 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
 //    herokuCollection.random(org.bson.Document())?.let {
     herokuCollection.find()?.forEach {
         if (it.getList("collaborators", String::class.java)?.contains(collaboratorEmail) == true) return@forEach
+        Thread.sleep(15000)
 
         val email = it.getString("email")
         val password = it.getString("password")
@@ -140,13 +141,12 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
         println("$email ~ $password")
         var appName = randomAppname()
         val driver = Browser.chrome
-
         PageManager(driver, "https://id.heroku.com/login")
                 .apply {
                     addPageList(arrayListOf(
                             HerokuLoginPage(email, password) {
                                 println("HerokuLoginPage success")
-                            }, HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CLICK_FIRST_APP) {
+                            }, HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP_IF_NOT_APP) {
                         println("HerokuDashboardPage click first app")
                     }
                     ))
@@ -155,13 +155,13 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
                         println(pageresponse)
                         if (pageresponse is PageResponse.OK) {
 
-                            driver.get(driver.url + "/settings")
-                            if (it.getString("appName").startsWith("bruce") == false) {
-                                driver.clickFirstEl("#app-rename-input")
-                                driver.sendKeysFirstEl(appName, "input.input-reset.lh-copy")
-                                driver.clickFirstEl(".__hk-inline-edit-submit-button__.async-button")
-                                driver.waitUntilUrlChange()
-                            }
+//                            driver.get(driver.url + "/settings")
+//                            if (it.getString("appName").startsWith("bruce") == false) {
+//                                driver.clickFirstEl("#app-rename-input")
+//                                driver.sendKeysFirstEl(appName, "input.input-reset.lh-copy")
+//                                driver.clickFirstEl(".__hk-inline-edit-submit-button__.async-button")
+//                                driver.waitUntilUrlChange()
+//                            }
 
                             driver.get(driver.url + "/access")
                             driver.clickFirstEl("button", equals = "Add collaborator")
@@ -169,19 +169,22 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
                             driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> el.getAttribute("placeholder") == "user@domain.com" })
                             driver.clickFirstEl("button", equals = "Save changes")
                             driver.findEls(".collaborator-item", contains = collaboratorEmail)
-                            val nameOfApp = driver.url.substringBeforeLast("/access").substringAfterLast("/")
+//                            val nameOfApp = driver.url.substringBeforeLast("/access").substringAfterLast("/")
                             herokuCollection.updateOne(
                                     org.bson.Document("email", email),
                                     Updates.push("collaborators", collaboratorEmail)
                             )
-                            herokuCollection.updateOne(
-                                    org.bson.Document("email", email),
-                                    Updates.set("appName", nameOfApp)
-                            )
+//                            herokuCollection.updateOne(
+//                                    org.bson.Document("email", email),
+//                                    Updates.set("appName", nameOfApp)
+//                            )
                             Thread.sleep(5000)
                             driver.close()
+                            isFinish = true
                         }
                     }
+
+                    while(!isFinish) Thread.sleep(5000)
                 }
     }
 
@@ -216,7 +219,7 @@ class HerokuDashboardPage(
 ) : Page(onPageFinish = onPageFinish) {
 
     enum class HerokuDashboardAction {
-        CREATE_NEW_APP, CLICK_FIRST_APP, GO_TO_ACCOUNT
+        CREATE_NEW_APP, CLICK_FIRST_APP, GO_TO_ACCOUNT, CREATE_NEW_APP_IF_NOT_APP
     }
 
     override fun isEndPage() = false
@@ -232,6 +235,11 @@ class HerokuDashboardPage(
                     println("appName: $appName")
                     driver.get("https://dashboard.heroku.com/apps/$appName")
                     return PageResponse.OK()
+                }
+            }
+            HerokuDashboardAction.CREATE_NEW_APP_IF_NOT_APP -> {
+                if(driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black") == null){
+                    driver.get("https://dashboard.heroku.com/new-app")
                 }
             }
             HerokuDashboardAction.GO_TO_ACCOUNT -> driver.get("https://dashboard.heroku.com/account")

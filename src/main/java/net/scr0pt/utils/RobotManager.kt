@@ -9,7 +9,7 @@ fun main() {
     RobotManager().apply {
         switchWindow()
 
-        mouseMove(280, 510)
+        mouseMove(900, screenSize.height -300)
     }
 }
 
