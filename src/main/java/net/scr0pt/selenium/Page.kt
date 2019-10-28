@@ -74,21 +74,17 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         runBlocking {
             originUrl?.let { driver.get(it) }
 
-            loop@ while (currentPage?.isEndPage() != true) {
-                var waitTime = 0.0
-                while (waitTime < MAX_SLEEP_TIME) {
-                    pageResponse = if (isSuccess) {
-                        Response.OK("Force success")
-                    } else {
-                        onWaiting()
-                    }
+            while (true) {
+                pageResponse = if (isSuccess) {
+                    Response.OK("Force success")
+                } else {
+                    onWaiting()
+                }
 
-                    if (pageResponse is Response.WAITING) {
-                        waitTime += INTERVAL_SLEEP_TIME
-                        delay(INTERVAL_SLEEP_TIME)
-                    } else {
-                        break@loop
-                    }
+                if (pageResponse is Response.WAITING) {
+                    delay(INTERVAL_SLEEP_TIME)
+                } else {
+                    break
                 }
             }
 
@@ -111,13 +107,13 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         }
 
         if (listOfpageDetect.isEmpty()) {
-            if(nonePageDetectCountDown.isTimeout()) return Response.TIME_OUT()
+            if (nonePageDetectCountDown.isTimeout()) return Response.TIME_OUT()
         } else {
             listOfpageDetect.firstOrNull()?.let { page ->
                 nonePageDetectCountDown.reset()
                 if (page != currentPage) {
                     prevPage = currentPage
-                    prevPage?.onPageFinish?.let { onPageFinish -> onPageFinish() }
+                    prevPage?.onPageFinish?.invoke()
                     currentPage = page
                 }
 
@@ -136,15 +132,12 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
             }
         }
 
-
-
         generalWatingResult?.let { generalWatingResult ->
             val response = generalWatingResult(pageStatus)
             if (response !is Response.WAITING) {
                 return@onWaiting response
             }
         }
-
 
         return Response.WAITING()
     }
@@ -221,9 +214,9 @@ sealed class Response(val msg: String? = null) {
 
 class MyCountDown(val MaxTime: Long = 2 * 60 * 1000) {
     var watingTime = 0L
-    var lastTimeWating= 0L
+    var lastTimeWating = 0L
 
-    fun isTimeout(): Boolean {
+    fun isTimeout(): Boolean {//also counting
         if (lastTimeWating != 0L) {
             watingTime += (System.currentTimeMillis() - lastTimeWating)
         }
@@ -232,8 +225,8 @@ class MyCountDown(val MaxTime: Long = 2 * 60 * 1000) {
         return watingTime > MaxTime
     }
 
-    fun reset(){
+    fun reset() {
         watingTime = 0L
-        lastTimeWating= 0L
+        lastTimeWating = 0L
     }
 }
