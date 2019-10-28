@@ -87,7 +87,6 @@ import java.io.File
             )
             run { response ->
                 println(response)
-                Thread.sleep(20000)
                 this.driver.close()
                 Thread.sleep(600000)
             }

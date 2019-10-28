@@ -24,6 +24,7 @@ import java.awt.event.KeyEvent
  * Created by Long
  * Date: 10/15/2019
  * Time: 11:07 AM
+ *
  */
 
 fun main() {
@@ -36,7 +37,7 @@ fun main() {
 }
 
 fun processLogin(collection: MongoCollection<org.bson.Document>) {
-    collection.find(Filters.exists("cluster_builded", false)).forEach {
+    collection.find(Filters.and(Filters.exists("cluster_builded", false), Filters.exists("cookies", false))).forEach {
         login(it.getString("email"), it.getString("password"), collection)
     }
 }
@@ -508,7 +509,7 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
                         closeWindow()
                     }
                 })
-            } else {
+            } else if (getCurrentUrl().endsWith("#clusters")) {
                 val cookieStr = getCookieStr(this)
                 if (cookieStr != "") {
                     collection.updateOne(org.bson.Document("email", email), Updates.combine(

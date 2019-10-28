@@ -67,8 +67,8 @@ class PageManager(val driver: DriverManager, val originUrl: String) {
             }
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse?.msg) ?: ""}")
-            isFinish = true
             onRunFinish(pageResponse)
+            isFinish = true
         }).start()
 
         while (!isFinish) {
