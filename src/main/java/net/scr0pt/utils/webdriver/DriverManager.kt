@@ -1,8 +1,16 @@
 package net.scr0pt.utils.webdriver
 
+import com.gargoylesoftware.htmlunit.BrowserVersion
+import com.gargoylesoftware.htmlunit.WebClient
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.openqa.selenium.*
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.firefox.FirefoxDriver
+import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.firefox.FirefoxProfile
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 
 fun main() {
     val driver = Browser.firefox
@@ -11,10 +19,69 @@ fun main() {
 }
 
 class DriverManager(var driver: WebDriver) {
+    lateinit var driverType: BrowserType
+    init {
+        when(driver){
+            is HtmlUnitDriver -> driverType = BrowserType.htmlUnitDriver
+            is FirefoxDriver -> driverType = BrowserType.firefox
+            is ChromeDriver -> driverType = BrowserType.chrome
+        }
+    }
+
+    constructor(driverType: BrowserType) : this(driverType.get().driver)
+
     companion object {
         @JvmStatic
         var INTERVAL_SLEEP_TIME = 1000L//1 second
         var MAX_SLEEP_TIME = 180000L//3 min
+    }
+
+    enum class BrowserType {
+        htmlUnitDriver {
+            override fun get(): DriverManager {
+                return DriverManager(object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
+                    override fun modifyWebClient(client: WebClient): WebClient {
+                        val webClient = super.modifyWebClient(client)
+                        webClient.options.isCssEnabled = false
+                        return webClient
+                    }
+                })
+            }
+        },
+        firefox {
+            override fun get(): DriverManager {
+                if (GeckoUtils.getGeckoDriver()) {
+                    System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
+                } else {
+                    println("Cant get getko driver")
+                }
+
+                val firefoxOptions = FirefoxOptions().apply {
+                    profile = FirefoxProfile().apply {
+                        setPreference("browser.helperApps.neverAsk.saveToDisk", "application/excel")
+                        setAcceptUntrustedCertificates(true)
+                        setAssumeUntrustedCertificateIssuer(false)
+                    }
+                }
+
+                return DriverManager(FirefoxDriver(firefoxOptions))
+            }
+        },
+        chrome {
+            override fun get(): DriverManager {
+                val options = ChromeOptions()
+                options.addArguments("--start-maximized", "--incognito", "--ignore-certificate-errors", "--disable-popup-blocking")
+                options.addArguments("disable-infobars") //disable chrome is being controlled by automated test software
+                if (ChromeDriverUtils.getChromeDriver()) {
+                    System.setProperty("webdriver.chrome.driver",
+                            ChromeDriverUtils.CHROMEDRIVER_EXE_FILE
+                    )
+                }
+                return DriverManager(ChromeDriver(options))
+            }
+        };
+
+        abstract fun get(): DriverManager
     }
 
     fun get(url: String) = driver.get(url)
@@ -60,7 +127,7 @@ class DriverManager(var driver: WebDriver) {
             return cookies
         }
 
-    fun addCookies(cookieStr: String){
+    fun addCookies(cookieStr: String) {
         cookieStr.split(";").forEach {
             driver.manage().addCookie(Cookie(it.substringBefore("="), it.substringAfter("=")))
         }
