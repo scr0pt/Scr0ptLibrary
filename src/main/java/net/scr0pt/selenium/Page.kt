@@ -74,19 +74,15 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         runBlocking {
             originUrl?.let { driver.get(it) }
 
-            while (true) {
+            do {
                 pageResponse = if (isSuccess) {
                     Response.OK("Force success")
                 } else {
                     onWaiting()
                 }
 
-                if (pageResponse is Response.WAITING) {
-                    delay(INTERVAL_SLEEP_TIME)
-                } else {
-                    break
-                }
-            }
+                delay(INTERVAL_SLEEP_TIME)
+            } while (pageResponse is Response.WAITING)
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse.msg) ?: ""}")
             onFinish?.invoke(pageResponse)
