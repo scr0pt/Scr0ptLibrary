@@ -20,8 +20,9 @@ fun main() {
 
 class DriverManager(var driver: WebDriver) {
     lateinit var driverType: BrowserType
+
     init {
-        when(driver){
+        when (driver) {
             is HtmlUnitDriver -> driverType = BrowserType.htmlUnitDriver
             is FirefoxDriver -> driverType = BrowserType.firefox
             is ChromeDriver -> driverType = BrowserType.chrome
@@ -244,4 +245,35 @@ class DriverManager(var driver: WebDriver) {
     }
 
 
+}
+
+
+class DriverElements {
+    class Form(
+            private val inputs: ArrayList<Pair<String, String>> = arrayListOf(),
+            private val buttons: List<String> = listOf<String>(),
+            private val submitBtn: String
+    ) {
+        val selectors: ArrayList<String> = arrayListOf()
+
+        init {
+            inputs.forEach {
+                selectors.add(it.first)
+            }
+            buttons.forEach {
+                selectors.add(it)
+            }
+            selectors.add(submitBtn)
+        }
+
+        fun submit(driver: DriverManager) {
+            inputs.forEach {
+                driver.sendKeysFirstEl(it.second, it.first)
+            }
+            buttons.forEach {
+                driver.clickFirstEl(it)
+            }
+            driver.clickFirstEl(submitBtn)
+        }
+    }
 }

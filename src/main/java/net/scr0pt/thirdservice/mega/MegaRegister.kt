@@ -13,6 +13,7 @@ import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
+import net.scr0pt.utils.webdriver.DriverElements
 import net.scr0pt.utils.webdriver.DriverManager
 import org.openqa.selenium.By
 import java.io.File
@@ -105,38 +106,30 @@ class MegaRegisterPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
+    val form = DriverElements.Form(
+            inputs = arrayListOf(
+                    "input#register-firstname-registerpage2" to firstName,
+                    "input#register-lastname-registerpage2" to lastName,
+                    "input#register-email-registerpage2" to email,
+                    "input#register-password-registerpage2" to password,
+                    "input#register-password-registerpage3" to password
+            ),
+            buttons = listOf(
+                    //I understand that if I lose my password, I may lose my data. Read more about MEGA’s end-to-end encryption.
+                    ".checkbox-block.pw-remind .understand-check input.checkboxOff",
+                    //I agree with the MEGA Terms of Service
+                    "input#register-check-registerpage2"
+            ),
+            submitBtn = "form#register_form .register-button.active"
+    )
+
     override fun action(pageStatus: PageStatus): Response {
-        with(pageStatus.driver) {
-            sendKeysFirstEl(firstName, "input#register-firstname-registerpage2")
-            sendKeysFirstEl(lastName, "input#register-lastname-registerpage2")
-            sendKeysFirstEl(email, "input#register-email-registerpage2")
-            sendKeysFirstEl(password, "input#register-password-registerpage2")
-            sendKeysFirstEl(password, "input#register-password-registerpage3")
-
-            //I understand that if I lose my password, I may lose my data. Read more about MEGA’s end-to-end encryption.
-            clickFirstEl(".checkbox-block.pw-remind .understand-check input.checkboxOff")
-
-            //I agree with the MEGA Terms of Service
-            clickFirstEl("input#register-check-registerpage2")
-            clickFirstEl("form#register_form .register-button.active")
-        }
-
+        form.submit(pageStatus.driver)
         return Response.WAITING()
     }
 
     override fun isReady(pageStatus: PageStatus): Boolean {
-        val selectors = listOf(
-                "input#register-firstname-registerpage2",
-                "input#register-lastname-registerpage2",
-                "input#register-email-registerpage2",
-                "input#register-password-registerpage2",
-                "input#register-password-registerpage3",
-                ".checkbox-block.pw-remind .understand-check input.checkboxOff",
-                "input#register-check-registerpage2",
-                "form#register_form .register-button.active"
-        )
-
-        return selectors.all { pageStatus.driver.findFirstEl(it) != null}
+        return form.selectors.all { pageStatus.driver.findFirstEl(it) != null }
     }
 
     override fun detect(pageStatus: PageStatus) =
@@ -288,7 +281,7 @@ class MegaChooseAccTypePage(
 
     override fun isReady(pageStatus: PageStatus) =
             pageStatus.title == "Plans & pricing - MEGA" &&
-            pageStatus.doc?.selectFirst(".bottom-page.top-info .big-header")?.text()?.trim() == "Choose your account type" &&
+                    pageStatus.doc?.selectFirst(".bottom-page.top-info .big-header")?.text()?.trim() == "Choose your account type" &&
                     pageStatus.driver.findFirstEl(By.className("loading-info"), filter = { el -> !el.isDisplayed }) != null &&
                     pageStatus.driver.findFirstEl(".key .plans .reg-st3-membership-bl.free .membership-pad-bl") != null
 
@@ -306,7 +299,7 @@ class MegaGetRecoverKeyPage(
         return Response.WAITING()
     }
 
-    override fun isReady(pageStatus: PageStatus)=
+    override fun isReady(pageStatus: PageStatus) =
             pageStatus.driver.findFirstEl(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)") != null
 
     override fun detect(pageStatus: PageStatus) =
@@ -326,7 +319,7 @@ class MegaRecoverKeyDownloadedPage(
         return Response.WAITING()
     }
 
-    override fun isReady(pageStatus: PageStatus)=
+    override fun isReady(pageStatus: PageStatus) =
             pageStatus.driver.findFirstEl(".content-wrapper .default-green-button.close-dialog") != null
 
     override fun detect(pageStatus: PageStatus) =
