@@ -22,8 +22,7 @@ import java.util.*
 }
 
  fun register() {
-    val gmailUsername = "vanlethi74@gmail.com"
-    val gmailPassword = "XinChaoVietNam@@2000"
+    val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
 
     val infinityMail = InfinityMail(gmailUsername)
     val mongoClient =
