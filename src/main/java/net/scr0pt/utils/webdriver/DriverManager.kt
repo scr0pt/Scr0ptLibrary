@@ -133,7 +133,7 @@ class DriverManager(var driver: WebDriver) {
         }
     }
 
-    fun wait(isDone: () -> Boolean, onWait: (() -> Unit)? = null) {
+    fun wait(isDone: () -> Boolean, onWait: (() -> Unit)? = null, onFail: (() -> Unit)? = null) {
         var waitTime = 0.0
         var sleepTime: Double = INTERVAL_SLEEP_TIME.toDouble()
         while (waitTime < MAX_SLEEP_TIME) {
@@ -143,6 +143,7 @@ class DriverManager(var driver: WebDriver) {
             waitTime += sleepTime
             Thread.sleep(sleepTime.toLong())
         }
+        onFail?.invoke()
     }
 
     fun waitUntilUrlChange() {

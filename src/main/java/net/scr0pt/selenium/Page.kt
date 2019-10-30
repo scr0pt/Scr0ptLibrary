@@ -1,13 +1,12 @@
 package net.scr0pt.selenium
 
-import kotlinx.coroutines.*
-import net.scr0pt.bot.PageResponse
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 fun main() {
@@ -101,7 +100,7 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
     private fun onWaiting(): Response {
         val now = LocalDateTime.now()
         println("waiting ${sleepCounting++} ${now.hour}:${now.minute}:${now.second}")
-        val pageStatus = PageStatus(driver)
+        var pageStatus = PageStatus(driver)
 
         //is go to next page
         val listOfpageDetect = pageList.filter { it.parentDetect(pageStatus) }
@@ -126,9 +125,20 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
                     }
                 }
 
-                val response = page.parentAction(pageStatus)
-                if (response !is Response.WAITING) {
-                    return@onWaiting response
+                driver.wait({
+                    PageStatus(driver).run {
+                        pageStatus = this
+                        page.isReady(this)
+                    }
+                })
+
+                if (page.isReady(pageStatus)) {
+                    val response = page.parentAction(pageStatus)
+                    if (response !is Response.WAITING) {
+                        return@onWaiting response
+                    }
+                } else {
+                    return@onWaiting Response.PAGE_CANNOT_READY()
                 }
 
                 if (page.isEndPage()) return@onWaiting Response.OK()
@@ -199,6 +209,8 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     protected open fun action(pageStatus: PageStatus): Response {
         return Response.WAITING()
     }
+
+    open fun isReady(pageStatus: PageStatus): Boolean = true
 }
 
 
@@ -212,6 +224,7 @@ sealed class Response(val msg: String? = null) {
     class WAITING(msg: String? = null) : Response(msg)
     class TIME_OUT(msg: String? = null) : Response(msg)
     class NOT_FOUND_ELEMENT(msg: String? = null) : Response(msg)
+    class PAGE_CANNOT_READY(msg: String? = null) : Response(msg)
 }
 
 class MyCountDown(val MaxTime: Long = 2 * 60 * 1000) {

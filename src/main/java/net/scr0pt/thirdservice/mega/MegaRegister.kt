@@ -55,9 +55,6 @@ fun main() {
                                 println("MegaRegisterConfirmEmailPage finish")
                                 collection.updateOne(org.bson.Document("User_Name", email), Updates.set("verify_email", true))
                             },
-                            MegaRegisterPreEnterPasswordAfterEnterConfirmLinkPage {
-                                println("MegaRegisterPreEnterPasswordAfterEnterConfirmLinkPage finish")
-                            },
                             MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
                                     gmailUsername,
                                     gmailPassword,
@@ -109,17 +106,11 @@ class MegaRegisterPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-        println(this::class.java.simpleName + ": action")
         pageStatus.driver.sendKeysFirstEl(firstName, "input#register-firstname-registerpage2")
-                ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.sendKeysFirstEl(lastName, "input#register-lastname-registerpage2")
-                ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.sendKeysFirstEl(email, "input#register-email-registerpage2")
-                ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.sendKeysFirstEl(password, "input#register-password-registerpage2")
-                ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.sendKeysFirstEl(password, "input#register-password-registerpage3")
-                ?: return Response.NOT_FOUND_ELEMENT()
 
         //I understand that if I lose my password, I may lose my data. Read more about MEGA’s end-to-end encryption.
         pageStatus.driver.clickFirstEl(".checkbox-block.pw-remind .understand-check input.checkboxOff")
@@ -129,6 +120,21 @@ class MegaRegisterPage(
         pageStatus.driver.clickFirstEl("form#register_form .register-button.active")
 
         return Response.WAITING()
+    }
+
+    override fun isReady(pageStatus: PageStatus): Boolean {
+        val selectors = listOf(
+                "input#register-firstname-registerpage2",
+                "input#register-lastname-registerpage2",
+                "input#register-email-registerpage2",
+                "input#register-password-registerpage2",
+                "input#register-password-registerpage3",
+                ".checkbox-block.pw-remind .understand-check input.checkboxOff",
+                "input#register-check-registerpage2",
+                "form#register_form .register-button.active"
+        )
+
+        return selectors.all { pageStatus.driver.findFirstEl(it) != null}
     }
 
     override fun detect(pageStatus: PageStatus) =
@@ -191,16 +197,7 @@ class MegaRegisterConfirmEmailPage(
                     pageStatus.doc.selectFirst(".reg-resend-button-bl .resend-email-button")?.text()?.trim() == "Resend"
 }
 
-class MegaRegisterPreEnterPasswordAfterEnterConfirmLinkPage(
-        onPageFinish: (() -> Unit)? = null
-) : Page(onPageFinish = onPageFinish) {
 
-    override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://mega.nz/confirm") == true &&
-                    pageStatus.title == "MEGA" &&
-                    pageStatus.doc?.selectFirst(".main-top-info-block .main-top-info-text") == null &&
-                    pageStatus.doc?.selectFirst(".fm-dialog.warning-dialog-a .fm-notification-info h1") == null
-}
 class MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
         val gmailUsername: String,
         val gmailPassword: String,
@@ -261,11 +258,14 @@ class MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
         return Response.WAITING()
     }
 
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.doc?.selectFirst(".main-top-info-block .main-top-info-text")?.text()?.isNotEmpty() == true &&
+                    pageStatus.doc.selectFirst(".fm-dialog.warning-dialog-a .fm-notification-info h1") == null &&
+                    pageStatus.title == "Login - MEGA"
+
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://mega.nz/confirm") == true &&
-                    pageStatus.title == "Login - MEGA" &&
-                    pageStatus.doc?.selectFirst(".main-top-info-block .main-top-info-text")?.text()?.isNotEmpty() == true &&
-                    pageStatus.doc.selectFirst(".fm-dialog.warning-dialog-a .fm-notification-info h1") == null
+            pageStatus.url?.startsWith("https://mega.nz/confirm") == true
+
 }
 
 class MegaGenerateKeyPage(
@@ -280,28 +280,32 @@ class MegaChooseAccTypePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-        println(this::class.java.simpleName + ": action")
-        pageStatus.driver.findFirstEl(By.className("loading-info"), filter = { el -> !el.isDisplayed })
         pageStatus.driver.clickFirstEl(".key .plans .reg-st3-membership-bl.free .membership-pad-bl")
-                ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
 
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.title == "Plans & pricing - MEGA" &&
+            pageStatus.doc?.selectFirst(".bottom-page.top-info .big-header")?.text()?.trim() == "Choose your account type" &&
+                    pageStatus.driver.findFirstEl(By.className("loading-info"), filter = { el -> !el.isDisplayed }) != null &&
+                    pageStatus.driver.findFirstEl(".key .plans .reg-st3-membership-bl.free .membership-pad-bl") != null
+
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url == "https://mega.nz/pro" &&
-                    pageStatus.title == "Plans & pricing - MEGA" &&
-                    pageStatus.doc?.selectFirst(".bottom-page.top-info .big-header")?.text()?.trim() == "Choose your account type"
+            pageStatus.url == "https://mega.nz/pro"
+
+
 }
 
 class MegaGetRecoverKeyPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-        println(this::class.java.simpleName + ": action")
         pageStatus.driver.clickFirstEl(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)")
-                ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
+
+    override fun isReady(pageStatus: PageStatus)=
+            pageStatus.driver.findFirstEl(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)") != null
 
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url?.startsWith("https://mega.nz/fm") == true &&
@@ -317,9 +321,11 @@ class MegaRecoverKeyDownloadedPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".content-wrapper .default-green-button.close-dialog")
-                ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
+
+    override fun isReady(pageStatus: PageStatus)=
+            pageStatus.driver.findFirstEl(".content-wrapper .default-green-button.close-dialog") != null
 
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url?.startsWith("https://mega.nz/fm") == true &&
@@ -333,9 +339,11 @@ class MegaDownloadAppPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".button-wrappers .redirect-clouddrive-link")
-                ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
+
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.driver.findFirstEl(".button-wrappers .redirect-clouddrive-link") != null
 
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/downloadapp" &&
