@@ -106,18 +106,20 @@ class MegaRegisterPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-        pageStatus.driver.sendKeysFirstEl(firstName, "input#register-firstname-registerpage2")
-        pageStatus.driver.sendKeysFirstEl(lastName, "input#register-lastname-registerpage2")
-        pageStatus.driver.sendKeysFirstEl(email, "input#register-email-registerpage2")
-        pageStatus.driver.sendKeysFirstEl(password, "input#register-password-registerpage2")
-        pageStatus.driver.sendKeysFirstEl(password, "input#register-password-registerpage3")
+        with(pageStatus.driver) {
+            sendKeysFirstEl(firstName, "input#register-firstname-registerpage2")
+            sendKeysFirstEl(lastName, "input#register-lastname-registerpage2")
+            sendKeysFirstEl(email, "input#register-email-registerpage2")
+            sendKeysFirstEl(password, "input#register-password-registerpage2")
+            sendKeysFirstEl(password, "input#register-password-registerpage3")
 
-        //I understand that if I lose my password, I may lose my data. Read more about MEGA’s end-to-end encryption.
-        pageStatus.driver.clickFirstEl(".checkbox-block.pw-remind .understand-check input.checkboxOff")
+            //I understand that if I lose my password, I may lose my data. Read more about MEGA’s end-to-end encryption.
+            clickFirstEl(".checkbox-block.pw-remind .understand-check input.checkboxOff")
 
-        //I agree with the MEGA Terms of Service
-        pageStatus.driver.clickFirstEl("input#register-check-registerpage2")
-        pageStatus.driver.clickFirstEl("form#register_form .register-button.active")
+            //I agree with the MEGA Terms of Service
+            clickFirstEl("input#register-check-registerpage2")
+            clickFirstEl("form#register_form .register-button.active")
+        }
 
         return Response.WAITING()
     }
