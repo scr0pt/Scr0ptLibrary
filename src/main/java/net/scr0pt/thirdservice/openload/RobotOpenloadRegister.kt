@@ -119,10 +119,27 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
 fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit, onSpecialCase: (() -> Unit)? = null) {
     with(robotManager) {
         longSleep()
-        initialResolveCaptchaBtn?.let {
-            click(it)
-            realylongSleep()
-            realylongSleep()
+        initialResolveCaptchaBtn?.let { click(it) }
+
+        for (i in 0..40) {
+            sleep()
+            val text = printScreenText().trim()
+            when {
+                text.contains("I'm not a robot\nPrivacy - Terms") -> {
+                    onSuccess()
+                    return@bypassCaptcha
+                }
+                text == "Multiple correct solutions required - please solve more.\nPress PLAY and enter the words you hear\nPLAY\nVERIFY" -> {
+                    click(multipleCorrect)
+                    bypassCaptcha(null, multipleCorrect, newCapthchaBtn, robotManager, onSuccess, onFail)
+                    return@bypassCaptcha
+                }
+                text == "Try again later\nYour computer or network may be sending automated queries. To protect our users, we can't process your request right now. For more details visit our help page" -> {
+                    println("onFail")
+                    onFail()
+                    return@bypassCaptcha
+                }
+            }
         }
 
         var text: String
@@ -132,31 +149,7 @@ fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorr
         } while (text == "Press PLAY and enter the words you hear")
 
         //Press PLAY and enter the words you hear: verifying
-
-        //\nI'm not a robot\nPrivacy - Terms : done
-        if (text.contains("I'm not a robot\nPrivacy - Terms")) {
-            onSuccess()
-
-        } else if (text == CLIPBOARD_DELETED) {
-            click(newCapthchaBtn)
-
-            if (printScreenText().trim() == "I'm not a robot\nPrivacy - Terms") {
-                onSuccess()
-            } else {
-                println("onFail")
-                onFail()
-            }
-        } else if (text == "Try again later\nYour computer or network may be sending automated queries. To protect our users, we can't process your request right now. For more details visit our help page") {
-            println("onFail")
-            onFail()
-
-//            onFail()
-        } else if (text == "Multiple correct solutions required - please solve more.\nPress PLAY and enter the words you hear\nPLAY\nVERIFY") {
-            click(multipleCorrect)
-
-            bypassCaptcha(null, multipleCorrect, newCapthchaBtn, robotManager, onSuccess, onFail)
-
-        } else if (text == "Press PLAY and enter the words you hear\nPLAY\nVERIFY") {
+        if (text == "Press PLAY and enter the words you hear\nPLAY\nVERIFY") {
             onFail()
         } else {
             print("sdfsdfsdfsdf: $text")

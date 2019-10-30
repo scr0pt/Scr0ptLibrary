@@ -4,7 +4,10 @@ import kotlinx.coroutines.*
 import net.scr0pt.bot.PageResponse
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 fun main() {
@@ -63,7 +66,11 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
     }
 
 
-    fun run() {
+    fun run(onFinish: ((response: Response) -> Unit)? = null) {
+        onFinish?.let {
+            this.onFinish = onFinish
+        }
+
         if (this.pageList.isEmpty()) {
             println("Page list is empty")
             return
@@ -85,7 +92,7 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
             } while (pageResponse is Response.WAITING)
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse.msg) ?: ""}")
-            onFinish?.invoke(pageResponse)
+            this@PageManager.onFinish?.invoke(pageResponse)
             isFinish = true
         }
     }
@@ -99,7 +106,7 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         //is go to next page
         val listOfpageDetect = pageList.filter { it.parentDetect(pageStatus) }
         if (listOfpageDetect.size != 1) {
-            println("listOfpageDetect: ${listOfpageDetect.size}")
+            println("listOfpageDetect: ${listOfpageDetect.size} | title: ${pageStatus.title} | url: ${pageStatus.url}")
         }
 
         if (listOfpageDetect.isEmpty()) {
@@ -148,8 +155,7 @@ class PageStatus(val driver: DriverManager) {
 abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     val TAG = this::class.java.simpleName
     fun log(msg: String) {
-        val now = LocalDateTime.now()
-        println("$TAG [${now.hour}:${now.minute}:${now.second}]: $msg")
+        println("$TAG [${SimpleDateFormat("HH:mm:ss").format(Date())}]: $msg")
     }
 
     var detectTime: Long? = null
@@ -168,12 +174,12 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
     }
 
     protected fun onWaiting(pageStatus: PageStatus): Response? = null
-    fun isEndPage() = false
+    open fun isEndPage() = false
     protected abstract fun detect(pageStatus: PageStatus): Boolean
     fun parentDetect(pageStatus: PageStatus): Boolean {
         val res = detect(pageStatus)
         if (res) {
-            log("detect")
+            log("detect | title: ${pageStatus.title} | url: ${pageStatus.url}")
             if (detectTime == null) {
                 detectTime = System.currentTimeMillis()
             }

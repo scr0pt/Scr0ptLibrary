@@ -3,7 +3,6 @@ package net.scr0pt.thirdservice.heroku
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
-import net.bytebuddy.utility.RandomString
 import net.scr0pt.bot.HerokuPageResponse
 import net.scr0pt.bot.Page
 import net.scr0pt.bot.PageManager
@@ -19,10 +18,8 @@ import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
-import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.jsoup.nodes.Document
-import java.awt.Toolkit
 import java.awt.event.KeyEvent
 
 /**
@@ -165,7 +162,7 @@ class HerokuRegister {
 
     private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         with(robotManager) {
-//            val baseX = 1170
+            //            val baseX = 1170
             val baseX = 900
 //            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
             val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
@@ -180,59 +177,58 @@ class HerokuRegister {
                 println("Success")
 
                 click(createNewAccountBtn)//create btn
-
-                realylongSleep()
-
-                click(screenSize.width / 4, screenSize.height / 2)//safe point screen
-
-                sleep()
-
-                val txt = printScreenText()
-                if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
-                    robot.keyPress(KeyEvent.VK_END)
-                    robot.keyRelease(KeyEvent.VK_END)
+                for (i in 0..20) {
                     sleep()
+                    click(screenSize.width / 4, screenSize.height / 2)//safe point screen
 
-                    //capthca position
-                    click(baseX, screenSize.height - 300)
+                    val txt = printScreenText()
+                    if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
+                        robot.keyPress(KeyEvent.VK_END)
+                        robot.keyRelease(KeyEvent.VK_END)
+                        sleep()
 
-                    doooo(robotManager, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
-                } else if (txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")
-                        || txt.contains("Help us make some avocado toast!")
-                ) {
-                    robot.keyPress(KeyEvent.VK_ALT)
-                    robot.keyPress(KeyEvent.VK_F4)
-                    robot.keyRelease(KeyEvent.VK_ALT)
-                    robot.keyRelease(KeyEvent.VK_F4)
-                    sleep()
-                    isDone = true
-                    return@bypassCaptcha
-                } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
+                        //capthca position
+                        click(baseX, screenSize.height - 300)
 
-                    val gmail = Gmail(gmailUsername, gmailPassword)
-                    gmail.onEvent(MailReceiveEvent(
-                            key = "ona_heroku_sender",
-                            validator = { mail ->
-                                (mail.id ?: 0) > registerTime &&
-                                        Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com") &&
-                                        Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
-                            },
-                            callback = { mails ->
-                                val mail =
-                                        mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
-                                val acceptLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")
-                                if (acceptLink != null) {
-                                    println(acceptLink)
-                                    gmail.logout()
-                                    closeWindow()
-                                    sleep()
-                                    installDriver(acceptLink, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
-                                }
-                            },
-                            once = false,
-                            new = true,
-                            fetchContent = true
-                    ))
+                        doooo(robotManager, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
+                        return@bypassCaptcha
+                    } else if (txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")
+                            || txt.contains("Help us make some avocado toast!")
+                    ) {
+                        robot.keyPress(KeyEvent.VK_ALT)
+                        robot.keyPress(KeyEvent.VK_F4)
+                        robot.keyRelease(KeyEvent.VK_ALT)
+                        robot.keyRelease(KeyEvent.VK_F4)
+                        sleep()
+                        isDone = true
+                        return@bypassCaptcha
+                    } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
+                        val gmail = Gmail(gmailUsername, gmailPassword)
+                        gmail.onEvent(MailReceiveEvent(
+                                key = "ona_heroku_sender",
+                                validator = { mail ->
+                                    (mail.id ?: 0) > registerTime &&
+                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com") &&
+                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
+                                },
+                                callback = { mails ->
+                                    val mail =
+                                            mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
+                                    val acceptLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")
+                                    if (acceptLink != null) {
+                                        println(acceptLink)
+                                        gmail.logout()
+                                        closeWindow()
+                                        sleep()
+                                        installDriver(acceptLink, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
+                                    }
+                                },
+                                once = false,
+                                new = true,
+                                fetchContent = true
+                        ))
+                        return@bypassCaptcha
+                    }
                 }
             }, onFail = {
                 isDone = true
