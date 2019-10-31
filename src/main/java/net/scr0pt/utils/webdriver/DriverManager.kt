@@ -29,7 +29,7 @@ class DriverManager(var driver: WebDriver) {
         }
     }
 
-    constructor(driverType: BrowserType) : this(driverType.get().driver)
+    constructor(driverType: BrowserType, driverHeadless: Boolean = false) : this(driverType.get(driverHeadless).driver)
 
     companion object {
         @JvmStatic
@@ -39,7 +39,7 @@ class DriverManager(var driver: WebDriver) {
 
     enum class BrowserType {
         htmlUnitDriver {
-            override fun get(): DriverManager {
+            override fun get(headless: Boolean ): DriverManager {
                 return DriverManager(object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
                     override fun modifyWebClient(client: WebClient): WebClient {
                         val webClient = super.modifyWebClient(client)
@@ -50,7 +50,7 @@ class DriverManager(var driver: WebDriver) {
             }
         },
         firefox {
-            override fun get(): DriverManager {
+            override fun get(headless: Boolean): DriverManager {
                 if (GeckoUtils.getGeckoDriver()) {
                     System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
                 } else {
@@ -60,6 +60,9 @@ class DriverManager(var driver: WebDriver) {
                 val firefoxOptions = FirefoxOptions().apply {
                     profile = FirefoxProfile().apply {
                         setPreference("browser.helperApps.neverAsk.saveToDisk", "application/excel")
+                        if (headless) {
+                            addArguments("--headless")
+                        }
                         setAcceptUntrustedCertificates(true)
                         setAssumeUntrustedCertificateIssuer(false)
                     }
@@ -69,10 +72,17 @@ class DriverManager(var driver: WebDriver) {
             }
         },
         chrome {
-            override fun get(): DriverManager {
+            override fun get(headless: Boolean ): DriverManager {
                 val options = ChromeOptions()
                 options.addArguments("--start-maximized", "--incognito", "--ignore-certificate-errors", "--disable-popup-blocking")
                 options.addArguments("disable-infobars") //disable chrome is being controlled by automated test software
+
+                if(headless){
+                    options.addArguments("--no-sandbox")
+                    options.addArguments("--headless")
+                    options.addArguments("disable-gpu")
+                }
+
                 if (ChromeDriverUtils.getChromeDriver()) {
                     System.setProperty("webdriver.chrome.driver",
                             ChromeDriverUtils.CHROMEDRIVER_EXE_FILE
@@ -82,7 +92,7 @@ class DriverManager(var driver: WebDriver) {
             }
         };
 
-        abstract fun get(): DriverManager
+        abstract fun get(headless: Boolean = false): DriverManager
     }
 
     fun get(url: String) = driver.get(url)

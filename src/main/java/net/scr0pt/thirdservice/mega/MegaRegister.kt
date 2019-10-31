@@ -40,7 +40,7 @@ fun main() {
         val firstName = result?.name?.first ?: "Bruce"
         val lastName = result?.name?.last ?: "Lee"
         val password = "XinChaoVietNam@2024"
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
         PageManager(driverManager, "https://mega.nz/register").apply {
             addPageList(
                     arrayListOf(
@@ -93,6 +93,7 @@ fun main() {
             run { response ->
                 println(response)
                 this.driver.close()
+                Thread.sleep(5 * 60000)
             }
         }
 
@@ -135,7 +136,7 @@ class MegaRegisterPage(
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/register" &&
                     pageStatus.title == "Register - MEGA" &&
-                    pageStatus.doc?.selectFirst("form#register_form .account.top-header.wide")?.text() == "Create your free account" &&
+                    pageStatus.doc?.selectFirst("form#register_form .account.top-header")?.text() == "Create your free account" &&
                     pageStatus.doc.selectFirst(".registration-page-success.special .reg-success-special .reg-success-txt") == null
 }
 
@@ -187,7 +188,7 @@ class MegaRegisterConfirmEmailPage(
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/register" &&
                     pageStatus.title == "Register - MEGA" &&
-                    pageStatus.doc?.selectFirst("form#register_form .account.top-header.wide")?.text() == "Create your free account" &&
+                    pageStatus.doc?.selectFirst("form#register_form .account.top-header")?.text() == "Create your free account" &&
                     pageStatus.doc.selectFirst(".registration-page-success.special .reg-success-special .reg-success-txt")?.text()?.trim() == "Please check your email and click the link to confirm your account." &&
                     pageStatus.doc.selectFirst(".reg-resend-button-bl .resend-email-button")?.text()?.trim() == "Resend"
 }
