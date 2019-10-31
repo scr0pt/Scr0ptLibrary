@@ -14,7 +14,6 @@ import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.types.ObjectId
 import org.jsoup.nodes.Document
-import org.openqa.selenium.chrome.ChromeDriver
 
 
 fun randomAppname(prefix: String? = null): String {
@@ -24,7 +23,7 @@ fun randomAppname(prefix: String? = null): String {
 }
 
 
- fun main() {
+fun main() {
     val mongoClient2 =
             MongoClients.create(MongoConnection.megaConnection)
     val herokuDatabase = mongoClient2.getDatabase("heroku")
@@ -50,6 +49,12 @@ fun randomAppname(prefix: String? = null): String {
         val gmail = Gmail(gmailUsername, gmailPassword)
         val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT) {
             println("HerokuDashboardPage click first app")
+        }
+        herokuDashboardPage.onPageDetect = {
+            herokuCollection.updateOne(
+                    org.bson.Document("email", email),
+                    Updates.set("cookies", driver.cookieStr)
+            )
         }
         PageManager(driver, "https://id.heroku.com/login").apply {
             addPageList(
@@ -122,7 +127,7 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
 }
 
 
- fun main22() {
+fun main22() {
 //    val collaboratorEmail = "alphahoai@gmail.com"
     val collaboratorEmail = "brucealmighty5daeae612ce20558@gmail.com"
     val mongoClient2 =
@@ -184,7 +189,7 @@ fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, 
                         }
                     }
 
-                    while(!isFinish) Thread.sleep(5000)
+                    while (!isFinish) Thread.sleep(5000)
                 }
     }
 
@@ -238,7 +243,7 @@ class HerokuDashboardPage(
                 }
             }
             HerokuDashboardAction.CREATE_NEW_APP_IF_NOT_APP -> {
-                if(driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black") == null){
+                if (driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black") == null) {
                     driver.get("https://dashboard.heroku.com/new-app")
                 }
             }

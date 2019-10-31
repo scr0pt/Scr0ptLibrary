@@ -116,7 +116,7 @@ class DriverManager(var driver: WebDriver) {
         } catch (e: Exception) {
             null
         }
-    val title: String?
+    val title: String
         get() = driver.title
     val cookieStr: String
         get() {
@@ -170,7 +170,11 @@ class DriverManager(var driver: WebDriver) {
         try {
             parseSelector(selector)?.let { parserd ->
                 this.driver.findElements(parserd)?.forEach { element ->
-                    val text = element.text
+                    val text = try {
+                        element.text
+                    } catch (e: Exception) {
+                        return@forEach
+                    }
                     if (element != null && filter(element)
                             && (contains == null || (text.contains(contains, ignoreCase = true)))
                             && (startWithsOneOf == null || (startWithsOneOf.firstOrNull { text.startsWith(it, ignoreCase = true) } != null))

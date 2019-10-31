@@ -4,7 +4,9 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
 import net.scr0pt.bot.PageResponse
+import net.scr0pt.selenium.Response
 import net.scr0pt.crawl.school.random
+import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.webdriver.Browser
@@ -35,7 +37,7 @@ import org.openqa.selenium.firefox.FirefoxDriver
             loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = { allowLessSecureApps(driver, gmailUsername, collection) },
                     onLoginFail = { response ->
                         println(6)
-                        if (response is PageResponse.PASSWORD_CHANGED || response is PageResponse.INCORECT_PASSWORD) {
+                        if (response is GoogleResponse.PASSWORD_CHANGED || response is GoogleResponse.INCORECT_PASSWORD) {
                             println(7)
                             collection.updateOne(Document("email", gmailUsername), Updates.combine(
                                     Updates.set("login_status", "PASSWORD_CHANGED"),

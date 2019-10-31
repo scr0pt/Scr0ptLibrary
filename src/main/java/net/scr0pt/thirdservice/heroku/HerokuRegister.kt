@@ -172,17 +172,29 @@ class HerokuRegister {
             val multipleCorrect = Pair<Int, Int>(590, 590)
             val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
             val registerTime = System.currentTimeMillis()
-
+            println("doooo 1")
             bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, newCapthchaBtn, robotManager, onSuccess = {
-                println("Success")
+                println("doooo 2")
 
                 click(createNewAccountBtn)//create btn
+                longSleep()
+
+
                 for (i in 0..20) {
+                    println("doooo 3")
                     sleep()
                     click(screenSize.width / 4, screenSize.height / 2)//safe point screen
 
                     val txt = printScreenText()
-                    if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
+
+                    if(txt == "Retry later!"){
+                        println("doooo 3.5")
+                        closeWindow()
+                        isDone = true
+                        return@bypassCaptcha
+                    }
+                    else if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
+                        println("doooo 4")
                         robot.keyPress(KeyEvent.VK_END)
                         robot.keyRelease(KeyEvent.VK_END)
                         sleep()
@@ -195,6 +207,7 @@ class HerokuRegister {
                     } else if (txt.contains("Sorry. A user with that email address already exists, or the email was invalid.")
                             || txt.contains("Help us make some avocado toast!")
                     ) {
+                        println("doooo 5")
                         robot.keyPress(KeyEvent.VK_ALT)
                         robot.keyPress(KeyEvent.VK_F4)
                         robot.keyRelease(KeyEvent.VK_ALT)
@@ -203,6 +216,8 @@ class HerokuRegister {
                         isDone = true
                         return@bypassCaptcha
                     } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
+                        println("doooo 6")
+                        closeWindow()
                         val gmail = Gmail(gmailUsername, gmailPassword)
                         gmail.onEvent(MailReceiveEvent(
                                 key = "ona_heroku_sender",
@@ -218,8 +233,6 @@ class HerokuRegister {
                                     if (acceptLink != null) {
                                         println(acceptLink)
                                         gmail.logout()
-                                        closeWindow()
-                                        sleep()
                                         installDriver(acceptLink, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
                                     }
                                 },
@@ -239,7 +252,7 @@ class HerokuRegister {
 
     private fun installDriver(acceptLink: String, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         val pageManager = PageManager(Browser.firefox, acceptLink)
-        pageManager.addPageList(arrayListOf<Page>(
+        pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {
                     herokuCollection.updateOne(
                             org.bson.Document("email", email),
@@ -260,6 +273,13 @@ class HerokuRegister {
                 },
                 HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
                     println("HerokuDashboardPage success")
+                }.apply {
+                    onPageDetect = {
+                        herokuCollection.updateOne(
+                                org.bson.Document("email", email),
+                                Updates.set("cookies", pageManager.driver.cookieStr)
+                        )
+                    }
                 },
                 HerokuCreateNewAppPage(appName = appName) {
                     herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))

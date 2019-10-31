@@ -34,7 +34,7 @@ class RobotManager {
     val run = Runtime.getRuntime()
 
     fun sleep() {
-        Thread.sleep(1000)
+        Thread.sleep(500)
     }
 
     fun longSleep() {

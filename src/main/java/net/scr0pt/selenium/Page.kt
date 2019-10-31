@@ -84,10 +84,9 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
                 pageResponse = if (isSuccess) {
                     Response.OK("Force success")
                 } else {
+                    delay(INTERVAL_SLEEP_TIME)
                     onWaiting()
                 }
-
-                delay(INTERVAL_SLEEP_TIME)
             } while (pageResponse is Response.WAITING)
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse.msg) ?: ""}")
@@ -158,8 +157,9 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
 
 class PageStatus(val driver: DriverManager) {
     val doc: Document? = driver.doc
-    val title: String? = driver.title
-    val url: String? = driver.url
+    val title: String = driver.title
+    val url: String = driver.url
+    val html: String = driver.html
 }
 
 abstract class Page(val onPageFinish: (() -> Unit)? = null) {
@@ -183,7 +183,7 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
         }
     }
 
-    protected fun onWaiting(pageStatus: PageStatus): Response? = null
+    protected open fun onWaiting(pageStatus: PageStatus): Response? = null
     open fun isEndPage() = false
     protected abstract fun detect(pageStatus: PageStatus): Boolean
     fun parentDetect(pageStatus: PageStatus): Boolean {
@@ -226,6 +226,20 @@ sealed class Response(val msg: String? = null) {
     class NOT_FOUND_ELEMENT(msg: String? = null) : Response(msg)
     class PAGE_CANNOT_READY(msg: String? = null) : Response(msg)
 }
+
+sealed class MlabResponse(msg: String? = null) : Response(msg) {
+    class LOGIN_ERROR(msg: String? = null) : MlabResponse(msg)
+}
+
+sealed class GoogleResponse(msg: String? = null) : Response(msg) {
+    class RECAPTCHA(msg: String? = null) : GoogleResponse(msg)
+    class NOT_FOUND_EMAIL(msg: String? = null) : GoogleResponse(msg)
+    class INCORECT_PASSWORD(msg: String? = null) : GoogleResponse(msg)
+    class PASSWORD_CHANGED(msg: String? = null) : GoogleResponse(msg)
+    class CANT_LOGIN_FOR_YOU(msg: String? = null) : GoogleResponse(msg)
+    class VERIFY_PHONE_NUMBER_DETECT(msg: String? = null) : GoogleResponse(msg)
+}
+
 
 class MyCountDown(val MaxTime: Long = 2 * 60 * 1000) {
     var watingTime = 0L

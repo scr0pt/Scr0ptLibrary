@@ -4,11 +4,10 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
-import net.scr0pt.bot.MlabPageResponse
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
+
 import net.scr0pt.bot.google.*
+import net.scr0pt.bot.google.GoogleSearch
+import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.thirdservice.openload.bypassCaptcha
 import net.scr0pt.utils.FakeProfile
@@ -16,8 +15,8 @@ import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.SystemClipboard
 import net.scr0pt.utils.webdriver.Browser
+import net.scr0pt.utils.webdriver.DriverElements
 import net.scr0pt.utils.webdriver.DriverManager
-import org.jsoup.nodes.Document
 import java.awt.event.KeyEvent
 
 /**
@@ -32,8 +31,8 @@ fun main() {
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("mlab-account")
-    processLogin(collection)
-//    processRegister(collection)
+//    processLogin(collection)
+    processRegister(collection)
 }
 
 fun processLogin(collection: MongoCollection<org.bson.Document>) {
@@ -68,12 +67,12 @@ fun processRegister(collection: MongoCollection<org.bson.Document>) {
     } while (true)
 }
 
-fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: () -> Unit, onLoginFail: ((pageResponse: PageResponse?) -> Unit)? = null, recoverEmail: String? = null) {
+fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginSuccess: () -> Unit, onLoginFail: ((pageResponse: Response?) -> Unit)? = null, recoverEmail: String? = null) {
     println("loginGoogle: $email $password")
     PageManager(driver,
             "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
     ).apply {
-        addPageList(arrayListOf<Page>(
+        addPageList(arrayListOf(
                 LoginEnterEmailPage(email) {
                     println("enter email success")
                 },
@@ -106,14 +105,14 @@ fun loginGoogle(email: String, password: String, driver: DriverManager, onLoginS
             })
         }
 
-        generalWatingResult = { jsoupDoc, currentUrl ->
-            if ((jsoupDoc.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
-                PageResponse.RECAPTCHA()
-            } else PageResponse.WAITING_FOR_RESULT()
+        generalWatingResult = { pageStatus ->
+            if ((pageStatus.doc?.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
+                GoogleResponse.RECAPTCHA()
+            } else Response.WAITING()
         }
 
         run { pageResponse ->
-            if (pageResponse is PageResponse.OK) {
+            if (pageResponse is Response.OK) {
                 onLoginSuccess()
             } else {
                 driver.close()
@@ -145,6 +144,10 @@ fun registerMlab(
                             )
                             println("register success")
                         },
+                        WelcomePage() {
+                            println("WelcomePage success")
+                            this.isSuccess = true
+                        },
                         BuildClusterPage() {
                             println("BuildClusterPage success")
                         }
@@ -152,10 +155,16 @@ fun registerMlab(
         )
 
         run { pageResponse ->
+            if (pageResponse is MlabResponse.LOGIN_ERROR) {
+                if (pageResponse.msg == "This email address is already in use.") {
+                    if (collection.countDocuments(org.bson.Document("email", email)) == 0L) {
+                        collection.insertOne(org.bson.Document("email", email))
+                    }
+                }
+                println(pageResponse.msg)
+            }
             println(pageResponse)
-            Thread.sleep(60000)
             driver.close()
-            Thread.sleep(180000)
         }
     }
 }
@@ -172,7 +181,7 @@ fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Docume
             "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
     ).apply {
         addPageList(
-                arrayListOf<Page>(
+                arrayListOf(
                         TryMongoDBAtlasPage(email, password, firstName, lastName) {
                             collection.insertOne(
                                     org.bson.Document("email", email)
@@ -180,11 +189,14 @@ fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Docume
                             )
                             println("register success")
                         },
+                        WelcomePage() {
+                            println("WelcomePage success")
+                        },
                         BuildClusterPage() {
                             println("BuildClusterPage success")
                         },
                         CreateClusterTypePage {
-                            println("BuildClusterPage success")
+                            println("CreateClusterTypePage success")
                         },
                         ClusterCreatingPage() {
                             println("ClusterCreatingPage success")
@@ -210,10 +222,6 @@ fun loginMlab(driver: DriverManager, collection: MongoCollection<org.bson.Docume
                 )
         )
         run { pageResponse ->
-            if (pageResponse is MlabPageResponse.LOGIN_ERROR) {
-                println(pageResponse.msg)
-            }
-
             println(pageResponse)
         }
     }
@@ -226,47 +234,68 @@ class TryMongoDBAtlasPage(
         val lastName: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? {
-        val selectFirst = doc.selectFirst("div.form-error")
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        val selectFirst = pageStatus.doc?.selectFirst("div.form-error")
         if (selectFirst != null && selectFirst.attr("style")?.contains("display: none;") == false) {
-            return MlabPageResponse.LOGIN_ERROR(msg = selectFirst.text())
+            return MlabResponse.LOGIN_ERROR(msg = selectFirst.text())
         }
         return null
     }
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(email, "input#email") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(firstName, "input#first_name") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(lastName, "input#last_name") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input#password") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("input#atlasCheckbox") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("input#atlas-submit-btn") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    val form = DriverElements.Form(
+            inputs = arrayListOf(
+                    "input#email" to email,
+                    "input#first_name" to firstName,
+                    "input#last_name" to lastName,
+                    "input#password" to password
+            ),
+            buttons = arrayListOf(
+                    "input#atlasCheckbox"
+            ),
+            submitBtn = "input#atlas-submit-btn"
+
+    )
+
+    override fun action(pageStatus: PageStatus): Response {
+        form.submit(pageStatus.driver)
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            doc.selectFirst("h1.txt-center")?.text() == "Try MongoDB Atlas"
+    override fun isReady(pageStatus: PageStatus): Boolean {
+        return form.selectors.all { pageStatus.driver.findFirstEl(it) != null }
+    }
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Sign Up for MongoDB Atlas | Cloud MongoDB Hosting | MongoDB" &&
+                    pageStatus.doc?.selectFirst("h1.txt-center")?.text() == "Try MongoDB Atlas"
+}
+
+class WelcomePage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.title == "Welcome | Cloud: MongoDB Cloud" &&
+                pageStatus.url.startsWith("https://cloud.mongodb.com/user#/atlas/register/welcomeBot")
+    }
 }
 
 class BuildClusterPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = true
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".path-selector-door-footer-starter .path-selector-door-submit")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".path-selector-door-footer-starter .path-selector-door-submit")
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") &&
-                doc.selectFirst("span.path-selector-header-title")?.text() == "MONGODB ATLAS" &&
-                doc.selectFirst("span.path-selector-header-main-text")?.text() == "Choose a path. Adjust anytime."
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.driver.findFirstEl(".path-selector-door-footer-starter .path-selector-door-submit") != null
+
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url.startsWith("https://cloud.mongodb.com/v2/") &&
+                pageStatus.url.endsWith("#clusters/pathSelector") &&
+                pageStatus.title == "Choose a Path | Atlas: MongoDB Atlas" &&
+                pageStatus.doc?.selectFirst("span.path-selector-header-title")?.text() == "MONGODB ATLAS" &&
+                pageStatus.doc.selectFirst("span.path-selector-header-main-text")?.text() == "Choose a path. Adjust anytime."
     }
 }
 
@@ -275,17 +304,16 @@ class CreateClusterTypePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl("button[type=\"button\"]:containsOwn(Create Cluster)")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl("button[type=\"button\"]:containsOwn(Create Cluster)")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") &&
-                doc.selectFirst("header.editor-layout-header h1 strong")?.text() == "Create a Starter Cluster" &&
-                doc.selectFirst("button[type=\"button\"]:containsOwn(Create Cluster)") != null
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.doc?.selectFirst("header.editor-layout-header h1 strong")?.text() == "Create a Starter Cluster" &&
+                pageStatus.doc.selectFirst("button[type=\"button\"]:containsOwn(Create Cluster)") != null
     }
 }
 
@@ -294,15 +322,15 @@ class ClusterCreatingPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".left-nav a:containsOwn(Database Access)") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Database Access)")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") &&
-                doc.selectFirst(".nds-sparkline-empty-header")?.text() == "Your cluster is being created"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.doc?.selectFirst(".nds-sparkline-empty-header")?.text() == "Your cluster is being created"
     }
 }
 
@@ -311,18 +339,18 @@ class CreatingDatabaseUserPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("database/users") &&
-                doc.selectFirst(".empty-view-text-is-heading")?.text() == "Create a database user" &&
-                doc.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
-                doc.selectFirst("button[name=\"deleteUser\"]") == null
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("database/users") &&
+                pageStatus.doc?.selectFirst(".empty-view-text-is-heading")?.text() == "Create a database user" &&
+                pageStatus.doc.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
+                pageStatus.doc.selectFirst("button[name=\"deleteUser\"]") == null
     }
 }
 
@@ -333,18 +361,19 @@ class AddNewUserPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(username, "input[name=\"user\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input[name=\"password\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("button[type=\"submit\"]:containsOwn(Add User)") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(username, "input[name=\"user\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(password, "input[name=\"password\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("button[type=\"submit\"]:containsOwn(Add User)")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("database/users") &&
-                doc.selectFirst(".nds-edit-modal-footer-checkbox-description")?.text() == "Save as temporary user" &&
-                doc.selectFirst("h3.view-modal-header-title")?.text() == "Add New User"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("database/users") == true &&
+                pageStatus.doc?.selectFirst(".nds-edit-modal-footer-checkbox-description")?.text() == "Save as temporary user" &&
+                pageStatus.doc.selectFirst("h3.view-modal-header-title")?.text() == "Add New User"
     }
 }
 
@@ -354,17 +383,17 @@ class CreatingDatabaseUserDonePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".left-nav a:containsOwn(Network Access)") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Network Access)") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("database/users") &&
-                doc.selectFirst(".empty-view-text-is-heading") == null &&
-                doc.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
-                doc.selectFirst("button[name=\"deleteUser\"]")?.text() == "Delete"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("database/users") == true &&
+                pageStatus.doc?.selectFirst(".empty-view-text-is-heading") == null &&
+                pageStatus.doc?.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
+                pageStatus.doc?.selectFirst("button[name=\"deleteUser\"]")?.text() == "Delete"
     }
 }
 
@@ -373,17 +402,17 @@ class NetworkAccessPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("network/whitelist") &&
-                doc.selectFirst("h1.section-header-title")?.text() == "Network Access" &&
-                doc.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add IP Address"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("network/whitelist") &&
+                pageStatus.doc?.selectFirst("h1.section-header-title")?.text() == "Network Access" &&
+                pageStatus.doc?.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add IP Address"
     }
 }
 
@@ -392,16 +421,16 @@ class NetworkAccessAddWhitelistPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl("button[name=\"allowAccessAnywhere\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("button[name=\"confirm\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl("button[name=\"allowAccessAnywhere\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("button[name=\"confirm\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("/network/whitelist/addToWhitelist") &&
-                doc.selectFirst("header.view-modal-header h3.view-modal-header-title")?.text() == "Add Whitelist Entry"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("/network/whitelist/addToWhitelist") &&
+                pageStatus.doc?.selectFirst("header.view-modal-header h3.view-modal-header-title")?.text() == "Add Whitelist Entry"
     }
 }
 
@@ -410,15 +439,15 @@ class NetworkAccessAddWhitelistDonePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.clickFirstEl(".left-nav a:containsOwn(Clusters)") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Clusters)") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean {
-        return currentUrl.startsWith("https://cloud.mongodb.com") && currentUrl.endsWith("network/whitelist") &&
-                doc.selectFirst("td.plain-table-cell")?.text() == "0.0.0.0/0 (includes your current IP address)"
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+                pageStatus.url.endsWith("network/whitelist") &&
+                pageStatus.doc?.selectFirst("td.plain-table-cell")?.text() == "0.0.0.0/0 (includes your current IP address)"
     }
 }
 
