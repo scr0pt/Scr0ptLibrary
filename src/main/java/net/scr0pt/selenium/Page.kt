@@ -240,6 +240,10 @@ sealed class GoogleResponse(msg: String? = null) : Response(msg) {
     class VERIFY_PHONE_NUMBER_DETECT(msg: String? = null) : GoogleResponse(msg)
 }
 
+sealed class FembedResponse(msg: String? = null) : Response(msg) {
+    class EMAIL_REGISTERED(msg: String? = null) : FembedResponse(msg)
+}
+
 
 class MyCountDown(val MaxTime: Long = 2 * 60 * 1000) {
     var watingTime = 0L

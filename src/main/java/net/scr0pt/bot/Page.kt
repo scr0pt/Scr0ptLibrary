@@ -193,9 +193,6 @@ sealed class HerokuPageResponse(msg: String? = null) : PageResponse(msg) {
 }
 
 
-//FembedPageResponse
-sealed class FembedPageResponse(msg: String? = null) : PageResponse(msg) {
-    class Email_Registered(msg: String? = null) : FembedPageResponse(msg)
-}
+
 
 

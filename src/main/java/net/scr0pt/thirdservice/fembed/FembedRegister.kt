@@ -1,20 +1,16 @@
 package net.scr0pt.thirdservice.fembed
 
-import net.scr0pt.bot.FembedPageResponse
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
+import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.bson.Document
 import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-import net.scr0pt.utils.webdriver.Browser
 import net.scr0pt.utils.webdriver.DriverManager
+import org.bson.Document
 import java.util.*
 
 /**
@@ -23,7 +19,7 @@ import java.util.*
  * Time: 9:36 PM
  */
 
- fun main() {
+fun main() {
     val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
     val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
 
@@ -45,13 +41,14 @@ import java.util.*
         val first = result?.name?.first ?: continue
         val last = result?.name?.last ?: continue
 
+        val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
         registerFembed(
                 "${first} $last", email,
                 "Bruce${System.currentTimeMillis()}",
                 gmailUsername,
                 gmailPassword,
                 collection,
-                Browser.chrome
+                driver
         )
     } while (true)
 }
@@ -61,64 +58,54 @@ class FembedRegisterPage(
         val email: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
 
-    override fun watingResult(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): PageResponse? {
-        if (doc.selectFirst(".notification.is-danger")?.text() == "This email is already registered with us, please use another one or try to reset password") {
-            return FembedPageResponse.Email_Registered()
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        if (pageStatus.doc?.selectFirst(".notification.is-danger")?.text() == "This email is already registered with us, please use another one or try to reset password") {
+            return FembedResponse.EMAIL_REGISTERED()
         }
 
-        return PageResponse.WAITING_FOR_RESULT()
+        return null
     }
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(name, "input#display_name") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(email, "input#email_register") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("button#register") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(name, "input#display_name") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(email, "input#email_register") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("button#register") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dash.fembed.com/auth/register") &&
-                    doc.selectFirst("#register_form .title")?.text() == "Free Register!"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url?.startsWith("https://dash.fembed.com/auth/register") &&
+                    pageStatus.doc?.selectFirst("#register_form .title")?.text() == "Free Register!"
 }
 
 class FembedThankYouForJoiningPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        return PageResponse.WAITING_FOR_RESULT()
-    }
-
-    override fun _detect(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dash.fembed.com/auth/register") &&
-                    doc.selectFirst("#register_done .title")?.text() == "Thank You for joining." &&
-                    doc.selectFirst(".notification.is-danger") == null &&
-                    doc.selectFirst("#register_form .title")?.text() != "Free Register!"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url?.startsWith("https://dash.fembed.com/auth/register") &&
+                    pageStatus.title == "Register - Fembed" &&
+                    pageStatus.doc?.selectFirst("#register_done .title")?.text() == "Thank You for joining." &&
+                    pageStatus.doc.selectFirst(".notification.is-danger") == null &&
+                    pageStatus.doc.selectFirst("#register_form .title")?.text() != "Free Register!"
 }
 
 class FembedActivatingSetPasswordPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(password, "input#password") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input#password2") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("button#verify") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(password, "input#password") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(password, "input#password2") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("button#verify") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): Boolean =
-            title == "Active my account - Fembed" &&
-                    doc.selectFirst(".container h3")?.text() == "Activating" &&
-                    doc.selectFirst(".container h4")?.text() == "Please set your password."
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Active my account - Fembed" &&
+                    pageStatus.url.startsWith("https://dash.fembed.com/auth/verify?") &&
+                    pageStatus.doc?.selectFirst(".container h3")?.text() == "Activating" &&
+                    pageStatus.doc.selectFirst(".container h4")?.text() == "Please set your password."
 }
 
 class FembedDashboardPage(
@@ -126,15 +113,12 @@ class FembedDashboardPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        return PageResponse.OK()
-    }
+    override fun action(pageStatus: PageStatus) = Response.OK()
 
-    override fun _detect(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): Boolean =
-            title == "Dashboard - Fembed" &&
-                    currentUrl.startsWith("https://dash.fembed.com") &&
-                    doc.selectFirst(".container h1.title")?.text() == "Dashboard"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Dashboard - Fembed" &&
+                    pageStatus.url == "https://dash.fembed.com" &&
+                    pageStatus.doc?.selectFirst(".container h1.title")?.text() == "Dashboard"
 }
 
 
@@ -142,19 +126,13 @@ class FembedWellcomeBackPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        return PageResponse.WAITING_FOR_RESULT()
-    }
-
-    override fun _detect(doc: org.jsoup.nodes.Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dash.fembed.com/auth/login") &&
-                    title == "Please login - Fembed" &&
-                    doc.selectFirst(".container .title")?.text() == "Welcome Back!"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url?.startsWith("https://dash.fembed.com/auth/login") &&
+                    pageStatus.title == "Please login - Fembed" &&
+                    pageStatus.doc?.selectFirst(".container .title")?.text() == "Welcome Back!"
 }
 
- fun registerFembed(
+fun registerFembed(
         name: String,
         email: String,
         password: String,
@@ -200,7 +178,7 @@ class FembedWellcomeBackPage(
 
         run { pageResponse ->
 
-            if (pageResponse is FembedPageResponse.Email_Registered) {
+            if (pageResponse is FembedResponse.EMAIL_REGISTERED) {
                 collection.insertOne(
                         Document("email", email).append("created_at", Date()).append("updated_at", Date())
                 )
