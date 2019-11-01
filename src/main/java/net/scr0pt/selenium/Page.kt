@@ -2,6 +2,7 @@ package net.scr0pt.selenium
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
 import java.text.SimpleDateFormat
@@ -56,6 +57,8 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
     var pageResponse: Response = Response.INITIAL()
     var isFinish = false
 
+    var gmail: Gmail? = null
+
     fun addPage(page: Page) {
         this.pageList.add(page)
     }
@@ -69,6 +72,8 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         onFinish?.let {
             this.onFinish = onFinish
         }
+        this.gmail?.logout()
+
 
         if (this.pageList.isEmpty()) {
             println("Page list is empty")

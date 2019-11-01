@@ -93,18 +93,20 @@ class Gmail(
             messages.addAll(it)
         }
         for (message in messages) {
-            if (list.size >= 50) break
             val mail = message.toMail()
             list.add(mail)
         }
+        list.sortByDescending { it.receivedDate }
         return list
     }
 
     fun Message.toMail(): Mail {
         val from = this.from?.first()?.toString()?.substringAfter("<")?.substringBefore(">")
-        val receivedDate = this.receivedDate.time
         val mail = Mail(from, emailAddress, this.subject)
-        mail.id = receivedDate
+        mail.receivedDate = this.receivedDate.time
+        mail.sentDate = this.sentDate.time
+        this.messageNumber
+        mail.id = mail.receivedDate
         return mail
     }
 

@@ -3,6 +3,8 @@ package net.scr0pt.utils.tempmail.models
 import org.jsoup.nodes.Element
 
 class Mail(var from: String?, var to: String?, var subject: String? = null, var content: String? = null) {
+    var sentDate: Long = -1
+    var receivedDate: Long = -1
     var id: Long? = null
     var contentDocumented: Element? = null
         set(value) {

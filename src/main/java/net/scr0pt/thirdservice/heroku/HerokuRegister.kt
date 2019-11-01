@@ -162,14 +162,14 @@ class HerokuRegister {
 
     private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         with(robotManager) {
-            //            val baseX = 1170
-            val baseX = 900
-//            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
-            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
-//            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
-            val newCapthchaBtn = Pair<Int, Int>(595, 580)
-//            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
-            val multipleCorrect = Pair<Int, Int>(590, 590)
+                        val baseX = 1170
+//            val baseX = 900
+            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
+//            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
+            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
+//            val newCapthchaBtn = Pair<Int, Int>(595, 580)
+            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
+//            val multipleCorrect = Pair<Int, Int>(590, 590)
             val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
             val registerTime = System.currentTimeMillis()
             println("doooo 1")

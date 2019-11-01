@@ -60,7 +60,6 @@ fun processRegister(collection: MongoCollection<org.bson.Document>) {
                     email = email,
                     firstName = first,
                     lastName = last,
-                    driver = Browser.chrome,
                     collection = collection
             )
         }
@@ -127,11 +126,11 @@ fun registerMlab(
         email: String,
         firstName: String,
         lastName: String,
-        driver: DriverManager,
         collection: MongoCollection<org.bson.Document>
 ) {
     val password = "XinChaoVietnam"
 
+    val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
     PageManager(driver,
             "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
     ).apply {
@@ -165,6 +164,7 @@ fun registerMlab(
             }
             println(pageResponse)
             driver.close()
+            Thread.sleep(5 * 60000)
         }
     }
 }

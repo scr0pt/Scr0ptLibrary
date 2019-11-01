@@ -41,60 +41,79 @@ fun main() {
         val lastName = result?.name?.last ?: "Lee"
         val password = "XinChaoVietNam@2024"
         val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
-        PageManager(driverManager, "https://mega.nz/register").apply {
-            addPageList(
-                    arrayListOf(
-                            MegaRegisterPage(firstName, lastName, email, password) {
-                                println("MegaRegisterPage finish")
-                                collection.insertOne(
-                                        org.bson.Document("User_Name", email)
-                                                .append("Password", password).append("firstName", firstName)
-                                                .append("lastName", lastName).append("verify_email", false)
-                                )
+        val pageManager = PageManager(driverManager, "https://mega.nz/register")
+        pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
+            onEvent(
+                    MailReceiveEvent(
+                            key = "ona1sender",
+                            validator = { mail ->
+                                Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "welcome@mega.nz") &&
+                                        Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "MEGA Email Verification Required")
                             },
-                            MegaRegisterConfirmEmailPage(gmailUsername, gmailPassword, startTime) {
-                                println("MegaRegisterConfirmEmailPage finish")
-                                collection.updateOne(org.bson.Document("User_Name", email), Updates.set("verify_email", true))
-                            },
-                            MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
-                                    gmailUsername,
-                                    gmailPassword,
-                                    password,
-                                    startTime
-                            ) {
-                                println("MegaRegisterEnterPasswordAfterEnterConfirmLinkPage finish")
-                            },
-                            MegaGenerateKeyPage {
-                                println("MegaGenerateKeyPage finish")
-                            },
-                            MegaChooseAccTypePage {
-                                println("MegaChooseAccTypePage finish")
-                            },
-                            MegaDownloadAppPage {
-                                println("MegaDownloadAppPage finish")
-                            },
-                            MegaGetRecoverKeyPage() {
-                                println("MegaGetRecoverKeyPage finish")
-                                Thread.sleep(10000)
-                                getRecoverKey()?.let { recoverKey ->
-                                    //update recover key
-                                    println("recoverKey: $recoverKey")
-
+                            callback = { mails ->
+                                val mail = mails.firstOrNull {
+                                    it.receivedDate > pageManager.startTime
+                                            && it.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button") != null
                                 }
+                                mail?.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button")
+                                        ?.attr("href")?.let { confirmLink ->
+                                            pageManager.driver.get(confirmLink)
+                                            this.logout()
+                                        }
                             },
-                            MegaRecoverKeyDownloadedPage() {
-                                println("MegaRecoverKeyDownloadedPage finish")
-                            },
-                            MegaCloudDrivePage() {
-                                println("MegaCloudDrivePage finish")
-                            }
+                            once = false,
+                            new = true,
+                            fetchContent = true
                     )
             )
-            run { response ->
-                println(response)
-                this.driver.close()
-                Thread.sleep(5 * 60000)
-            }
+        }
+        pageManager.addPageList(
+                arrayListOf(
+                        MegaRegisterPage(firstName, lastName, email, password) {
+                            println("MegaRegisterPage finish")
+                            collection.insertOne(
+                                    org.bson.Document("User_Name", email)
+                                            .append("Password", password).append("firstName", firstName)
+                                            .append("lastName", lastName).append("verify_email", false)
+                            )
+                        },
+                        MegaRegisterConfirmEmailPage() {
+                            println("MegaRegisterConfirmEmailPage finish")
+                            collection.updateOne(org.bson.Document("User_Name", email), Updates.set("verify_email", true))
+                        },
+                        MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(password) {
+                            println("MegaRegisterEnterPasswordAfterEnterConfirmLinkPage finish")
+                        },
+                        MegaGenerateKeyPage {
+                            println("MegaGenerateKeyPage finish")
+                        },
+                        MegaChooseAccTypePage {
+                            println("MegaChooseAccTypePage finish")
+                        },
+                        MegaDownloadAppPage {
+                            println("MegaDownloadAppPage finish")
+                        },
+                        MegaGetRecoverKeyPage() {
+                            println("MegaGetRecoverKeyPage finish")
+                            Thread.sleep(10000)
+                            getRecoverKey()?.let { recoverKey ->
+                                //update recover key
+                                println("recoverKey: $recoverKey")
+
+                            }
+                        },
+                        MegaRecoverKeyDownloadedPage() {
+                            println("MegaRecoverKeyDownloadedPage finish")
+                        },
+                        MegaCloudDrivePage() {
+                            println("MegaCloudDrivePage finish")
+                        }
+                )
+        )
+        pageManager.run { response ->
+            println(response)
+            pageManager.driver.close()
+            Thread.sleep(5 * 60000)
         }
 
     } while (true)
@@ -141,49 +160,9 @@ class MegaRegisterPage(
 }
 
 class MegaRegisterConfirmEmailPage(
-        private val gmailUsername: String,
-        private val gmailPassword: String,
-        private val registerTime: Long,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = false
-    private var gmail: Gmail? = null
-
-    override fun action(pageStatus: PageStatus): Response {
-        if (gmail == null) {
-            gmail = Gmail(gmailUsername, gmailPassword).apply {
-                onEvent(
-                        MailReceiveEvent(
-                                key = "ona1sender",
-                                validator = { mail ->
-                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                            mail.from,
-                                            "welcome@mega.nz"
-                                    )
-                                },
-                                callback = { mails ->
-                                    val mail = mails.firstOrNull {
-                                        (it.id
-                                                ?: 0) > registerTime && it.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button") != null
-                                    }
-                                    val timestamp = mail?.id
-                                    println(timestamp)
-                                    mail?.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button")
-                                            ?.attr("href")?.let { confirmLink ->
-                                                pageStatus.driver.get(confirmLink)
-                                                this.logout()
-                                            }
-                                },
-                                once = false,
-                                new = true,
-                                fetchContent = true
-                        )
-                )
-            }
-        }
-
-        return Response.WAITING()
-    }
 
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/register" &&
@@ -195,10 +174,7 @@ class MegaRegisterConfirmEmailPage(
 
 
 class MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
-        val gmailUsername: String,
-        val gmailPassword: String,
         val password: String,
-        val registerTime: Long,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     var gmail: Gmail? = null
@@ -218,37 +194,6 @@ class MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
                 return Response.WAITING()
             }
         } else if (notiText == "Your confirmation link is no longer valid. Your account may already be activated or you may have cancelled your registration.") {
-            if (gmail == null) {
-                gmail = Gmail(gmailUsername, gmailPassword).apply {
-                    onEvent(
-                            MailReceiveEvent(
-                                    key = "ona1sender",
-                                    validator = { mail ->
-                                        Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                                mail.from,
-                                                "welcome@mega.nz"
-                                        )
-                                    },
-                                    callback = { mails ->
-                                        val mail = mails.firstOrNull {
-                                            (it.id
-                                                    ?: 0) > registerTime && it.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button") != null
-                                        }
-                                        val timestamp = mail?.id
-                                        println(timestamp)
-                                        mail?.contentDocumented?.selectFirst("a[href^='https://mega.nz/#confirm']#bottom-button")
-                                                ?.attr("href")?.let { confirmLink ->
-                                                    pageStatus.driver.get(confirmLink)
-                                                    this.logout()
-                                                }
-                                    },
-                                    once = false,
-                                    new = true,
-                                    fetchContent = true
-                            )
-                    )
-                }
-            }
             return Response.WAITING()
         }
         return Response.WAITING()
