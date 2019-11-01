@@ -12,25 +12,12 @@ import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.firefox.FirefoxProfile
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 
-fun main() {
-    val driver = Browser.firefox
-    val tab2 = driver.driver.switchTo().newWindow(WindowType.TAB)
-    driver.driver.switchTo().newWindow(WindowType.TAB)
-}
 
-class DriverManager(var driver: WebDriver) {
-    lateinit var driverType: BrowserType
-
-    init {
-        when (driver) {
-            is HtmlUnitDriver -> driverType = BrowserType.htmlUnitDriver
-            is FirefoxDriver -> driverType = BrowserType.firefox
-            is ChromeDriver -> driverType = BrowserType.chrome
-        }
-    }
-
-    constructor(driverType: BrowserType, driverHeadless: Boolean = false) : this(driverType.get(driverHeadless).driver)
-
+class DriverManager(
+        val driverType: BrowserType,
+        val driverHeadless: Boolean = false,
+        var driver: WebDriver = driverType.get(driverHeadless)
+) {
     companion object {
         @JvmStatic
         var INTERVAL_SLEEP_TIME = 1000L//1 second
@@ -39,18 +26,18 @@ class DriverManager(var driver: WebDriver) {
 
     enum class BrowserType {
         htmlUnitDriver {
-            override fun get(headless: Boolean ): DriverManager {
-                return DriverManager(object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
+            override fun get(headless: Boolean): WebDriver {
+                return object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
                     override fun modifyWebClient(client: WebClient): WebClient {
                         val webClient = super.modifyWebClient(client)
                         webClient.options.isCssEnabled = false
                         return webClient
                     }
-                })
+                }
             }
         },
         firefox {
-            override fun get(headless: Boolean): DriverManager {
+            override fun get(headless: Boolean): WebDriver {
                 if (GeckoUtils.getGeckoDriver()) {
                     System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
                 } else {
@@ -68,16 +55,16 @@ class DriverManager(var driver: WebDriver) {
                     }
                 }
 
-                return DriverManager(FirefoxDriver(firefoxOptions))
+                return FirefoxDriver(firefoxOptions)
             }
         },
         chrome {
-            override fun get(headless: Boolean ): DriverManager {
+            override fun get(headless: Boolean): WebDriver {
                 val options = ChromeOptions()
                 options.addArguments("--start-maximized", "--incognito", "--ignore-certificate-errors", "--disable-popup-blocking")
                 options.addArguments("disable-infobars") //disable chrome is being controlled by automated test software
 
-                if(headless){
+                if (headless) {
                     options.addArguments("--no-sandbox")
                     options.addArguments("--headless")
                     options.addArguments("disable-gpu")
@@ -88,11 +75,11 @@ class DriverManager(var driver: WebDriver) {
                             ChromeDriverUtils.CHROMEDRIVER_EXE_FILE
                     )
                 }
-                return DriverManager(ChromeDriver(options))
+                return ChromeDriver(options)
             }
         };
 
-        abstract fun get(headless: Boolean = false): DriverManager
+        abstract fun get(headless: Boolean = false): WebDriver
     }
 
     fun get(url: String) = driver.get(url)
@@ -106,9 +93,11 @@ class DriverManager(var driver: WebDriver) {
     }
 
 
-    fun renew(newDriver: Any) {
+    fun renew(newDriver: Any? = null) {
         this.close()
-        if (newDriver is WebDriver) {
+        if (newDriver == null) {
+            this.driver = this.driverType.get(this.driverHeadless)
+        } else if (newDriver is WebDriver) {
             this.driver = newDriver
         } else if (newDriver is DriverManager) {
             this.driver = newDriver.driver

@@ -3,16 +3,17 @@ package net.scr0pt.crawl.school
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
+import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.Document
 import org.openqa.selenium.By
-import net.scr0pt.utils.webdriver.Browser
+
 
 fun main() {
     val mongoClient = MongoClients.create(MongoConnection.eduConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("diploma-neu-2")
 
-    val firefox = Browser.firefox
+    val firefox =DriverManager(driverType = DriverManager.BrowserType.firefox)
     firefox.get("http://vanbang.neu.edu.vn/#mainResult")
     firefox.clickFirstEl(By.id("ctl00_phd_slices_VanBangListViewOnly__searchButton"))
     Thread.sleep(500)

@@ -23,9 +23,7 @@ fun main() {
     val collectionQlvbDiploma = serviceAccountDatabase.getCollection("qlvb-diploma")
 
 
-    val firefox = Browser.firefox
-    val jse = firefox as JavascriptExecutor
-
+    val firefox = DriverManager(driverType = DriverManager.BrowserType.firefox)
     firefox.get("https://qlvb.ctu.edu.vn/")
 
     var type = 9
@@ -38,7 +36,7 @@ fun main() {
             for (i in 1..(type / 10)) {
                 firefox.clickFirstEl(".v-filterselect-nextpage")
                 Thread.sleep(2000)
-                jse.executeScript("document.querySelectorAll('.v-filterselect-suggestmenu .gwt-MenuItem')[${type - 10}].click()")
+                firefox.executeScript("document.querySelectorAll('.v-filterselect-suggestmenu .gwt-MenuItem')[${type - 10}].click()")
             }
         } else typs?.get(type)?.click()
 

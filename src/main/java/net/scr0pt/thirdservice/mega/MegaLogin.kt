@@ -9,7 +9,7 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
 import java.util.*
@@ -37,7 +37,6 @@ import java.util.*
             loginMega(
                     it.getString("User_Name"),
                     it.getString("Password"),
-                    Browser.firefox,
                     collection
             )
     }
@@ -47,10 +46,10 @@ import java.util.*
  fun loginMega(
         email: String,
         password: String,
-        driver: DriverManager,
         collection: MongoCollection<org.bson.Document>
 ) {
-    PageManager(driver, "https://mega.nz/login").apply {
+     val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+    PageManager(driverManager, "https://mega.nz/login").apply {
         addPageList(arrayListOf<Page>(
                 MegaLoginPage(email, password) {
                     println("register success")

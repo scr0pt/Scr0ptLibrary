@@ -10,7 +10,7 @@ import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.types.ObjectId
 import org.jsoup.nodes.Document
@@ -45,7 +45,7 @@ fun main() {
             newEmail = newImail.fullAddress
         } while (newEmail == null || newImail.username == infinityMail.username || herokuCollection.countDocuments(org.bson.Document("email", newEmail)) > 0)
 
-        val driver = Browser.chrome
+        val driver  = DriverManager(driverType = DriverManager.BrowserType.chrome)
         val gmail = Gmail(gmailUsername, gmailPassword)
         val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT) {
             println("HerokuDashboardPage click first app")
@@ -145,7 +145,7 @@ fun main22() {
 
         println("$email ~ $password")
         var appName = randomAppname()
-        val driver = Browser.chrome
+        val driver = DriverManager(driverType = DriverManager.BrowserType.chrome)
         PageManager(driver, "https://id.heroku.com/login")
                 .apply {
                     addPageList(arrayListOf(

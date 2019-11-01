@@ -9,7 +9,7 @@ import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.Document
 import org.openqa.selenium.firefox.FirefoxDriver
@@ -33,8 +33,8 @@ import org.openqa.selenium.firefox.FirefoxDriver
             val recover_email: String? = it.getString("recover_email")
             val gmailPassword = it.getString("new_pass") ?: it.getString("pass")
 
-            val driver = Browser.firefox
-            loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = { allowLessSecureApps(driver, gmailUsername, collection) },
+            val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
+            loginGoogle(gmailUsername, gmailPassword, driverManager, onLoginSuccess = { allowLessSecureApps(driverManager, gmailUsername, collection) },
                     onLoginFail = { response ->
                         println(6)
                         if (response is GoogleResponse.PASSWORD_CHANGED || response is GoogleResponse.INCORECT_PASSWORD) {

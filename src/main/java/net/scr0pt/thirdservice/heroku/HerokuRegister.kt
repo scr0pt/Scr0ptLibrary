@@ -16,7 +16,7 @@ import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomUtils
 import org.jsoup.nodes.Document
@@ -251,7 +251,8 @@ class HerokuRegister {
     }
 
     private fun installDriver(acceptLink: String, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
-        val pageManager = PageManager(Browser.firefox, acceptLink)
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+        val pageManager = PageManager(driverManager, acceptLink)
         pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {
                     herokuCollection.updateOne(

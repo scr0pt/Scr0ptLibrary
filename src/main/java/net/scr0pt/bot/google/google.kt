@@ -5,12 +5,11 @@ import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
 import net.scr0pt.utils.webdriver.DriverElements
-import org.jsoup.nodes.Document
 
 
 class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
     override fun onWaiting(pageStatus: PageStatus): Response? {
-        if (pageStatus.doc?.selectFirst(".LXRPh .GQ8Pzc")?.text() == "Không thể tìm thấy Tài khoản Google của bạn") {
+        if (pageStatus.html.contains("Không thể tìm thấy Tài khoản Google của bạn")) {
             return GoogleResponse.NOT_FOUND_EMAIL()
         }
         return null
@@ -30,6 +29,8 @@ class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null)
         val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
         val headingSubtext = pageStatus.doc?.selectFirst("#headingSubtext")?.text() ?: return false
         val emailInput = pageStatus.doc?.selectFirst("input#identifierId[type=\"email\"]") ?: return false
+
+        if(pageStatus.title != "Đăng nhập - Tài khoản Google") return false
 
         when (headingText) {
             "Chào mừng" -> {

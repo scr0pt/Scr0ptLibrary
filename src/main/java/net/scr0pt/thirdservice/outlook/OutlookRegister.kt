@@ -12,7 +12,7 @@ import org.jsoup.nodes.Document
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.Select
 import net.scr0pt.utils.FakeProfile
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverManager
 import java.util.*
 
@@ -37,7 +37,8 @@ import java.util.*
 
     println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
 
-    PageManager(Browser.chrome, "https://signup.live.com/signup").apply {
+     val driverManager = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
+    PageManager(driverManager, "https://signup.live.com/signup").apply {
         addPageList(
                 arrayListOf(
                         OutlookRegisterEnterEmailPage(email) {

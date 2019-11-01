@@ -14,7 +14,7 @@ import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.SystemClipboard
-import net.scr0pt.utils.webdriver.Browser
+
 import net.scr0pt.utils.webdriver.DriverElements
 import net.scr0pt.utils.webdriver.DriverManager
 import java.awt.event.KeyEvent

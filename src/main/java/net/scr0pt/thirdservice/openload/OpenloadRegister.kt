@@ -11,7 +11,8 @@ import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-import net.scr0pt.utils.webdriver.Browser
+import net.scr0pt.utils.webdriver.DriverManager
+
 import org.bson.Document
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.util.*
@@ -42,7 +43,7 @@ import java.util.*
 
 
         val password = "XinChaoVietNam@1990"
-        val driver = Browser.firefox
+        val driver = DriverManager(driverType = DriverManager.BrowserType.firefox)
         driver.get("https://openload.co/register")
         driver.sendKeysFirstEl(email, "form#register-form input#registerform-email") ?: continue
         driver.sendKeysFirstEl(password, "form#register-form input#registerform-password") ?: continue
@@ -71,7 +72,7 @@ fun login(
 ) {//update cookie
 //    val driver = Browser.firefox
 
-    val driver = Browser.htmlUnitDriver
+    val driver = DriverManager(driverType = DriverManager.BrowserType.htmlUnitDriver)
 
     driver.get("https://openload.co/login")
     try {

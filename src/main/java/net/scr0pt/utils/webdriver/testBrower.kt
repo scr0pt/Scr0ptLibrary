@@ -51,7 +51,7 @@ fun main() {
 }
 
 fun main3() {
-    val driver = Browser.chrome
+    val driver =  DriverManager(driverType = DriverManager.BrowserType.chrome)
     driver.get("https://openload.co/register")
     Thread.sleep(5000)
     val iframe = driver.findFirstEl("iframe", filter = {it.getAttribute("src")?.startsWith("https://www.google.com/recaptcha/api2/anchor") == true})
@@ -61,7 +61,7 @@ fun main3() {
 
 
 fun main2() {
-    val firefox = Browser.firefox
+    val firefox = DriverManager(driverType = DriverManager.BrowserType.chrome)
     firefox.get("http://google.com")
     print(firefox.title)
 }
