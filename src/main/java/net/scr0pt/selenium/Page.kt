@@ -72,8 +72,6 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
         onFinish?.let {
             this.onFinish = onFinish
         }
-        this.gmail?.logout()
-
 
         if (this.pageList.isEmpty()) {
             println("Page list is empty")
@@ -95,6 +93,7 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
             } while (pageResponse is Response.WAITING)
 
             println("onRunFinish running with pageResponse $pageResponse ${(pageResponse.msg) ?: ""}")
+            this@PageManager.gmail?.logout()
             this@PageManager.onFinish?.invoke(pageResponse)
             isFinish = true
         }

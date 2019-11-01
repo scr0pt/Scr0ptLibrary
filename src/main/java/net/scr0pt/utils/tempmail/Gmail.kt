@@ -194,12 +194,15 @@ class Gmail(
      * to logout from the mail host server
      */
     @Throws(MessagingException::class)
-    fun logout() {
-        inboxFolder?.close(false)
-        spamFolder?.close(false)
+    override fun logout() {
+        super.logout()
+
+        spamFolder?.close(true)
+        spamFolder = null
+        inboxFolder?.close(true)
+        inboxFolder = null
         store?.close()
         store = null
         session = null
-        schedule?.cancel()
     }
 }

@@ -8,9 +8,10 @@ import java.util.*
 
 abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onInitFail: (() -> Unit)?) {
     val inbox = arrayListOf<Mail>()
+    var isLogout = false
     var timeUpdate = 5000L//milisecond
-    var schedule: Timer? = null
-    private var events = arrayListOf<MailReceiveEvent>()
+    private var schedule: Timer? = null
+    val events = arrayListOf<MailReceiveEvent>()
     fun onEvent(event: MailReceiveEvent) {
         events.removeIf { it.key == event.key }
         events.add(event)
@@ -44,17 +45,22 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
     abstract fun updateInbox(): List<Mail>?
 
     fun onUpdateInbox() {
+        if (isLogout) return
         println("onUpdateInbox")
-        updateInbox()?.takeIf { it.isNotEmpty() }?.let { newInboxs ->
-            val filter =
-                    newInboxs.filter { newInbox -> inbox.none { it.id != null && newInbox.id != null && it.id == newInbox.id } }//new inbox mails that not in old inbox mails
-            if (filter.isNotEmpty()) {
-                inbox.addAll(filter)
-                events.onReceiveMails(filter) { mail ->
-                    this.getMailContent(mail)
+        updateInbox()
+                ?.takeIf { !isLogout && it.isNotEmpty() }
+                ?.let { newInboxs ->
+                    val filter =
+                            newInboxs.filter { newInbox -> inbox.none { it.id != null && newInbox.id != null && it.id == newInbox.id } }//new inbox mails that not in old inbox mails
+                    if (filter.isNotEmpty()) {
+                        inbox.addAll(filter)
+                        if (events.isNotEmpty()) {
+                            events.onReceiveMails(filter) { mail ->
+                                this.getMailContent(mail)
+                            }
+                        }
+                    }
                 }
-            }
-        }
     }
 
     /*  fun onMailAdded(mails: List<Mail>) {
@@ -65,4 +71,10 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
       }*/
 
     abstract fun getMailContent(mail: Mail): Element?
+
+    open fun logout() {
+        isLogout = true
+        events.clear()
+        schedule?.cancel()
+    }
 }

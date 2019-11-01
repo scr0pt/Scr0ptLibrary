@@ -41,14 +41,12 @@ fun main() {
         val first = result?.name?.first ?: continue
         val last = result?.name?.last ?: continue
 
-        val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
         registerFembed(
                 "${first} $last", email,
                 "Bruce${System.currentTimeMillis()}",
                 gmailUsername,
                 gmailPassword,
-                collection,
-                driver
+                collection
         )
     } while (true)
 }
@@ -138,23 +136,49 @@ fun registerFembed(
         password: String,
         gmailUsername: String,
         gmailPassword: String,
-        collection: MongoCollection<Document>,
-        driver: DriverManager
+        collection: MongoCollection<Document>
 ) {
     println(email)
+    val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
     PageManager(driver,
             "https://dash.fembed.com/auth/register"
     ).apply {
+        gmail = Gmail(gmailUsername, gmailPassword).apply {
+            onEvent(
+                    MailReceiveEvent(
+                            key = "ona1sender",
+                            validator = { mail ->
+                                mail.receivedDate > startTime &&
+                                        Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                                mail.from,
+                                                "noreply@notify.fembed.com"
+                                        )
+                                Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                        mail.subject,
+                                        "Thank for registering an account with us"
+                                )
+                            },
+                            callback = callback@{ mails ->
+                                for (mail in mails) {
+                                    mail.contentDocumented?.selectFirst("a[href*='https://dash.fembed.com/auth/verify?token']")
+                                            ?.attr("href")?.let { confirmLink ->
+                                                println(confirmLink)
+                                                this.logout()
+                                                driver.get(confirmLink)
+                                                return@callback
+                                            }
+                                }
+                            },
+                            once = false,
+                            new = true,
+                            fetchContent = true
+                    )
+            )
+        }
+
         addPageList(arrayListOf(
                 FembedRegisterPage(name, email) {
                     println("FembedRegisterPage success")
-                    getVerifyEmail(
-                            startTime,
-                            gmailUsername,
-                            gmailPassword
-                    ) { confirmLink ->
-                        driver.get(confirmLink)
-                    }
                 },
                 FembedThankYouForJoiningPage {
                     println("FembedThankYouForJoiningPage success")
@@ -177,7 +201,6 @@ fun registerFembed(
         ))
 
         run { pageResponse ->
-
             if (pageResponse is FembedResponse.EMAIL_REGISTERED) {
                 collection.insertOne(
                         Document("email", email).append("created_at", Date()).append("updated_at", Date())
@@ -185,47 +208,10 @@ fun registerFembed(
             }
 
             driver.close()
-
-            Thread.sleep(5 * 60000)
+            Thread.sleep(6 * 60000)
             println(pageResponse)
         }
     }
 }
 
-fun getVerifyEmail(registerTime: Long, gmailUsername: String, gmailPassword: String, onSuccess: (String) -> Unit) {
-    Gmail(gmailUsername, gmailPassword).apply {
-        onEvent(
-                MailReceiveEvent(
-                        key = "ona1sender",
-                        validator = { mail ->
-                            (mail.id ?: 0) > registerTime &&
-                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                            mail.from,
-                                            "noreply@notify.fembed.com"
-                                    )
-                            Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                    mail.subject,
-                                    "Thank for registering an account with us"
-                            )
-                        },
-                        callback = callback@{ mails ->
-                            for (mail in mails) {
-                                mail.contentDocumented?.selectFirst("a[href*='https://dash.fembed.com/auth/verify?token']")
-                                        ?.attr("href")?.let { confirmLink ->
-                                            println(confirmLink)
-                                            this.logout()
-                                            onSuccess(confirmLink)
-                                            return@callback
-                                        }
-                            }
-                        },
-                        once = false,
-                        new = true,
-                        fetchContent = true
-                )
-        )
-    }
-
-
-}
 
