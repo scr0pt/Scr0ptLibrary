@@ -7,7 +7,10 @@ import net.scr0pt.selenium.Response
 import net.scr0pt.utils.webdriver.DriverElements
 
 
-class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    private val emailSelector = "input#identifierId[type=\"email\"]"
+    private val nextBtnSelector = "#identifierNext"
+
     override fun onWaiting(pageStatus: PageStatus): Response? {
         if (pageStatus.html.contains("Không thể tìm thấy Tài khoản Google của bạn")) {
             return GoogleResponse.NOT_FOUND_EMAIL()
@@ -15,22 +18,23 @@ class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null)
         return null
     }
 
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.contain(emailSelector) && pageStatus.contain(nextBtnSelector)
 
     override fun action(pageStatus: PageStatus): Response {
-        println(this::class.java.simpleName + ": action")
-        pageStatus.driver.sendKeysFirstEl(email, "input#identifierId[type=\"email\"]")
+        pageStatus.driver.sendKeysFirstEl(email, emailSelector)
                 ?: return Response.NOT_FOUND_ELEMENT()
-        pageStatus.driver.clickFirstEl("div#identifierNext[role=\"button\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl(nextBtnSelector) ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
 
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
-        val headingSubtext = pageStatus.doc?.selectFirst("#headingSubtext")?.text() ?: return false
-        val emailInput = pageStatus.doc?.selectFirst("input#identifierId[type=\"email\"]") ?: return false
+        val headingText = pageStatus.doc?.selectFirst(headingTextSelector)?.text() ?: return false
+        val headingSubtext = pageStatus.doc.selectFirst(headingSubtextSelector)?.text() ?: return false
+        val emailInput = pageStatus.doc.selectFirst(emailSelector) ?: return false
 
-        if(pageStatus.title != "Đăng nhập - Tài khoản Google") return false
+        if (pageStatus.title != "Đăng nhập - Tài khoản Google") return false
 
         when (headingText) {
             "Chào mừng" -> {
@@ -45,59 +49,50 @@ class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null)
 }
 
 class LoginEnterPasswordPage(val password: String, onPageFinish: (() -> Unit)? = null) :
-        Page(onPageFinish = onPageFinish) {
+        GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
-        val forgotPassword = pageStatus.doc?.selectFirst("#forgotPassword")?.text() ?: return false
-
-        return when {
-            forgotPassword != "Bạn quên mật khẩu?" -> false
-            headingText == "Chào mừng" || headingText == "Đăng nhập" -> true
-            else -> false
-        }
+        val headingText = pageStatus.doc?.selectFirst(headingTextSelector)?.text() ?: return false
+        val forgotPassword = pageStatus.doc.selectFirst("#forgotPassword")?.text() ?: return false
+        return (headingText == "Chào mừng" || headingText == "Đăng nhập")
+                && forgotPassword == "Bạn quên mật khẩu?"
+                && pageStatus.notContain(".dMArKd .ck6P8")
+                && pageStatus.contain("input[name=\"password\"]")
+                && pageStatus.contain("#passwordNext")
     }
 
-    override fun onWaiting(pageStatus: PageStatus): Response? {
-        if (pageStatus.doc?.selectFirst("[jsname=\"B34EJ\"]")?.text()?.startsWith("Mật khẩu không chính xác.") == true) {
-            return GoogleResponse.INCORECT_PASSWORD()//incorect password
-        } else if (pageStatus.doc?.selectFirst(".Xk3mYe.Jj6Lae .xgOPLd")?.text()?.startsWith("Mật khẩu của bạn đã thay đổi") == true
-        ) {
-            return GoogleResponse.PASSWORD_CHANGED()//incorect password
-        }
-        return null
+    override fun onWaiting(pageStatus: PageStatus) = when {
+        pageStatus.html.contains("Mật khẩu không chính xác.") ->
+            GoogleResponse.INCORECT_PASSWORD()
+        pageStatus.html.contains("Mật khẩu của bạn đã thay đổi") ->
+            GoogleResponse.PASSWORD_CHANGED()
+        else -> null
     }
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.sendKeysFirstEl(password, "input[name=\"password\"]") ?: return Response.NOT_FOUND_ELEMENT()
-        pageStatus.driver.clickFirstEl("div[role=\"button\"]#passwordNext") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("#passwordNext") ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
 
-    override fun isReady(pageStatus: PageStatus) =
-            pageStatus.driver.findFirstEl("input[name=\"password\"]") != null &&
-                    pageStatus.driver.findFirstEl("div[role=\"button\"]#passwordNext") != null
 }
 
-class WellcomeToNewAccount(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        val wellcomeTitle = pageStatus.doc?.selectFirst(".glT6eb h1")?.text() ?: return false
-        return wellcomeTitle == "Chào mừng bạn đến với tài khoản mới"
-    }
-
+class WellcomeToNewAccount(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.contain("h1:contains(Chào mừng bạn đến với tài khoản mới)")
+                    && pageStatus.title == "Tài khoản Google"
+                    && pageStatus.contain("input#accept")
 
     override fun action(pageStatus: PageStatus): Response {
-        pageStatus.driver.clickFirstEl("input#accept[name=\"accept\"]") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("input#accept") ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
-
-    override fun isReady(pageStatus: PageStatus) = pageStatus.driver.findFirstEl("input#accept[name=\"accept\"]") != null
 }
 
-class ChangePasswordFirstTime(val newPassword: String, onPageFinish: (() -> Unit)? = null) :
-        Page(onPageFinish = onPageFinish) {
+class ChangePasswordFirstTime(newPassword: String, onPageFinish: (() -> Unit)? = null) :
+        GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        val wellcomeTitle = pageStatus.doc?.selectFirst(".glT6eb h1")?.text() ?: return false
-        return wellcomeTitle.startsWith("Thay đổi mật khẩu cho ")
+        return pageStatus.contain("h1:contains(Thay đổi mật khẩu cho)")
+                && pageStatus.title == "Đổi Mật khẩu"
     }
 
     val form = DriverElements.Form(
@@ -114,39 +109,40 @@ class ChangePasswordFirstTime(val newPassword: String, onPageFinish: (() -> Unit
     }
 
     override fun isReady(pageStatus: PageStatus): Boolean {
-        return form.selectors.all { pageStatus.driver.findFirstEl(it) != null }
+        return form.selectors.all { pageStatus.contain(it) }
     }
 }
 
 class EnterPasswordFirstTimeChanged(val newPassword: String, onPageFinish: (() -> Unit)? = null) :
-        Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        val wellcomeTitle = pageStatus.doc?.selectFirst(".dMArKd .ck6P8")?.text() ?: return false
-        return wellcomeTitle.startsWith("Để tiếp tục, trước tiên, hãy xác minh danh tính của bạn")
-    }
+        GooglePage(onPageFinish = onPageFinish) {
+    private val passwordSelector = "input[name=\"password\"]"
+    private val nextBtnSelector = "#passwordNext"
 
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.html.contains("Để tiếp tục, trước tiên, hãy xác minh danh tính của bạn")
+                    && pageStatus.contain(passwordSelector)
+                    && pageStatus.contain(nextBtnSelector)
 
     override fun action(pageStatus: PageStatus): Response {
-        pageStatus.driver.sendKeysFirstEl(newPassword, "input[name=\"password\"]")
+        pageStatus.driver.sendKeysFirstEl(newPassword, passwordSelector)
                 ?: return Response.NOT_FOUND_ELEMENT()
-        pageStatus.driver.clickFirstEl("#passwordNext") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl(nextBtnSelector) ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
-
 }
 
 class ProtectYourAccount(
         val defaultAction: DEFAULT_ACTION = DEFAULT_ACTION.UPDATE,
         onPageFinish: (() -> Unit)? = null
-) : Page(onPageFinish = onPageFinish) {
+) : GooglePage(onPageFinish = onPageFinish) {
     enum class DEFAULT_ACTION {
         UPDATE, DONE
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.doc?.selectFirst("#headingText") == null &&
-                pageStatus.doc?.selectFirst("#headingSubtext") == null &&
-                pageStatus.doc?.selectFirst(".mkCr7e .N4lOwd")?.text() == "Bảo vệ tài khoản của bạn"
+        return pageStatus.notContain(headingTextSelector) &&
+                pageStatus.notContain(headingSubtextSelector) &&
+                pageStatus.equalsText(".mkCr7e .N4lOwd", "Bảo vệ tài khoản của bạn")
     }
 
 
@@ -168,11 +164,11 @@ class ProtectYourAccount(
 
 }
 
-class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.doc?.selectFirst("#headingText") == null &&
-                pageStatus.doc?.selectFirst("#headingSubtext") == null &&
-                pageStatus.doc?.selectFirst(".mkCr7e .N4lOwd")?.text() == "Xác minh số điện thoại của bạn"
+        return pageStatus.notContain(headingTextSelector) &&
+                pageStatus.notContain(headingSubtextSelector) &&
+                pageStatus.equalsText(".mkCr7e .N4lOwd", "Xác minh số điện thoại của bạn")
 
     }
 
@@ -184,12 +180,12 @@ class ProtectYourAccountUpdatePhone(onPageFinish: (() -> Unit)? = null) : Page(o
 
 }
 
-class ProtectYourAccountUpdateRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Unit)? = null) :
-        Page(onPageFinish = onPageFinish) {
+class ProtectYourAccountUpdateRecoverEmail(private val recoverEmail: String, onPageFinish: (() -> Unit)? = null) :
+        GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.doc?.selectFirst("#headingText") == null &&
-                pageStatus.doc?.selectFirst("#headingSubtext") == null &&
-                pageStatus.doc?.selectFirst(".mkCr7e .N4lOwd")?.text() == "Thêm email khôi phục"
+        return pageStatus.notContain(headingTextSelector) &&
+                pageStatus.notContain(headingSubtextSelector) &&
+                pageStatus.equalsText(".mkCr7e .N4lOwd", "Thêm email khôi phục")
     }
 
 
@@ -202,11 +198,11 @@ class ProtectYourAccountUpdateRecoverEmail(val recoverEmail: String, onPageFinis
 }
 
 class ProtectYourAccountUpdateRecoverEmailSuccess(onPageFinish: (() -> Unit)? = null) :
-        Page(onPageFinish = onPageFinish) {
+        GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.doc?.selectFirst("#headingText") == null &&
-                pageStatus.doc?.selectFirst("#headingSubtext") == null &&
-                pageStatus.doc?.selectFirst(".mkCr7e .N4lOwd")?.text() == "Thành công!"
+        return pageStatus.notContain(headingTextSelector) &&
+                pageStatus.notContain(headingSubtextSelector) &&
+                pageStatus.equalsText(".mkCr7e .N4lOwd", "Thành công!")
     }
 
 
@@ -216,28 +212,24 @@ class ProtectYourAccountUpdateRecoverEmailSuccess(onPageFinish: (() -> Unit)? = 
     }
 }
 
-class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+class GoogleSearch(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.doc?.selectFirst("#main input[type=\"search\"][name=\"q\"]") != null ||
-                pageStatus.doc?.selectFirst("#searchform input[autocomplete=\"off\"][name=\"q\"]") != null
+        return pageStatus.contain("#main input[type=\"search\"][name=\"q\"]") ||
+                pageStatus.contain("#searchform input[autocomplete=\"off\"][name=\"q\"]")
     }
 
     override fun isEndPage() = true
-
-    override fun action(pageStatus: PageStatus): Response {
-        return Response.WAITING()
-    }
 }
 
 //Veryfy it you action
-class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        return !pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
-                pageStatus.doc?.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
-                pageStatus.doc?.selectFirst("#headingSubtext")?.text() == "" &&
-                pageStatus.doc?.html().contains("Để bảo mật tài khoản của bạn, Google cần xác minh danh tính của bạn. Vui lòng đăng nhập lại để tiếp tục.") &&
-                pageStatus.doc?.selectFirst("#identifierNext")?.text() == "Tiếp theo"
-    }
+class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.title == "Đăng nhập - Tài khoản Google"
+                    && !pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
+                    pageStatus.equalsText(headingTextSelector, "Xác minh đó là bạn") &&
+                    pageStatus.equalsText(headingSubtextSelector, "") &&
+                    pageStatus.html.contains("Để bảo mật tài khoản của bạn, Google cần xác minh danh tính của bạn. Vui lòng đăng nhập lại để tiếp tục.") &&
+                    pageStatus.equalsText("#identifierNext", "Tiếp theo")
 
 
     override fun action(pageStatus: PageStatus): Response {
@@ -248,13 +240,12 @@ class VerifyItsYouAction(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish
 }
 
 //Veryfy phone number
-class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        return !pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
-                pageStatus.doc?.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
-                pageStatus.doc?.selectFirst("#headingSubtext")?.text() == "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm" &&
-                pageStatus.doc?.selectFirst("input#phoneNumberId") != null
-    }
+class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) =
+            !pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
+                    pageStatus.equalsText(headingTextSelector, "Xác minh đó là bạn") &&
+                    pageStatus.equalsText(headingSubtextSelector, "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm") &&
+                    pageStatus.contain("input#phoneNumberId")
 
     override fun action(pageStatus: PageStatus) = GoogleResponse.VERIFY_PHONE_NUMBER_DETECT()
 }
@@ -262,16 +253,14 @@ class VerifyItsYouPhoneNumber(onPageFinish: (() -> Unit)? = null) : Page(onPageF
 //Nhận mã xác minh tại ••• ••• •• 68
 //Gọi vào số điện thoại của bạn trong hồ sơ ••• ••• •• 68
 //Xác nhận số điện thoại khôi phục của bạn
-class VerifyItsYouPhoneNumberRecieveMessage(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+class VerifyItsYouPhoneNumberRecieveMessage(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
         return !pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình") &&
-                pageStatus.doc?.selectFirst("#headingText")?.text() == "Xác minh đó là bạn" &&
-                pageStatus.doc?.selectFirst("#headingSubtext")?.text() == "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm" &&
-                pageStatus.doc?.selectFirst("input#phoneNumberId") == null &&
+                pageStatus.equalsText(headingTextSelector, "Xác minh đó là bạn") &&
+                pageStatus.equalsText(headingSubtextSelector, "Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn. Tìm hiểu thêm") &&
+                pageStatus.notContain("input#phoneNumberId") &&
                 pageStatus.html.contains("Thử cách đăng nhập khác") &&
-                (pageStatus.html.contains("Nhận mã xác minh tại") ||
-                        pageStatus.html.contains("Gọi vào số điện thoại của bạn trong hồ sơ") ||
-                        pageStatus.html.contains("Xác nhận số điện thoại khôi phục của bạn"))
+                (pageStatus.html.contains("Nhận mã xác minh tại") || pageStatus.html.contains("Gọi vào số điện thoại của bạn trong hồ sơ") || pageStatus.html.contains("Xác nhận số điện thoại khôi phục của bạn"))
 
     }
 
@@ -279,51 +268,55 @@ class VerifyItsYouPhoneNumberRecieveMessage(onPageFinish: (() -> Unit)? = null) 
 
 }
 
-class VerifyItsYouRecoverEmail(val recoverEmail: String, onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
-        return "Xác minh đó là bạn" == headingText && pageStatus.doc?.html().contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình")
-    }
+class VerifyItsYouRecoverEmail(private val recoverEmail: String, onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    private val recoverEmailSelector = "input#knowledge-preregistered-email-response"
+    private val nextBtnSelector = "div[role=\"button\"] > span > span"
+
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.equalsText(headingTextSelector, "Xác minh đó là bạn")
+                    && pageStatus.html.contains("Xác nhận địa chỉ email khôi phục bạn đã thêm vào tài khoản của mình")
 
     override fun action(pageStatus: PageStatus): Response {
-        pageStatus.driver.sendKeysFirstEl(recoverEmail, "input#knowledge-preregistered-email-response")
+        pageStatus.driver.sendKeysFirstEl(recoverEmail, recoverEmailSelector)
                 ?: return Response.NOT_FOUND_ELEMENT()
-        pageStatus.driver.clickFirstEl("div[role=\"button\"] > span > span", equals = "Tiếp theo")
+        pageStatus.driver.clickFirstEl(nextBtnSelector, equals = "Tiếp theo")
                 ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
+
+    override fun isReady(pageStatus: PageStatus) =
+            pageStatus.contain(recoverEmailSelector) && pageStatus.contain(nextBtnSelector)
 }
 
-class VerifyItsYouPhoneDevice(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
-        return "Xác minh đó là bạn" == headingText
-                && pageStatus.doc?.html().contains("Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn.")
-                && pageStatus.doc?.html().contains("Bạn có điện thoại của mình chứ?")
-                && pageStatus.doc?.html().contains("Google sẽ gửi thông báo đến điện thoại của bạn để xác minh đó là bạn")
-                && pageStatus.doc?.html().contains("Thử cách khác")
-    }
+class VerifyItsYouPhoneDevice(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) =
+            "Xác minh đó là bạn" == pageStatus.doc?.selectFirst(headingTextSelector)?.text()
+                    && pageStatus.html.contains("Không nhận dạng được thiết bị này. Để bảo mật cho bạn, Google muốn đảm bảo rằng đó thực sự là bạn.")
+                    && pageStatus.html.contains("Bạn có điện thoại của mình chứ?")
+                    && pageStatus.html.contains("Google sẽ gửi thông báo đến điện thoại của bạn để xác minh đó là bạn")
+                    && pageStatus.html.contains("Thử cách khác")
 
     override fun isEndPage() = true
-
 }
 
-class AccountDisable(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        val headingText = pageStatus.doc?.selectFirst("#headingText")?.text() ?: return false
-        return "Đã vô hiệu hóa tài khoản" == headingText
-    }
+class AccountDisable(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) = pageStatus.equalsText(headingTextSelector, "Đã vô hiệu hóa tài khoản")
 
     override fun isEndPage() = true
 }
 
 
-class CantLoginForYou(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
-    override fun detect(pageStatus: PageStatus): Boolean {
-        return "Không thể đăng nhập cho bạn" == pageStatus.doc?.selectFirst("#headingText")?.text()
-                && pageStatus.html.contains("Google không thể xác minh tài khoản này thuộc về bạn.")
-                && pageStatus.html.contains("Hãy thử lại sau hoặc sử dụng Khôi phục tài khoản để được trợ giúp.")
-    }
+class CantLoginForYou(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.equalsText(headingTextSelector, "Không thể đăng nhập cho bạn")
+                    && pageStatus.html.contains("Google không thể xác minh tài khoản này thuộc về bạn.")
+                    && pageStatus.html.contains("Hãy thử lại sau hoặc sử dụng Khôi phục tài khoản để được trợ giúp.")
 
     override fun action(pageStatus: PageStatus) = GoogleResponse.CANT_LOGIN_FOR_YOU()
+}
+
+
+abstract class GooglePage(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish = onPageFinish) {
+    val headingTextSelector = "#headingText"
+    val headingSubtextSelector = "#headingSubtext"
 }

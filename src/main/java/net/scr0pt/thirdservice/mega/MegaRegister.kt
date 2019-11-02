@@ -40,7 +40,7 @@ fun main() {
         val firstName = result?.name?.first ?: "Bruce"
         val lastName = result?.name?.last ?: "Lee"
         val password = "XinChaoVietNam@2024"
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
         val pageManager = PageManager(driverManager, "https://mega.nz/register")
         pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
             onEvent(
@@ -120,8 +120,8 @@ fun main() {
 }
 
 class MegaRegisterPage(
-        val firstName: String,
-        val lastName: String,
+        firstName: String,
+        lastName: String,
         val email: String,
         val password: String,
         onPageFinish: (() -> Unit)? = null
@@ -149,27 +149,25 @@ class MegaRegisterPage(
     }
 
     override fun isReady(pageStatus: PageStatus): Boolean {
-        return form.selectors.all { pageStatus.driver.findFirstEl(it) != null }
+        return form.selectors.all { pageStatus.contain(it) }
     }
 
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/register" &&
                     pageStatus.title == "Register - MEGA" &&
-                    pageStatus.doc?.selectFirst("form#register_form .account.top-header")?.text() == "Create your free account" &&
-                    pageStatus.doc.selectFirst(".registration-page-success.special .reg-success-special .reg-success-txt") == null
+                    pageStatus.equalsText("form#register_form .account.top-header", "Create your free account") &&
+                    pageStatus.notContain(".registration-page-success.special .reg-success-special .reg-success-txt")
 }
 
 class MegaRegisterConfirmEmailPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/register" &&
                     pageStatus.title == "Register - MEGA" &&
-                    pageStatus.doc?.selectFirst("form#register_form .account.top-header")?.text() == "Create your free account" &&
-                    pageStatus.doc.selectFirst(".registration-page-success.special .reg-success-special .reg-success-txt")?.text()?.trim() == "Please check your email and click the link to confirm your account." &&
-                    pageStatus.doc.selectFirst(".reg-resend-button-bl .resend-email-button")?.text()?.trim() == "Resend"
+                    pageStatus.equalsText("form#register_form .account.top-header", "Create your free account") &&
+                    pageStatus.equalsText(".registration-page-success.special .reg-success-special .reg-success-txt", "Please check your email and click the link to confirm your account.") &&
+                    pageStatus.equalsText(".reg-resend-button-bl .resend-email-button", "Resend")
 }
 
 
@@ -201,11 +199,11 @@ class MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(
 
     override fun isReady(pageStatus: PageStatus) =
             pageStatus.doc?.selectFirst(".main-top-info-block .main-top-info-text")?.text()?.isNotEmpty() == true &&
-                    pageStatus.doc.selectFirst(".fm-dialog.warning-dialog-a .fm-notification-info h1") == null &&
+                    pageStatus.notContain(".fm-dialog.warning-dialog-a .fm-notification-info h1")  &&
                     pageStatus.title == "Login - MEGA"
 
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://mega.nz/confirm") == true
+            pageStatus.url.startsWith("https://mega.nz/confirm")
 
 }
 
@@ -246,33 +244,32 @@ class MegaGetRecoverKeyPage(
     }
 
     override fun isReady(pageStatus: PageStatus) =
-            pageStatus.driver.findFirstEl(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)") != null
+            pageStatus.contain(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)")
 
     override fun detect(pageStatus: PageStatus) =
-            pageStatus.url?.startsWith("https://mega.nz/fm") == true &&
-                    pageStatus.doc?.selectFirst(".post-register .step-main-question.post-register")?.text()?.trim() == "Here is your Recovery Key!" &&
-                    pageStatus.doc.selectFirst(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)")?.text()?.trim() == "Download key" &&
-                    !pageStatus.doc.selectFirst(".fm-dialog.recovery-key-dialog.backup-recover.improved-recovery-steps.post-register").hasClass(
-                            "hidden"
-                    )
+            pageStatus.url.startsWith("https://mega.nz/fm") &&
+                    pageStatus.equalsText(".post-register .step-main-question.post-register", "Here is your Recovery Key!") &&
+                    pageStatus.equalsText(".improved-recovery-steps .recover-paste-block .right-section > div:not(.hidden)", "Download key")
 }
 
 class MegaRecoverKeyDownloadedPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
+    private val closeDialogSelector = ".content-wrapper .default-green-button.close-dialog"
     override fun action(pageStatus: PageStatus): Response {
-        pageStatus.driver.clickFirstEl(".content-wrapper .default-green-button.close-dialog")
+        pageStatus.driver.clickFirstEl(closeDialogSelector)
         return Response.WAITING()
     }
 
     override fun isReady(pageStatus: PageStatus) =
-            pageStatus.driver.findFirstEl(".content-wrapper .default-green-button.close-dialog") != null
+            pageStatus.contain(".fm-dialog.recovery-key-info.improved-recovery-steps") &&
+                    pageStatus.notContain(".fm-dialog.recovery-key-info.improved-recovery-steps.hidden")
 
-    override fun detect(pageStatus: PageStatus) =
-            pageStatus.url?.startsWith("https://mega.nz/fm") == true &&
-                    pageStatus.doc?.selectFirst(".fm-dialog-header .fm-dialog-title.top-pad")?.text()?.trim() == "Account Recovery" &&
-                    pageStatus.doc.selectFirst(".content-wrapper .default-green-button.close-dialog")?.text()?.trim() == "OK" &&
-                    !pageStatus.doc.selectFirst(".fm-dialog.recovery-key-info.improved-recovery-steps").hasClass("hidden")
+    override fun detect(pageStatus: PageStatus): Boolean {
+        return pageStatus.url.startsWith("https://mega.nz/fm") &&
+                pageStatus.equalsText(".fm-dialog-header .fm-dialog-title.top-pad", "Account Recovery") &&
+                pageStatus.equalsText(closeDialogSelector, "OK")
+    }
 }
 
 class MegaDownloadAppPage(
@@ -289,8 +286,8 @@ class MegaDownloadAppPage(
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/downloadapp" &&
                     pageStatus.title == "Download our App" &&
-                    pageStatus.doc?.selectFirst(".download-app")?.text()?.trim() == "Download the MEGA App" &&
-                    pageStatus.doc.selectFirst(".button-wrappers .redirect-clouddrive-link")?.text() == "Skip this step"
+                    pageStatus.equalsText(".download-app", "Download the MEGA App") &&
+                    pageStatus.equalsText(".button-wrappers .redirect-clouddrive-link", "Skip this step")
 }
 
 class MegaCloudDrivePage(
@@ -301,8 +298,8 @@ class MegaCloudDrivePage(
     override fun detect(pageStatus: PageStatus) =
             pageStatus.url == "https://mega.nz/fm" &&
                     pageStatus.title == "MEGA" &&
-                    pageStatus.doc?.selectFirst(".cloud-drive .nw-fm-tree-header.cloud-drive input")?.attr("placeholder")?.trim() == "Cloud Drive" &&
-                    pageStatus.doc.selectFirst("#how-to-upload .dropdown.hint-info-block .dropdown.hint-header")?.text()?.trim() == "How to upload"
+                    pageStatus.contain(".cloud-drive .nw-fm-tree-header.cloud-drive input[placeholder=\"Cloud Drive\"]") &&
+                    pageStatus.equalsText("#how-to-upload .dropdown.hint-info-block .dropdown.hint-header", "How to upload")
 }
 
 

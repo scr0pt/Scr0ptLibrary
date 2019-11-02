@@ -1,17 +1,12 @@
 package net.scr0pt.thirdservice.mega
 
-import net.scr0pt.bot.MegaPageResponse
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-
 import net.scr0pt.utils.webdriver.DriverManager
-import org.jsoup.nodes.Document
 import java.util.*
 
 /**
@@ -20,7 +15,7 @@ import java.util.*
  * Time: 11:02 PM
  */
 
- fun main() {
+fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mega")
@@ -43,12 +38,12 @@ import java.util.*
 }
 
 
- fun loginMega(
+fun loginMega(
         email: String,
         password: String,
         collection: MongoCollection<org.bson.Document>
 ) {
-     val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox)
     PageManager(driverManager, "https://mega.nz/login").apply {
         addPageList(arrayListOf<Page>(
                 MegaLoginPage(email, password) {
@@ -64,7 +59,7 @@ import java.util.*
 
         run { pageResponse ->
             println(pageResponse)
-            if (pageResponse is PageResponse.OK) {
+            if (pageResponse is Response.OK) {
                 collection.updateOne(org.bson.Document("User_Name", email), Updates.set("last_time_login", Date()))
                 if (pageResponse.msg?.startsWith("Storage") == true) {
                     val storage = pageResponse.msg.removePrefix("Storage").trim()
@@ -74,7 +69,7 @@ import java.util.*
                             Updates.set("Storage", storage)
                     )
                 }
-            } else if (pageResponse is MegaPageResponse.NOT_VERIFY_EMAIL_YET) {
+            } else if (pageResponse is MegaResponse.NOT_VERIFY_EMAIL_YET) {
                 collection.updateOne(org.bson.Document("User_Name", email), Updates.set("verify_email", false))
             }
 
@@ -89,71 +84,61 @@ class MegaLoginPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? {
-        val notification = doc.selectFirst(".fm-notification-body .fm-notification-info h1")?.text()
-        if (notification == "Invalid email and/or password. Please try again.") return PageResponse.INCORECT_PASSWORD(
-                msg = notification
-        )
-        else if (notification == "This account has not completed the registration process yet. First check your email, click on the Activate Account button and reconfirm your chosen password.") return MegaPageResponse.NOT_VERIFY_EMAIL_YET(
-                msg = notification
-        )
-        return null
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        val notification = pageStatus.doc?.selectFirst(".fm-notification-body .fm-notification-info h1")?.text()
+        return if (notification == "Invalid email and/or password. Please try again.") MegaResponse.INCORECT_PASSWORD(msg = notification)
+        else if (notification == "This account has not completed the registration process yet. First check your email, click on the Activate Account button and reconfirm your chosen password.") MegaResponse.NOT_VERIFY_EMAIL_YET(msg = notification)
+        else null
     }
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(email, "input#login-name2") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input#login-password2") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl(".big-red-button.login-button") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(email, "input#login-name2") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(password, "input#login-password2") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl(".big-red-button.login-button") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://mega.nz/login")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://mega.nz/login")
 }
 
 class CloudDrivePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.get("https://mega.nz/fm/account")
-        return PageResponse.WAITING_FOR_RESULT()
+
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.get("https://mega.nz/fm/account")
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://mega.nz/fm") &&
-                    doc.selectFirst(".nw-fm-tree-header.cloud-drive input[placeholder=\"Cloud Drive\"]") != null
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://mega.nz/fm") &&
+                    pageStatus.contain(".nw-fm-tree-header.cloud-drive input[placeholder=\"Cloud Drive\"]")
 
 }
 
 class AccountPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    val quotaSelector = ".dashboard-container .fm-account-blocks.storage .account.chart-block .account.chart.data"
+    private val quotaSelector = ".dashboard-container .fm-account-blocks.storage .account.chart-block .account.chart.data"
     override fun isEndPage() = true
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        val quota =
-                driver.doc?.selectFirst(quotaSelector)
-                        ?.text()
+    override fun action(pageStatus: PageStatus): Response {
 
-        if (quota != null) {
-            return PageResponse.OK(msg = quota)
-        } else return PageResponse.WAITING_FOR_RESULT()
+        val quota = pageStatus.doc?.selectFirst(quotaSelector)?.text()
+        return if (quota != null) {
+            Response.OK(msg = quota)
+        } else Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://mega.nz/fm/account") &&
-                    doc.selectFirst(".settings-banner .first-block .title-txt")?.text() == "Overall Usage:" &&
-                    (doc.selectFirst(quotaSelector)?.text()?.isNotEmpty() == true) &&
-                    (doc.selectFirst(quotaSelector)?.text() != "Storage 2.93 GB / 15 GB") &&
-                    doc.selectFirst(".fm-account-profile.fm-account-sections .cancel-account-block .settings-left-block") != null &&
-                    doc.selectFirst(".fm-account-profile.fm-account-sections .cancel-account-block .cancel-account")?.text() == "Cancel Account"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://mega.nz/fm/account") &&
+                    pageStatus.equalsText(".settings-banner .first-block .title-txt", "Overall Usage:") &&
+                    (pageStatus.doc?.selectFirst(quotaSelector)?.text()?.isNotEmpty() == true) &&
+                    !pageStatus.equalsText(quotaSelector, "Storage 2.93 GB / 15 GB") &&
+                    pageStatus.contain(".fm-account-profile.fm-account-sections .cancel-account-block .settings-left-block") &&
+                    pageStatus.equalsText(".fm-account-profile.fm-account-sections .cancel-account-block .cancel-account", "Cancel Account")
 
 }

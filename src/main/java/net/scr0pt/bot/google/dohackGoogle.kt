@@ -1,6 +1,5 @@
 package net.scr0pt.bot.google
 
-import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.Response
 import com.mongodb.client.MongoClients
@@ -12,17 +11,16 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
 
 import net.scr0pt.utils.webdriver.DriverManager
-import org.jsoup.select.Selector.selectFirst
 
 
-fun main() {
+fun main(args: Array<String>) {
     DoHackGoogle().run()
 }
 
 
 class DoHackGoogle() {
-    val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
-    val mongoClient = MongoClients.create(MongoConnection.eduConnection)
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
+    val mongoClient = MongoClients.create(MongoConnection.eduConnection!!)
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
 

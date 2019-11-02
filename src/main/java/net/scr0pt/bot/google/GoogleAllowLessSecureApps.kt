@@ -3,8 +3,6 @@ package net.scr0pt.bot.google
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
-import net.scr0pt.bot.PageResponse
-import net.scr0pt.selenium.Response
 import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.thirdservice.mlab.loginGoogle
@@ -12,7 +10,6 @@ import net.scr0pt.thirdservice.mongodb.MongoConnection
 
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.Document
-import org.openqa.selenium.firefox.FirefoxDriver
 
 /**
  * Created by Long
@@ -33,7 +30,7 @@ import org.openqa.selenium.firefox.FirefoxDriver
             val recover_email: String? = it.getString("recover_email")
             val gmailPassword = it.getString("new_pass") ?: it.getString("pass")
 
-            val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox, driverHeadless = true)
+            val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
             loginGoogle(gmailUsername, gmailPassword, driverManager, onLoginSuccess = { allowLessSecureApps(driverManager, gmailUsername, collection) },
                     onLoginFail = { response ->
                         println(6)

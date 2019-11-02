@@ -6,12 +6,11 @@ import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
 import java.util.*
 
 
 fun main() {
-    val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox)
     PageManager(driverManager, "https://www.google.com").apply {
         addPageList(arrayListOf(
                 GoogleSearch().apply {
@@ -50,7 +49,6 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
     val INTERVAL_SLEEP_TIME = 1000L//1 second
     val MAX_SLEEP_TIME = 120000L//2 min
     val pageList = arrayListOf<Page>()
-    var sleepCounting = 0
     var generalWatingResult: ((pageStatus: PageStatus) -> Response)? = null
     var onFinish: ((response: Response) -> Unit)? = null
     var isSuccess: Boolean = false
@@ -101,14 +99,15 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
 
     val nonePageDetectCountDown = MyCountDown()
     private fun onWaiting(): Response {
-        val now = LocalDateTime.now()
-        println("waiting ${sleepCounting++} ${now.hour}:${now.minute}:${now.second}")
         var pageStatus = PageStatus(driver)
 
         //is go to next page
         val listOfpageDetect = pageList.filter { it.parentDetect(pageStatus) }
-        if (listOfpageDetect.size != 1) {
-            println("listOfpageDetect: ${listOfpageDetect.size} | title: ${pageStatus.title} | url: ${pageStatus.url}")
+        val size = listOfpageDetect.size
+        if (size != 1) {
+            var pagesString = ""
+            listOfpageDetect.forEach { pagesString += it.TAG + ", " }
+            println("listOfpageDetect: $size | ${pagesString.removeSuffix(", ").trim()}\n| title: ${pageStatus.title} | url: ${pageStatus.url}")
         }
 
         if (listOfpageDetect.isEmpty()) {
@@ -164,10 +163,24 @@ class PageStatus(val driver: DriverManager) {
     val title: String = driver.title
     val url: String = driver.url
     val html: String = driver.html
+
+    fun contain(selector: String, text: String? = null): Boolean =
+            if (text == null) {
+                doc?.selectFirst(selector) != null
+            } else {
+                doc?.select(selector)?.firstOrNull { it.text().trim().contains(text) } != null
+            }
+
+    fun equalsText(selector: String, text: String): Boolean =
+            doc?.select(selector)?.firstOrNull { it.text().trim() == text.trim() } != null
+
+    fun notContain(selector: String): Boolean = doc?.selectFirst(selector) == null
 }
 
 abstract class Page(val onPageFinish: (() -> Unit)? = null) {
-    val TAG = this::class.java.simpleName
+    val TAG: String = this::class.java.simpleName
+    var onPageDetect: (() -> Unit)? = null
+    var onPageDetectOnce: (() -> Unit)? = null
     fun log(msg: String) {
         println("$TAG [${SimpleDateFormat("HH:mm:ss").format(Date())}]: $msg")
     }
@@ -197,6 +210,13 @@ abstract class Page(val onPageFinish: (() -> Unit)? = null) {
             if (detectTime == null) {
                 detectTime = System.currentTimeMillis()
             }
+
+            onPageDetectOnce?.let {
+                it()
+                onPageDetectOnce = null
+            }
+
+            onPageDetect?.invoke()
         }
         return res
     }
@@ -246,6 +266,16 @@ sealed class GoogleResponse(msg: String? = null) : Response(msg) {
 
 sealed class FembedResponse(msg: String? = null) : Response(msg) {
     class EMAIL_REGISTERED(msg: String? = null) : FembedResponse(msg)
+}
+
+sealed class HerokuResponse(msg: String? = null) : Response(msg) {
+    class COLLABORATOR_ADDED(msg: String? = null) : HerokuResponse(msg)
+}
+
+sealed class MegaResponse(msg: String? = null) : Response(msg) {
+    class NOT_VERIFY_EMAIL_YET(msg: String? = null) : MegaResponse(msg)
+    class CONFIRMATIOM_LINK_NO_LONGER_VALID(msg: String? = null) : MegaResponse(msg)
+    class INCORECT_PASSWORD(msg: String? = null) : MegaResponse(msg)
 }
 
 

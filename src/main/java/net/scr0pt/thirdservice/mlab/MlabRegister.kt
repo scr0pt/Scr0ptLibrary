@@ -130,7 +130,7 @@ fun registerMlab(
 ) {
     val password = "XinChaoVietnam"
 
-    val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
+    val driver = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = true)
     PageManager(driver,
             "https://www.mongodb.com/atlas-signup-from-mlab?utm_source=mlab.com&utm_medium=referral&utm_campaign=mlab%20signup&utm_content=blue%20sign%20up%20button"
     ).apply {
@@ -267,7 +267,7 @@ class TryMongoDBAtlasPage(
 
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.title == "Sign Up for MongoDB Atlas | Cloud MongoDB Hosting | MongoDB" &&
-                    pageStatus.doc?.selectFirst("h1.txt-center")?.text() == "Try MongoDB Atlas"
+                    pageStatus.equalsText("h1.txt-center", "Try MongoDB Atlas")
 }
 
 class WelcomePage(
@@ -294,15 +294,15 @@ class BuildClusterPage(
         return pageStatus.url.startsWith("https://cloud.mongodb.com/v2/") &&
                 pageStatus.url.endsWith("#clusters/pathSelector") &&
                 pageStatus.title == "Choose a Path | Atlas: MongoDB Atlas" &&
-                pageStatus.doc?.selectFirst("span.path-selector-header-title")?.text() == "MONGODB ATLAS" &&
-                pageStatus.doc.selectFirst("span.path-selector-header-main-text")?.text() == "Choose a path. Adjust anytime."
+                pageStatus.equalsText("span.path-selector-header-title", "MONGODB ATLAS") &&
+                pageStatus.equalsText("span.path-selector-header-main-text", "Choose a path. Adjust anytime.")
     }
 }
 
 class CreateClusterTypePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl("button[type=\"button\"]:containsOwn(Create Cluster)")
@@ -311,16 +311,16 @@ class CreateClusterTypePage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
-                pageStatus.doc?.selectFirst("header.editor-layout-header h1 strong")?.text() == "Create a Starter Cluster" &&
-                pageStatus.doc.selectFirst("button[type=\"button\"]:containsOwn(Create Cluster)") != null
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
+                pageStatus.equalsText("header.editor-layout-header h1 strong", "Create a Starter Cluster") &&
+                pageStatus.notContain("button[type=\"button\"]:containsOwn(Create Cluster)")
     }
 }
 
 class ClusterCreatingPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Database Access)")
@@ -329,15 +329,15 @@ class ClusterCreatingPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
-                pageStatus.doc?.selectFirst(".nds-sparkline-empty-header")?.text() == "Your cluster is being created"
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
+                pageStatus.equalsText(".nds-sparkline-empty-header", "Your cluster is being created")
     }
 }
 
 class CreatingDatabaseUserPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
@@ -346,11 +346,11 @@ class CreatingDatabaseUserPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("database/users") &&
-                pageStatus.doc?.selectFirst(".empty-view-text-is-heading")?.text() == "Create a database user" &&
-                pageStatus.doc.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
-                pageStatus.doc.selectFirst("button[name=\"deleteUser\"]") == null
+                pageStatus.equalsText(".empty-view-text-is-heading", "Create a database user" )&&
+                pageStatus.equalsText(".section-controls-is-end-justified .button-is-primary", "Add New User" )&&
+                pageStatus.notContain("button[name=\"deleteUser\"]")
     }
 }
 
@@ -359,7 +359,7 @@ class AddNewUserPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.sendKeysFirstEl(username, "input[name=\"user\"]") ?: return Response.NOT_FOUND_ELEMENT()
@@ -370,10 +370,10 @@ class AddNewUserPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("database/users") == true &&
-                pageStatus.doc?.selectFirst(".nds-edit-modal-footer-checkbox-description")?.text() == "Save as temporary user" &&
-                pageStatus.doc.selectFirst("h3.view-modal-header-title")?.text() == "Add New User"
+                pageStatus.equalsText(".nds-edit-modal-footer-checkbox-description", "Save as temporary user") &&
+                pageStatus.equalsText("h3.view-modal-header-title", "Add New User")
     }
 }
 
@@ -381,7 +381,7 @@ class AddNewUserPage(
 class CreatingDatabaseUserDonePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Network Access)") ?: return Response.NOT_FOUND_ELEMENT()
@@ -389,18 +389,18 @@ class CreatingDatabaseUserDonePage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("database/users") == true &&
-                pageStatus.doc?.selectFirst(".empty-view-text-is-heading") == null &&
-                pageStatus.doc?.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add New User" &&
-                pageStatus.doc?.selectFirst("button[name=\"deleteUser\"]")?.text() == "Delete"
+                pageStatus.notContain(".empty-view-text-is-heading") &&
+                pageStatus.equalsText(".section-controls-is-end-justified .button-is-primary","Add New User") &&
+                pageStatus.equalsText("button[name=\"deleteUser\"]", "Delete")
     }
 }
 
 class NetworkAccessPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".section-controls-is-end-justified .button-is-primary")
@@ -409,17 +409,17 @@ class NetworkAccessPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("network/whitelist") &&
-                pageStatus.doc?.selectFirst("h1.section-header-title")?.text() == "Network Access" &&
-                pageStatus.doc?.selectFirst(".section-controls-is-end-justified .button-is-primary")?.text() == "Add IP Address"
+                pageStatus.equalsText("h1.section-header-title", "Network Access" )&&
+                pageStatus.equalsText(".section-controls-is-end-justified .button-is-primary", "Add IP Address")
     }
 }
 
 class NetworkAccessAddWhitelistPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl("button[name=\"allowAccessAnywhere\"]") ?: return Response.NOT_FOUND_ELEMENT()
@@ -428,16 +428,16 @@ class NetworkAccessAddWhitelistPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("/network/whitelist/addToWhitelist") &&
-                pageStatus.doc?.selectFirst("header.view-modal-header h3.view-modal-header-title")?.text() == "Add Whitelist Entry"
+                pageStatus.equalsText("header.view-modal-header h3.view-modal-header-title", "Add Whitelist Entry")
     }
 }
 
 class NetworkAccessAddWhitelistDonePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+
 
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.clickFirstEl(".left-nav a:containsOwn(Clusters)") ?: return Response.NOT_FOUND_ELEMENT()
@@ -445,9 +445,9 @@ class NetworkAccessAddWhitelistDonePage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://cloud.mongodb.com") == true &&
+        return pageStatus.url.startsWith("https://cloud.mongodb.com") &&
                 pageStatus.url.endsWith("network/whitelist") &&
-                pageStatus.doc?.selectFirst("td.plain-table-cell")?.text() == "0.0.0.0/0 (includes your current IP address)"
+                pageStatus.equalsText("td.plain-table-cell", "0.0.0.0/0 (includes your current IP address)")
     }
 }
 

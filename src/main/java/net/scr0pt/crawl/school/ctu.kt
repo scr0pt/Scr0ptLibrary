@@ -10,10 +10,7 @@ import net.scr0pt.utils.webdriver.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.apache.http.client.methods.RequestBuilder
 import org.bson.Document
-import org.openqa.selenium.JavascriptExecutor
-import org.openqa.selenium.WebDriver
 import java.io.IOException
 
 
@@ -23,7 +20,7 @@ fun main() {
     val collectionQlvbDiploma = serviceAccountDatabase.getCollection("qlvb-diploma")
 
 
-    val firefox = DriverManager(driverType = DriverManager.BrowserType.firefox)
+    val firefox = DriverManager(driverType = DriverManager.BrowserType.Firefox)
     firefox.get("https://qlvb.ctu.edu.vn/")
 
     var type = 9

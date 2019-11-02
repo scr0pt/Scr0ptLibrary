@@ -181,16 +181,7 @@ sealed class PageResponse(val msg: String? = null) {
 
 
 
-//MegaPageResponse
-sealed class MegaPageResponse(msg: String? = null) : PageResponse(msg) {
-    class NOT_VERIFY_EMAIL_YET(msg: String? = null) : MegaPageResponse(msg)
-    class CONFIRMATIOM_LINK_NO_LONGER_VALID(msg: String? = null) : MegaPageResponse(msg)
-}
 
-//HerokuPageResponse
-sealed class HerokuPageResponse(msg: String? = null) : PageResponse(msg) {
-    class COLLABORATOR_ADDED(msg: String? = null) : HerokuPageResponse(msg)
-}
 
 
 

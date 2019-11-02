@@ -2,18 +2,17 @@ package net.scr0pt.thirdservice.heroku
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.model.Updates
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
+import net.scr0pt.selenium.Page
+import net.scr0pt.selenium.PageManager
+import net.scr0pt.selenium.PageStatus
+import net.scr0pt.selenium.Response
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.types.ObjectId
-import org.jsoup.nodes.Document
 
 
 fun randomAppname(prefix: String? = null): String {
@@ -45,85 +44,78 @@ fun main() {
             newEmail = newImail.fullAddress
         } while (newEmail == null || newImail.username == infinityMail.username || herokuCollection.countDocuments(org.bson.Document("email", newEmail)) > 0)
 
-        val driver  = DriverManager(driverType = DriverManager.BrowserType.chrome)
-        val gmail = Gmail(gmailUsername, gmailPassword)
-        val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT) {
-            println("HerokuDashboardPage click first app")
-        }
-        herokuDashboardPage.onPageDetect = {
+        val driver = DriverManager(driverType = DriverManager.BrowserType.Chrome)
+
+        val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT)
+        herokuDashboardPage.onPageDetectOnce = {
             herokuCollection.updateOne(
                     org.bson.Document("email", email),
                     Updates.set("cookies", driver.cookieStr)
             )
         }
-        PageManager(driver, "https://id.heroku.com/login").apply {
-            addPageList(
-                    arrayListOf(
-                            HerokuLoginPage(email, password) {
-                                println("HerokuLoginPage success")
-                            }, herokuDashboardPage
-                            ,
-                            HerokuAccountConfirmPasswordPage(password) {
-                                println("HerokuAccountConfirmPasswordPage success")
-                                installGmail(gmail, driver, this, startTime) { confirmLink ->
-                                    println("confirmLink: $confirmLink")
-                                    driver.get(confirmLink)
-                                    gmail.logout()
-                                    herokuDashboardPage.onPageDetect = {
-                                        this.success()
-                                    }
+        val pageManager = PageManager(driver, "https://id.heroku.com/login")
+        pageManager.gmail = Gmail(gmailUsername, gmailPassword)
+        pageManager.gmail?.onEvent(
+                MailReceiveEvent(
+                        key = "ona1sender",
+                        validator = { mail ->
+                            (mail.id ?: 0) > pageManager.startTime &&
+                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                            mail.from,
+                                            "noreply@heroku.com"
+                                    ) &&
+                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                            mail.subject,
+                                            "Confirm Heroku Account Email Change"
+                                    )
+                        },
+                        callback = { mails ->
+                            val mail =
+                                    mails.firstOrNull { it.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']") != null }
+                            val confirmLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']")?.attr("href")
+                            if (confirmLink != null) {
+                                println("confirmLink: $confirmLink")
+                                driver.get(confirmLink)
+                                pageManager.gmail?.logout()
+                                herokuDashboardPage.onPageDetect = {
+                                    pageManager.isSuccess = true
                                 }
-                            },
-                            HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)) {
-                                println("HerokuAccountPage success")
-                            },
-                            HerokuAccountConfirmPasswordDonePage() {
-                                println("HerokuAccountConfirmPasswordDonePage success")
                             }
-                    )
-            )
-            run {
-                if (it is PageResponse.OK) {
-                    herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
-                            Updates.set("original_email", email),
-                            Updates.set("email", newEmail)
-                    ))
-                }
-                println("Login Heroku response $it")
-                driver.close()
+                        },
+                        once = false,
+                        new = true,
+                        fetchContent = true
+                )
+        )
+
+        pageManager.addPageList(
+                arrayListOf(
+                        HerokuLoginPage(email, password) {
+                            println("HerokuLoginPage success")
+                        }, herokuDashboardPage
+                        ,
+                        HerokuAccountConfirmPasswordPage(password) {
+                            println("HerokuAccountConfirmPasswordPage success")
+                        },
+                        HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)) {
+                            println("HerokuAccountPage success")
+                        },
+                        HerokuAccountConfirmPasswordDonePage() {
+                            println("HerokuAccountConfirmPasswordDonePage success")
+                        }
+                )
+        )
+        pageManager.run {
+            if (it is Response.OK) {
+                herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
+                        Updates.set("original_email", email),
+                        Updates.set("email", newEmail)
+                ))
             }
+            println("Login Heroku response $it")
+            driver.close()
         }
     }
-}
-
-fun installGmail(gmail: Gmail, driver: DriverManager, pageManager: PageManager, startTime: Long, onSuccess: (String) -> Unit) {
-    gmail.onEvent(
-            MailReceiveEvent(
-                    key = "ona1sender",
-                    validator = { mail ->
-                        (mail.id ?: 0) > startTime &&
-                                Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                        mail.from,
-                                        "noreply@heroku.com"
-                                ) &&
-                                Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                        mail.subject,
-                                        "Confirm Heroku Account Email Change"
-                                )
-                    },
-                    callback = { mails ->
-                        val mail =
-                                mails.firstOrNull { it.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']") != null }
-                        val confirmLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']")?.attr("href")
-                        if (confirmLink != null) {
-                            onSuccess(confirmLink)
-                        }
-                    },
-                    once = false,
-                    new = true,
-                    fetchContent = true
-            )
-    )
 }
 
 
@@ -145,7 +137,7 @@ fun main22() {
 
         println("$email ~ $password")
         var appName = randomAppname()
-        val driver = DriverManager(driverType = DriverManager.BrowserType.chrome)
+        val driver = DriverManager(driverType = DriverManager.BrowserType.Chrome)
         PageManager(driver, "https://id.heroku.com/login")
                 .apply {
                     addPageList(arrayListOf(
@@ -158,7 +150,7 @@ fun main22() {
 
                     run { pageresponse ->
                         println(pageresponse)
-                        if (pageresponse is PageResponse.OK) {
+                        if (pageresponse is Response.OK) {
 
 //                            driver.get(driver.url + "/settings")
 //                            if (it.getString("appName").startsWith("bruce") == false) {
@@ -201,21 +193,17 @@ class HerokuLoginPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(email, "input#email") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(password, "input#password") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("button[value=\"Log In\"]") ?: return Response.NOT_FOUND_ELEMENT()
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-
-        driver.sendKeysFirstEl(email, "input#email") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input#password") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("button[value=\"Log In\"]") ?: return PageResponse.NOT_FOUND_ELEMENT()
-
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Heroku | Login" &&
-                    currentUrl.startsWith("https://id.heroku.com/login")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Heroku | Login" &&
+                    pageStatus.url.startsWith("https://id.heroku.com/login")
 }
 
 class HerokuDashboardPage(
@@ -227,35 +215,31 @@ class HerokuDashboardPage(
         CREATE_NEW_APP, CLICK_FIRST_APP, GO_TO_ACCOUNT, CREATE_NEW_APP_IF_NOT_APP
     }
 
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-
+    override fun action(pageStatus: PageStatus): Response {
         when (action) {
-            HerokuDashboardAction.CREATE_NEW_APP -> driver.get("https://dashboard.heroku.com/new-app")
+            HerokuDashboardAction.CREATE_NEW_APP -> pageStatus.driver.get("https://dashboard.heroku.com/new-app")
             HerokuDashboardAction.CLICK_FIRST_APP -> {
-                driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black")?.let {
+                pageStatus.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black")?.let {
                     val appName = it.text()
                     println("appName: $appName")
-                    driver.get("https://dashboard.heroku.com/apps/$appName")
-                    return PageResponse.OK()
+                    pageStatus.driver.get("https://dashboard.heroku.com/apps/$appName")
+                    return Response.OK()
                 }
             }
             HerokuDashboardAction.CREATE_NEW_APP_IF_NOT_APP -> {
-                if (driver.doc?.selectFirst(".apps-list-item .items-baseline .ember-view span.near-black") == null) {
-                    driver.get("https://dashboard.heroku.com/new-app")
+                if (pageStatus.notContain(".apps-list-item .items-baseline .ember-view span.near-black")) {
+                    pageStatus.driver.get("https://dashboard.heroku.com/new-app")
                 }
             }
-            HerokuDashboardAction.GO_TO_ACCOUNT -> driver.get("https://dashboard.heroku.com/account")
+            HerokuDashboardAction.GO_TO_ACCOUNT -> pageStatus.driver.get("https://dashboard.heroku.com/account")
         }
 
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Personal apps | Heroku" &&
-                    currentUrl.startsWith("https://dashboard.heroku.com/apps")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Personal apps | Heroku" &&
+                    pageStatus.url.startsWith("https://dashboard.heroku.com/apps")
 }
 
 class HerokuAccountPage(
@@ -268,66 +252,50 @@ class HerokuAccountPage(
     }
 
 
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-
+    override fun action(pageStatus: PageStatus): Response {
         when (action) {
             is HerokuAccountAction.CHANGE_EMAIL -> {
-                driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit button")
-                driver.sendKeysFirstEl(action.newEmail, "input#new-e-mail")
-                driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit .__hk-inline-edit-submit-button__")
+                pageStatus.driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit button")
+                pageStatus.driver.sendKeysFirstEl(action.newEmail, "input#new-e-mail")
+                pageStatus.driver.clickFirstEl(".profile.edit-first label[for=\"new-e-mail\"] ~ hk-inline-edit .__hk-inline-edit-submit-button__")
             }
         }
 
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Account | Heroku" &&
-                    currentUrl.startsWith("https://dashboard.heroku.com/account") &&
-                    doc.selectFirst(".modal-overlay .ember-modal-dialog .modal-box .modal-header")?.text() != "Update Profile" &&
-                    doc.selectFirst(".hk-message.hk-message--success .lh-copy") == null
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Account | Heroku" &&
+                    pageStatus.url.startsWith("https://dashboard.heroku.com/account") &&
+                    !pageStatus.equalsText(".modal-overlay .ember-modal-dialog .modal-box .modal-header", "Update Profile") &&
+                    pageStatus.notContain(".hk-message.hk-message--success .lh-copy")
 }
 
 class HerokuAccountConfirmPasswordPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(password, ".modal-overlay .modal-box .modal-content input[type=\"password\"]")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl(".modal-overlay .modal-box .modal-footer button[type=\"submit\"]")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(password, ".modal-overlay .modal-box .modal-content input[type=\"password\"]")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl(".modal-overlay .modal-box .modal-footer button[type=\"submit\"]")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Account | Heroku" &&
-                    currentUrl.startsWith("https://dashboard.heroku.com/account") &&
-                    doc.selectFirst(".modal-overlay .ember-modal-dialog .modal-box .modal-header")?.text() == "Update Profile" &&
-                    doc.selectFirst(".hk-message.hk-message--success .lh-copy") == null
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Account | Heroku" &&
+                    pageStatus.url.startsWith("https://dashboard.heroku.com/account") &&
+                    pageStatus.equalsText(".modal-overlay .ember-modal-dialog .modal-box .modal-header", "Update Profile") &&
+                    pageStatus.notContain(".hk-message.hk-message--success .lh-copy")
 }
 
 class HerokuAccountConfirmPasswordDonePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        return PageResponse.WAITING_FOR_RESULT()
-    }
-
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Account | Heroku" &&
-                    currentUrl.startsWith("https://dashboard.heroku.com/account") &&
-                    doc.selectFirst(".modal-overlay .ember-modal-dialog .modal-box .modal-header") == null &&
-                    doc.selectFirst(".hk-message.hk-message--success .lh-copy")?.text() == "A confirmation link has been sent to your new email address and you must click on the link to complete the address change. A notice has also been sent to your old email address."
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Account | Heroku" &&
+                    pageStatus.url.startsWith("https://dashboard.heroku.com/account") &&
+                    pageStatus.notContain(".modal-overlay .ember-modal-dialog .modal-box .modal-header") &&
+                    pageStatus.equalsText(".hk-message.hk-message--success .lh-copy", "A confirmation link has been sent to your new email address and you must click on the link to complete the address change. A notice has also been sent to your old email address.")
 }

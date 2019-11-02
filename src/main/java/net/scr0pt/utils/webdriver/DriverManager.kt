@@ -10,7 +10,6 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.firefox.FirefoxProfile
-import org.openqa.selenium.htmlunit.HtmlUnitDriver
 
 
 class DriverManager(
@@ -25,9 +24,9 @@ class DriverManager(
     }
 
     enum class BrowserType {
-        htmlUnitDriver {
+        HtmlUnitDriver {
             override fun get(headless: Boolean): WebDriver {
-                return object : HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
+                return object : org.openqa.selenium.htmlunit.HtmlUnitDriver(BrowserVersion.FIREFOX_60, true) {
                     override fun modifyWebClient(client: WebClient): WebClient {
                         val webClient = super.modifyWebClient(client)
                         webClient.options.isCssEnabled = false
@@ -36,7 +35,7 @@ class DriverManager(
                 }
             }
         },
-        firefox {
+        Firefox {
             override fun get(headless: Boolean): WebDriver {
                 if (GeckoUtils.getGeckoDriver()) {
                     System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
@@ -58,7 +57,7 @@ class DriverManager(
                 return FirefoxDriver(firefoxOptions)
             }
         },
-        chrome {
+        Chrome {
             override fun get(headless: Boolean): WebDriver {
                 val options = ChromeOptions()
                 options.addArguments("--start-maximized", "--incognito", "--ignore-certificate-errors", "--disable-popup-blocking")

@@ -58,7 +58,7 @@ class FembedRegisterPage(
 ) : Page(onPageFinish = onPageFinish) {
 
     override fun onWaiting(pageStatus: PageStatus): Response? {
-        if (pageStatus.doc?.selectFirst(".notification.is-danger")?.text() == "This email is already registered with us, please use another one or try to reset password") {
+        if (pageStatus.equalsText(".notification.is-danger", "This email is already registered with us, please use another one or try to reset password")) {
             return FembedResponse.EMAIL_REGISTERED()
         }
 
@@ -73,19 +73,19 @@ class FembedRegisterPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://dash.fembed.com/auth/register") &&
-                    pageStatus.doc?.selectFirst("#register_form .title")?.text() == "Free Register!"
+            pageStatus.url.startsWith("https://dash.fembed.com/auth/register") &&
+                    pageStatus.equalsText("#register_form .title","Free Register!")
 }
 
 class FembedThankYouForJoiningPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://dash.fembed.com/auth/register") &&
+            pageStatus.url.startsWith("https://dash.fembed.com/auth/register") &&
                     pageStatus.title == "Register - Fembed" &&
-                    pageStatus.doc?.selectFirst("#register_done .title")?.text() == "Thank You for joining." &&
-                    pageStatus.doc.selectFirst(".notification.is-danger") == null &&
-                    pageStatus.doc.selectFirst("#register_form .title")?.text() != "Free Register!"
+                    pageStatus.equalsText("#register_done .title", "Thank You for joining." )&&
+                    pageStatus.notContain(".notification.is-danger") &&
+                    !pageStatus.equalsText("#register_form .title", "Free Register!")
 }
 
 class FembedActivatingSetPasswordPage(
@@ -102,8 +102,8 @@ class FembedActivatingSetPasswordPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.title == "Active my account - Fembed" &&
                     pageStatus.url.startsWith("https://dash.fembed.com/auth/verify?") &&
-                    pageStatus.doc?.selectFirst(".container h3")?.text() == "Activating" &&
-                    pageStatus.doc.selectFirst(".container h4")?.text() == "Please set your password."
+                    pageStatus.equalsText(".container h3", "Activating") &&
+                    pageStatus.equalsText(".container h4", "Please set your password.")
 }
 
 class FembedDashboardPage(
@@ -116,7 +116,7 @@ class FembedDashboardPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.title == "Dashboard - Fembed" &&
                     pageStatus.url == "https://dash.fembed.com" &&
-                    pageStatus.doc?.selectFirst(".container h1.title")?.text() == "Dashboard"
+                    pageStatus.equalsText(".container h1.title", "Dashboard")
 }
 
 
@@ -125,9 +125,9 @@ class FembedWellcomeBackPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url?.startsWith("https://dash.fembed.com/auth/login") &&
+            pageStatus.url.startsWith("https://dash.fembed.com/auth/login") &&
                     pageStatus.title == "Please login - Fembed" &&
-                    pageStatus.doc?.selectFirst(".container .title")?.text() == "Welcome Back!"
+                    pageStatus.equalsText(".container .title", "Welcome Back!")
 }
 
 fun registerFembed(
@@ -139,7 +139,7 @@ fun registerFembed(
         collection: MongoCollection<Document>
 ) {
     println(email)
-    val driver = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
+    val driver = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = true)
     PageManager(driver,
             "https://dash.fembed.com/auth/register"
     ).apply {

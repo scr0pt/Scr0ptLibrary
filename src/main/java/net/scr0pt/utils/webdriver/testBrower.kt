@@ -1,14 +1,10 @@
 package net.scr0pt.utils.webdriver
 
 import java.io.*
-import org.openqa.selenium.*
 import org.openqa.selenium.chrome.*
-import org.openqa.selenium.remote.*
-import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global.quit
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.WebDriver
-import java.net.URL
 
 
 class GettingStartedWithService {
@@ -51,7 +47,7 @@ fun main() {
 }
 
 fun main3() {
-    val driver =  DriverManager(driverType = DriverManager.BrowserType.chrome)
+    val driver =  DriverManager(driverType = DriverManager.BrowserType.Chrome)
     driver.get("https://openload.co/register")
     Thread.sleep(5000)
     val iframe = driver.findFirstEl("iframe", filter = {it.getAttribute("src")?.startsWith("https://www.google.com/recaptcha/api2/anchor") == true})
@@ -61,7 +57,7 @@ fun main3() {
 
 
 fun main2() {
-    val firefox = DriverManager(driverType = DriverManager.BrowserType.chrome)
+    val firefox = DriverManager(driverType = DriverManager.BrowserType.Chrome)
     firefox.get("http://google.com")
     print(firefox.title)
 }

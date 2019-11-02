@@ -3,11 +3,8 @@ package net.scr0pt.thirdservice.heroku
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
-import net.scr0pt.bot.HerokuPageResponse
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
 import net.scr0pt.crawl.school.random
+import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.thirdservice.openload.bypassCaptcha
@@ -19,7 +16,6 @@ import net.scr0pt.utils.tempmail.models.Mail
 
 import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomUtils
-import org.jsoup.nodes.Document
 import java.awt.event.KeyEvent
 
 /**
@@ -162,7 +158,7 @@ class HerokuRegister {
 
     private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         with(robotManager) {
-                        val baseX = 1170
+            val baseX = 1170
 //            val baseX = 900
             val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
 //            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
@@ -187,13 +183,12 @@ class HerokuRegister {
 
                     val txt = printScreenText()
 
-                    if(txt == "Retry later!"){
+                    if (txt == "Retry later!") {
                         println("doooo 3.5")
                         closeWindow()
                         isDone = true
                         return@bypassCaptcha
-                    }
-                    else if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
+                    } else if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
                         println("doooo 4")
                         robot.keyPress(KeyEvent.VK_END)
                         robot.keyRelease(KeyEvent.VK_END)
@@ -233,7 +228,7 @@ class HerokuRegister {
                                     if (acceptLink != null) {
                                         println(acceptLink)
                                         gmail.logout()
-                                        installDriver(acceptLink, gmailUsername, gmailPassword, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
+                                        installDriver(acceptLink, email, appName, collaboratorEmailList, password, firstName, lastName, herokuCollection)
                                     }
                                 },
                                 once = false,
@@ -250,8 +245,8 @@ class HerokuRegister {
         }
     }
 
-    private fun installDriver(acceptLink: String, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.firefox)
+    private fun installDriver(acceptLink: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox)
         val pageManager = PageManager(driverManager, acceptLink)
         pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {
@@ -296,7 +291,7 @@ class HerokuRegister {
 
         pageManager.run { pageResponse ->
             println(pageResponse)
-            if (pageResponse is HerokuPageResponse.COLLABORATOR_ADDED) {
+            if (pageResponse is HerokuResponse.COLLABORATOR_ADDED) {
                 herokuCollection.updateOne(
                         org.bson.Document("email", email),
                         Updates.pushEach("collaborators", collaboratorEmailList)
@@ -363,7 +358,7 @@ class HerokuRegister {
                 ))
                 run { pageResponse ->
                     println(pageResponse)
-                    if (pageResponse is HerokuPageResponse.COLLABORATOR_ADDED) {
+                    if (pageResponse is HerokuResponse.COLLABORATOR_ADDED) {
                         herokuCollection.updateOne(
                                 org.bson.Document("email", email),
                                 Updates.pushEach("collaborators", collaboratorEmailList)
@@ -385,12 +380,9 @@ class HerokuRegisterPage(
         val email: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
+    override fun action(pageStatus: PageStatus): Response {
         try {
-            driver.executeScript(
+            pageStatus.driver.executeScript(
                     """
                     function randInt(max, min){
                         return Math.floor(Math.random() * (+max - +min + 1)) + +min;
@@ -410,13 +402,13 @@ class HerokuRegisterPage(
         } catch (e: Exception) {
         }
 
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            title == "Heroku | Sign up" &&
-                    currentUrl.startsWith("https://signup.heroku.com") &&
-                    doc.selectFirst(".header-main h2")?.text() == "Sign up for free and experience Heroku today"
+    override fun detect(pageStatus: PageStatus) =
+            pageStatus.title == "Heroku | Sign up" &&
+                    pageStatus.url.startsWith("https://signup.heroku.com") &&
+                    pageStatus.equalsText(".header-main h2", "Sign up for free and experience Heroku today")
 }
 
 class HerokuRegisterDoneWaitingCheckEmailPage(
@@ -425,10 +417,9 @@ class HerokuRegisterDoneWaitingCheckEmailPage(
         val registerTime: Long,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
     var gmail: Gmail? = null
 
-    override fun _action(driver: DriverManager): PageResponse {
+    override fun action(pageStatus: PageStatus): Response {
         if (gmail == null) {
             gmail =
                     Gmail(gmailUsername, gmailPassword).apply {
@@ -445,7 +436,7 @@ class HerokuRegisterDoneWaitingCheckEmailPage(
                                     val acceptLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")
                                     if (acceptLink != null) {
                                         this.logout()
-                                        driver.get(acceptLink)
+                                        pageStatus.driver.get(acceptLink)
                                     }
                                 },
                                 once = false,
@@ -455,56 +446,52 @@ class HerokuRegisterDoneWaitingCheckEmailPage(
                         )
                     }
         }
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.heroku.com/account") &&
-                    doc.selectFirst(".header-main h2") == null &&
-                    doc.selectFirst(".account-page .account-content h2")?.text() == "Almost there …" &&
-                    doc.selectFirst(".account-page .account-content h3")?.text()?.startsWith("Please check your email") == true
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.heroku.com/account") &&
+                    pageStatus.notContain(".header-main h2") &&
+                    pageStatus.equalsText(".account-page .account-content h2", "Almost there …") &&
+                    pageStatus.contain(".account-page .account-content h3", "Please check your email")
 }
 
 class HerokuSetYourPasswordPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        driver.sendKeysFirstEl(password, "input#user_password") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(password, "input#user_password_confirmation")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("form.signup-form.confirmation-form .input-group input[type=\"submit\"]")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(password, "input#user_password") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(password, "input#user_password_confirmation")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("form.signup-form.confirmation-form .input-group input[type=\"submit\"]")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.heroku.com/confirm") &&
-                    doc.selectFirst(".header-main h2") == null &&
-                    doc.selectFirst(".account-page .account-content h2")?.text() == "Set your password" &&
-                    doc.selectFirst(".account-page .account-content h3")?.text() == "Create your password and log in to your Heroku account."
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.heroku.com/confirm") &&
+                    pageStatus.notContain(".header-main h2") &&
+                    pageStatus.equalsText(".account-page .account-content h2", "Set your password") &&
+                    pageStatus.equalsText(".account-page .account-content h3", "Create your password and log in to your Heroku account.")
 }
 
 
 class HerokuWelcomePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        driver.clickFirstEl("form#final_login .center input[type=\"submit\"]")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.clickFirstEl("form#final_login .center input[type=\"submit\"]")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.heroku.com/account/accept/ok") &&
-                    doc.selectFirst(".header-main h2") == null &&
-                    doc.selectFirst(".account-page .account-content h2")?.text() == "Welcome to Heroku" &&
-                    doc.selectFirst(".account-page .account-content h3") == null &&
-                    doc.selectFirst("form#final_login .center input[type=\"submit\"]")?.attr("value") == "Click here to proceed"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.heroku.com/account/accept/ok") &&
+                    pageStatus.notContain(".header-main h2")  &&
+                    pageStatus.equalsText(".account-page .account-content h2", "Welcome to Heroku") &&
+                    pageStatus.notContain(".account-page .account-content h3")  &&
+                    pageStatus.doc?.selectFirst("form#final_login .center input[type=\"submit\"]")?.attr("value") == "Click here to proceed"
 }
 
 
@@ -512,32 +499,28 @@ class HerokuCreateNewAppPage(
         val appName: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        driver.sendKeysFirstEl(appName, "form.new-app-view .new-app-name input")
-                ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("form.new-app-view button.create-app-button") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(appName, "form.new-app-view .new-app-name input")
+                ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("form.new-app-view button.create-app-button") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dashboard.heroku.com/new-app")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://dashboard.heroku.com/new-app")
 }
 
 class HerokuDeployPagePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        driver.get(driver.url.substringBefore("/deploy") + "/access")
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.get(pageStatus.url.substringBefore("/deploy") + "/access")
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dashboard.heroku.com/apps/") &&
-                    currentUrl.contains("/deploy/heroku-git")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://dashboard.heroku.com/apps/") &&
+                    pageStatus.url.contains("/deploy/heroku-git")
 }
 
 
@@ -548,12 +531,8 @@ class HerokuAccessPage(
     data class AddingCollaboratorEmailStatus(val collaboratorEmail: String, var isAdded: Boolean = false)
 
     private val collaboratorEmailObjectList: List<AddingCollaboratorEmailStatus> = collaboratorEmailList.map { AddingCollaboratorEmailStatus(it) }
-
-    override fun isEndPage() = false
-
-    override fun watingResult(doc: Document, currentUrl: String, title: String): PageResponse? {
-
-        doc.select(".collaborator-list tr.collaborator-item")?.forEach {
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        pageStatus.doc?.select(".collaborator-list tr.collaborator-item")?.forEach {
             val txt = it.text().trim()
             val email = txt.split(" ")[0]
 //            val role = txt.split(" ")[1]
@@ -564,50 +543,45 @@ class HerokuAccessPage(
         }
 
         if (collaboratorEmailObjectList.firstOrNull { !it.isAdded } == null) {
-            return HerokuPageResponse.COLLABORATOR_ADDED()
+            return HerokuResponse.COLLABORATOR_ADDED()
         }
         return null
     }
 
-    override fun _action(driver: DriverManager): PageResponse {
-
+    override fun action(pageStatus: PageStatus): Response {
         collaboratorEmailObjectList.forEach {
             val collaboratorEmail = it.collaboratorEmail
-            driver.clickFirstEl("button.hk-button--secondary", equals = "Add collaborator")
-                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
-            driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
-                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
-            driver.clickFirstEl("button.hk-button--primary", equals = "Save changes")
-                    ?: return@_action PageResponse.NOT_FOUND_ELEMENT()
+            pageStatus.driver.clickFirstEl("button.hk-button--secondary", equals = "Add collaborator")
+                    ?: return@action Response.NOT_FOUND_ELEMENT()
+            pageStatus.driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
+                    ?: return@action Response.NOT_FOUND_ELEMENT()
+            pageStatus.driver.clickFirstEl("button.hk-button--primary", equals = "Save changes")
+                    ?: return@action Response.NOT_FOUND_ELEMENT()
             Thread.sleep(2000)
         }
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://dashboard.heroku.com/apps/") &&
-                    currentUrl.contains("/access")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://dashboard.heroku.com/apps/") &&
+                    pageStatus.url.contains("/access")
 }
 
 
 class GoogleGmailPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
-
-    override fun _action(driver: DriverManager): PageResponse {
-        val link =
-                driver.html.substringAfter("Thanks for signing up with Heroku! You must follow this link to activate your account: ")
-                        ?.substringBefore("Have fun")?.trim()
+    override fun action(pageStatus: PageStatus): Response {
+        val link = pageStatus.html.substringAfter("Thanks for signing up with Heroku! You must follow this link to activate your account: ")?.substringBefore("Have fun")?.trim()
         if (link.startsWith("https://id.heroku.com/account/accept/")) {
-            driver.get(link)
+            pageStatus.driver.get(link)
         }
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://mail.google.com/mail/") &&
-                    doc.html().contains("Thanks for signing up with Heroku! You must follow this link to activate your account") &&
-                    doc.html().contains("https://id.heroku.com/account/accept/") &&
-                    doc.html().contains("Have fun")
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://mail.google.com/mail/") &&
+                    pageStatus.html.contains("Thanks for signing up with Heroku! You must follow this link to activate your account") &&
+                    pageStatus.html.contains("https://id.heroku.com/account/accept/") &&
+                    pageStatus.html.contains("Have fun")
 }

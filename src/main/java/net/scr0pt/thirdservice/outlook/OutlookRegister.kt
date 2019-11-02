@@ -1,23 +1,22 @@
 package net.scr0pt.thirdservice.outlook
 
-import net.scr0pt.bot.Page
-import net.scr0pt.bot.PageManager
-import net.scr0pt.bot.PageResponse
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
+import net.scr0pt.selenium.Page
+import net.scr0pt.selenium.PageManager
+import net.scr0pt.selenium.PageStatus
+import net.scr0pt.selenium.Response
 import net.scr0pt.thirdservice.mongodb.MongoConnection
+import net.scr0pt.utils.FakeProfile
+import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
-import org.jsoup.nodes.Document
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.Select
-import net.scr0pt.utils.FakeProfile
-
-import net.scr0pt.utils.webdriver.DriverManager
 import java.util.*
 
 
- fun main() {
+fun main() {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
@@ -29,7 +28,7 @@ import java.util.*
     outlookRegister(email = email, collection = collection)
 }
 
- fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
+fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
     val password = "TheOutlook22001@22"
     val result = FakeProfile.getNewProfile()
     val firstName = result?.name?.first ?: "Bruce"
@@ -37,7 +36,7 @@ import java.util.*
 
     println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
 
-     val driverManager = DriverManager(driverType = DriverManager.BrowserType.chrome, driverHeadless = true)
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = true)
     PageManager(driverManager, "https://signup.live.com/signup").apply {
         addPageList(
                 arrayListOf(
@@ -64,7 +63,7 @@ import java.util.*
         run { response ->
             println(response)
 
-            if (response is PageResponse.OK) {
+            if (response is Response.OK) {
                 collection.insertOne(
                         org.bson.Document("email", email).append("password", password).append(
                                 "firstname",
@@ -87,21 +86,19 @@ class OutlookRegisterEnterEmailPage(
         val email: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(email, "input#MemberName") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("#iSignupAction") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+        pageStatus.driver.sendKeysFirstEl(email, "input#MemberName") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.live.com/signup") &&
-                    title == "Create account" &&
-                    doc.selectFirst("#CredentialsPageTitle")?.text() == "Create account" &&
-                    doc.selectFirst("#phoneSwitch")?.text() == "Use a phone number instead" &&
-                    doc.selectFirst("#MemberName")?.text() != null
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup") &&
+                    pageStatus.title == "Create account" &&
+                    pageStatus.equalsText("#CredentialsPageTitle", "Create account") &&
+                    pageStatus.equalsText("#phoneSwitch", "Use a phone number instead") &&
+                    pageStatus.contain("#MemberName")
 }
 
 
@@ -109,20 +106,18 @@ class OutlookRegisterEnterPasswordPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(password, "input#PasswordInput") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("#iSignupAction") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+        pageStatus.driver.sendKeysFirstEl(password, "input#PasswordInput") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.live.com/signup") &&
-                    title == "Create a password" &&
-                    doc.selectFirst("#ShowHidePasswordLabel")?.text() == "Show password" &&
-                    doc.selectFirst("#PasswordTitle")?.text() == "Create a password"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup") &&
+                    pageStatus.title == "Create a password" &&
+                    pageStatus.equalsText("#ShowHidePasswordLabel", "Show password") &&
+                    pageStatus.equalsText("#PasswordTitle", "Create a password")
 }
 
 class OutlookRegisterEnterNamePage(
@@ -130,63 +125,57 @@ class OutlookRegisterEnterNamePage(
         val lastName: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.sendKeysFirstEl(firstName, "input#FirstName") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.sendKeysFirstEl(lastName, "input#LastName") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        driver.clickFirstEl("#iSignupAction") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+        pageStatus.driver.sendKeysFirstEl(firstName, "input#FirstName") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.sendKeysFirstEl(lastName, "input#LastName") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.live.com/signup") &&
-                    title == "What's your name?" &&
-                    doc.selectFirst("#iPageTitle")?.text() == "What's your name?"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup") &&
+                    pageStatus.title == "What's your name?" &&
+                    pageStatus.equalsText("#iPageTitle", "What's your name?")
 }
 
 class OutlookRegisterEnterBirthdatePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
 
-        val BirthYear = Select(driver.findFirstEl(By.id("BirthYear")))
+        val BirthYear = Select(pageStatus.driver.findFirstEl(By.id("BirthYear")))
         BirthYear.selectByValue(RandomUtils.nextInt(1980, 2001).toString())//exclude 2001
-        val BirthDay = Select(driver.findFirstEl(By.id("BirthDay")))//except 31, 30
+        val BirthDay = Select(pageStatus.driver.findFirstEl(By.id("BirthDay")))//except 31, 30
         BirthDay.selectByIndex(RandomUtils.nextInt(1, BirthDay.options.size - 2))//exclude Day value empty
-        val BirthMonth = Select(driver.findFirstEl(By.id("BirthMonth")))
+        val BirthMonth = Select(pageStatus.driver.findFirstEl(By.id("BirthMonth")))
         BirthMonth.selectByIndex(RandomUtils.nextInt(1, BirthMonth.options.size))//exclude Month value empty
 
-        driver.clickFirstEl("#iSignupAction") ?: return PageResponse.NOT_FOUND_ELEMENT()
-        return PageResponse.WAITING_FOR_RESULT()
+        pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.live.com/signup") &&
-                    title == "What's your birth date?" &&
-                    doc.selectFirst("#iPageTitle")?.text() == "What's your birth date?"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup") &&
+                    pageStatus.title == "What's your birth date?" &&
+                    pageStatus.equalsText("#iPageTitle", "What's your birth date?")
 }
 
 class OutlookRegisterEnterCaptchaPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = false
+    override fun action(pageStatus: PageStatus): Response {
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        driver.findFirstEl(".form-group.template-input", contains = "Enter the characters you see")?.findElement(By.tagName("input"))?.click()
+        pageStatus.driver.findFirstEl(".form-group.template-input", contains = "Enter the characters you see")?.findElement(By.tagName("input"))?.click()
         Thread.sleep(10000)//10 seconds
-        return PageResponse.WAITING_FOR_RESULT()
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://signup.live.com/signup") &&
-                    title == "Add security info" &&
-                    doc.selectFirst("#wlspispHipInstructionContainer")?.text() == "Enter the characters you see"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup") &&
+                    pageStatus.title == "Add security info" &&
+                    pageStatus.equalsText("#wlspispHipInstructionContainer", "Enter the characters you see")
 }
 
 class MicrosoftAccountPage(
@@ -194,12 +183,12 @@ class MicrosoftAccountPage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
 
-    override fun _action(driver: DriverManager): PageResponse {
-        println(this::class.java.simpleName + ": action")
-        return PageResponse.WAITING_FOR_RESULT()
+    override fun action(pageStatus: PageStatus): Response {
+
+        return Response.WAITING()
     }
 
-    override fun _detect(doc: Document, currentUrl: String, title: String): Boolean =
-            currentUrl.startsWith("https://account.microsoft.com") &&
-                    title == "Microsoft account | Home"
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://account.microsoft.com") &&
+                    pageStatus.title == "Microsoft account | Home"
 }

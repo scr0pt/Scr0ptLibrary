@@ -1,11 +1,8 @@
 package net.scr0pt.thirdservice.openload
 
-import com.gargoylesoftware.htmlunit.BrowserVersion
-import com.gargoylesoftware.htmlunit.WebClient
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
-import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
@@ -14,7 +11,6 @@ import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.DriverManager
 
 import org.bson.Document
-import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import java.util.*
 
 
@@ -43,7 +39,7 @@ import java.util.*
 
 
         val password = "XinChaoVietNam@1990"
-        val driver = DriverManager(driverType = DriverManager.BrowserType.firefox)
+        val driver = DriverManager(driverType = DriverManager.BrowserType.Firefox)
         driver.get("https://openload.co/register")
         driver.sendKeysFirstEl(email, "form#register-form input#registerform-email") ?: continue
         driver.sendKeysFirstEl(password, "form#register-form input#registerform-password") ?: continue
@@ -72,7 +68,7 @@ fun login(
 ) {//update cookie
 //    val driver = Browser.firefox
 
-    val driver = DriverManager(driverType = DriverManager.BrowserType.htmlUnitDriver)
+    val driver = DriverManager(driverType = DriverManager.BrowserType.HtmlUnitDriver)
 
     driver.get("https://openload.co/login")
     try {
