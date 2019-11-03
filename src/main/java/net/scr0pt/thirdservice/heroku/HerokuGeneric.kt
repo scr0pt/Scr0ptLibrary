@@ -35,12 +35,12 @@ class HerokuRegister(
         val firstName: String,
         val lastName: String,
         val email: String,
+        val password: String = "Bruce_${System.currentTimeMillis()}",
         val appName: String) {
     val collaboratorEmailList = arrayListOf(
             "brucealmighty5daeae612ce20558@gmail.com",
             "alphahoai@gmail.com"
     )
-    val password = "Bruce_${System.currentTimeMillis()}"
     val robotManager = RobotManager()
     var isDone = false
 
@@ -83,6 +83,7 @@ class HerokuRegister(
             tab()//country default VN
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
+            sleep()
             robot.keyPress(KeyEvent.VK_DOWN)
             robot.keyRelease(KeyEvent.VK_DOWN)
 //            for (i in 0..(RandomUtils.nextInt(1, 242))) {
@@ -272,7 +273,7 @@ class HerokuGeneric {
                         gmailPassword = doc.getString("new_pass") ?: doc.getString("pass"),
                         firstName = result.firstName,
                         lastName = result.lastName,
-                        appName = randomAppname(prefix = result.username),
+                        appName = result.username.toLowerCase(),
                         email = gmailUsername,
                         herokuCollection = herokuCollection
                 ).apply {

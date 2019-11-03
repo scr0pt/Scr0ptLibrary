@@ -73,6 +73,7 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
     abstract fun getMailContent(mail: Mail): Element?
 
     open fun logout() {
+        println("GenericMail logout")
         isLogout = true
         events.clear()
         schedule?.cancel()
