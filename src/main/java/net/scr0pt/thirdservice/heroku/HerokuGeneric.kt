@@ -25,6 +25,7 @@ import java.awt.event.KeyEvent
 
 fun main(args: Array<String>) {
     HerokuGeneric().run()
+
 }
 
 class HerokuRegister(
@@ -82,6 +83,8 @@ class HerokuRegister(
             tab()//country default VN
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
+            robot.keyPress(KeyEvent.VK_DOWN)
+            robot.keyRelease(KeyEvent.VK_DOWN)
 //            for (i in 0..(RandomUtils.nextInt(1, 242))) {
 //                robot.keyPress(KeyEvent.VK_DOWN)
 //                robot.keyRelease(KeyEvent.VK_DOWN)
