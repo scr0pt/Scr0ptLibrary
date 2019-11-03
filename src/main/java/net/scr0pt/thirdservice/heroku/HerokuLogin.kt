@@ -18,7 +18,7 @@ import org.bson.types.ObjectId
 fun randomAppname(prefix: String? = null): String {
     var appName = (if (prefix == null) "bruce-" else prefix) + ObjectId().toString()
     while (appName.length > 30) appName = appName.substring(0, appName.length - 1)
-    return appName
+    return appName.toLowerCase()
 }
 
 

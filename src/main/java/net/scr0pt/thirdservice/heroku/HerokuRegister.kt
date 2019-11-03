@@ -8,14 +8,12 @@ import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.thirdservice.openload.bypassCaptcha
-import net.scr0pt.utils.FakeProfile
+import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
-
 import net.scr0pt.utils.webdriver.DriverManager
-import org.apache.commons.lang3.RandomUtils
 import java.awt.event.KeyEvent
 
 /**
@@ -24,7 +22,7 @@ import java.awt.event.KeyEvent
  * Time: 9:11 PM
  */
 
-fun main() {
+fun main(args: Array<String>) {
     HerokuRegister().run()
 }
 
@@ -46,18 +44,17 @@ class HerokuRegister {
             if (doc != null && doc.containsKey("Allow less secure apps")) {
                 val gmailUsername = doc.getString("email")
                 val gmailPassword = doc.getString("new_pass") ?: doc.getString("pass")
-                val gmail_recover_email: String? = doc.getString("recover_email")
+                val result = FakeProfileV2.getNewProfile() ?: continue
+                val first = result.firstName
+                val last = result.lastName
 
                 if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) continue
 
-                val appName = randomAppname()
+                val appName = randomAppname(prefix = result.username)
                 val collaboratorEmailList = arrayListOf(
                         "brucealmighty5daeae612ce20558@gmail.com",
                         "alphahoai@gmail.com"
                 )
-                val result = FakeProfile.getNewProfile()
-                val first = result?.name?.first ?: "Bruce"
-                val last = result?.name?.last ?: "Lee"
                 println(gmailUsername)
                 println(first)
                 println(last)
@@ -119,11 +116,11 @@ class HerokuRegister {
             tab()//role
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
-            for (i in 0..(RandomUtils.nextInt(1, 7))) {
-                robot.keyPress(KeyEvent.VK_DOWN)
-                robot.keyRelease(KeyEvent.VK_DOWN)
-                sleep()
-            }
+//            for (i in 0..(RandomUtils.nextInt(1, 7))) {
+//                robot.keyPress(KeyEvent.VK_DOWN)
+//                robot.keyRelease(KeyEvent.VK_DOWN)
+//                sleep()
+//            }
 
 
             tab()//country default VN
@@ -138,11 +135,11 @@ class HerokuRegister {
             tab()//programing language
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
-            for (i in 0..(RandomUtils.nextInt(1, 12))) {
-                robot.keyPress(KeyEvent.VK_DOWN)
-                robot.keyRelease(KeyEvent.VK_DOWN)
-                sleep()
-            }
+//            for (i in 0..(RandomUtils.nextInt(1, 12))) {
+//                robot.keyPress(KeyEvent.VK_DOWN)
+//                robot.keyRelease(KeyEvent.VK_DOWN)
+//                sleep()
+//            }
 
             tab()//captcha button
             robot.keyPress(KeyEvent.VK_ENTER)
@@ -158,14 +155,14 @@ class HerokuRegister {
 
     private fun doooo(robotManager: RobotManager, gmailUsername: String, gmailPassword: String, email: String, appName: String, collaboratorEmailList: ArrayList<String>, password: String, firstName: String, lastName: String, herokuCollection: MongoCollection<org.bson.Document>) {
         with(robotManager) {
-            val baseX = 1170
-//            val baseX = 900
-            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
-//            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
-            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
-//            val newCapthchaBtn = Pair<Int, Int>(595, 580)
-            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
-//            val multipleCorrect = Pair<Int, Int>(590, 590)
+            //            val baseX = 1170
+            val baseX = 900
+//            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
+            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
+//            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
+            val newCapthchaBtn = Pair<Int, Int>(595, 580)
+//            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
+            val multipleCorrect = Pair<Int, Int>(590, 590)
             val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
             val registerTime = System.currentTimeMillis()
             println("doooo 1")
@@ -284,9 +281,10 @@ class HerokuRegister {
                 HerokuDeployPagePage {
                     println("HerokuDeployPagePage success")
                 },
-                HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
-                    println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
-                }
+                HerokuAccessPage(actionType = HerokuAccessPage.ActionType.ENDPAGE)
+                /* HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
+                     println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
+                 }*/
         ))
 
         pageManager.run { pageResponse ->
@@ -316,59 +314,58 @@ class HerokuRegister {
             gmail_recover_email: String?
     ) {
         loginGoogle(gmailUsername, gmailPassword, driver, onLoginSuccess = {
-            PageManager(driver, "https://signup.heroku.com").apply {
-                addPageList(arrayListOf<Page>(
-                        HerokuRegisterPage(firstName, lastName, email) {
-                            herokuCollection.insertOne(
-                                    org.bson.Document("email", email)
-                                            .append("password", password).append("firstName", firstName).append("lastName", lastName)
-                                            .append("verify", false)
-                            )
-                            println("HerokuRegisterPage success")
-                        },
-                        HerokuRegisterDoneWaitingCheckEmailPage(gmailUsername, gmailPassword, startTime) {
-                            println("HerokuRegisterDone_WaitingCheckEmail_Page success")
-                        },
-                        GoogleGmailPage() {
-                            println("GoogleGmailPage success")
-                        },
-                        HerokuSetYourPasswordPage(password = password) {
-                            herokuCollection.updateOne(
-                                    org.bson.Document("email", email),
-                                    Updates.set("verify", true)
-                            )
-                            println("HerokuSetYourPasswordPage success")
-                        },
-                        HerokuWelcomePage {
-                            println("HerokuWelcomePage success")
-                        },
-                        HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
-                            println("HerokuDashboardPage success")
-                        },
-                        HerokuCreateNewAppPage(appName = appName) {
-                            herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))
-                            println("HerokuCreateNewAppPage ${appName} success")
-                        },
-                        HerokuDeployPagePage {
-                            println("HerokuDeployPagePage success")
-                        },
-                        HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
-                            println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
-                        }
-                ))
-                run { pageResponse ->
-                    println(pageResponse)
-                    if (pageResponse is HerokuResponse.COLLABORATOR_ADDED) {
+            val pageManager = PageManager(driver, "https://signup.heroku.com")
+            pageManager.addPageList(arrayListOf(
+                    HerokuRegisterPage(firstName, lastName, email) {
+                        herokuCollection.insertOne(
+                                org.bson.Document("email", email)
+                                        .append("password", password).append("firstName", firstName).append("lastName", lastName)
+                                        .append("verify", false)
+                        )
+                        println("HerokuRegisterPage success")
+                    },
+                    HerokuRegisterDoneWaitingCheckEmailPage(gmailUsername, gmailPassword, pageManager.startTime) {
+                        println("HerokuRegisterDone_WaitingCheckEmail_Page success")
+                    },
+                    GoogleGmailPage() {
+                        println("GoogleGmailPage success")
+                    },
+                    HerokuSetYourPasswordPage(password = password) {
                         herokuCollection.updateOne(
                                 org.bson.Document("email", email),
-                                Updates.pushEach("collaborators", collaboratorEmailList)
+                                Updates.set("verify", true)
                         )
+                        println("HerokuSetYourPasswordPage success")
+                    },
+                    HerokuWelcomePage {
+                        println("HerokuWelcomePage success")
+                    },
+                    HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP) {
+                        println("HerokuDashboardPage success")
+                    },
+                    HerokuCreateNewAppPage(appName = appName) {
+                        herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))
+                        println("HerokuCreateNewAppPage ${appName} success")
+                    },
+                    HerokuDeployPagePage {
+                        println("HerokuDeployPagePage success")
+                    },
+                    HerokuAccessPage(collaboratorEmailList = collaboratorEmailList) {
+                        println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
                     }
-
-                    Thread.sleep(60000)
-                    driver.close()
-                    Thread.sleep(180000)
+            ))
+            pageManager.run { pageResponse ->
+                println(pageResponse)
+                if (pageResponse is HerokuResponse.COLLABORATOR_ADDED) {
+                    herokuCollection.updateOne(
+                            org.bson.Document("email", email),
+                            Updates.pushEach("collaborators", collaboratorEmailList)
+                    )
                 }
+
+                Thread.sleep(60000)
+                driver.close()
+                Thread.sleep(3 * 60000)
             }
         }, recoverEmail = gmail_recover_email)
     }
@@ -488,9 +485,9 @@ class HerokuWelcomePage(
 
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://signup.heroku.com/account/accept/ok") &&
-                    pageStatus.notContain(".header-main h2")  &&
+                    pageStatus.notContain(".header-main h2") &&
                     pageStatus.equalsText(".account-page .account-content h2", "Welcome to Heroku") &&
-                    pageStatus.notContain(".account-page .account-content h3")  &&
+                    pageStatus.notContain(".account-page .account-content h3") &&
                     pageStatus.doc?.selectFirst("form#final_login .center input[type=\"submit\"]")?.attr("value") == "Click here to proceed"
 }
 
@@ -502,7 +499,8 @@ class HerokuCreateNewAppPage(
     override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.sendKeysFirstEl(appName, "form.new-app-view .new-app-name input")
                 ?: return Response.NOT_FOUND_ELEMENT()
-        pageStatus.driver.clickFirstEl("form.new-app-view button.create-app-button") ?: return Response.NOT_FOUND_ELEMENT()
+        pageStatus.driver.clickFirstEl("form.new-app-view button.create-app-button")
+                ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
     }
 
@@ -525,40 +523,68 @@ class HerokuDeployPagePage(
 
 
 class HerokuAccessPage(
-        collaboratorEmailList: ArrayList<String>,
+        val actionType: ActionType = ActionType.IGNORE,
+        collaboratorEmailList: ArrayList<String> = arrayListOf(),
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
+    enum class ActionType {
+        ADDCOLLABORATOREMAILLIST, IGNORE, ENDPAGE
+    }
+
     data class AddingCollaboratorEmailStatus(val collaboratorEmail: String, var isAdded: Boolean = false)
 
     private val collaboratorEmailObjectList: List<AddingCollaboratorEmailStatus> = collaboratorEmailList.map { AddingCollaboratorEmailStatus(it) }
+
     override fun onWaiting(pageStatus: PageStatus): Response? {
-        pageStatus.doc?.select(".collaborator-list tr.collaborator-item")?.forEach {
-            val txt = it.text().trim()
-            val email = txt.split(" ")[0]
+        when (actionType) {
+            ActionType.ADDCOLLABORATOREMAILLIST -> {
+                pageStatus.doc?.select(".collaborator-list tr.collaborator-item")?.forEach {
+                    val txt = it.text().trim()
+                    val email = txt.split(" ")[0]
 //            val role = txt.split(" ")[1]
 
-            collaboratorEmailObjectList.firstOrNull { collaboratorEmail -> collaboratorEmail.collaboratorEmail == email }?.let {
-                it.isAdded = true
+                    collaboratorEmailObjectList.firstOrNull { collaboratorEmail -> collaboratorEmail.collaboratorEmail == email }?.let {
+                        it.isAdded = true
+                    }
+                }
+
+                if (collaboratorEmailObjectList.firstOrNull { !it.isAdded } == null) {
+                    return HerokuResponse.COLLABORATOR_ADDED()
+                }
+            }
+            ActionType.IGNORE -> {
+
+            }
+            ActionType.ENDPAGE -> {
+                return Response.OK()
             }
         }
 
-        if (collaboratorEmailObjectList.firstOrNull { !it.isAdded } == null) {
-            return HerokuResponse.COLLABORATOR_ADDED()
-        }
         return null
     }
 
     override fun action(pageStatus: PageStatus): Response {
-        collaboratorEmailObjectList.forEach {
-            val collaboratorEmail = it.collaboratorEmail
-            pageStatus.driver.clickFirstEl("button.hk-button--secondary", equals = "Add collaborator")
-                    ?: return@action Response.NOT_FOUND_ELEMENT()
-            pageStatus.driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
-                    ?: return@action Response.NOT_FOUND_ELEMENT()
-            pageStatus.driver.clickFirstEl("button.hk-button--primary", equals = "Save changes")
-                    ?: return@action Response.NOT_FOUND_ELEMENT()
-            Thread.sleep(2000)
+        when (actionType) {
+            ActionType.ADDCOLLABORATOREMAILLIST -> {
+                collaboratorEmailObjectList.forEach {
+                    val collaboratorEmail = it.collaboratorEmail
+                    pageStatus.driver.clickFirstEl("button.hk-button--secondary", equals = "Add collaborator")
+                            ?: return@action Response.NOT_FOUND_ELEMENT()
+                    pageStatus.driver.sendKeysFirstEl(collaboratorEmail, "input", filter = { el -> "user@domain.com".equals(el.getAttribute("placeholder"), ignoreCase = true) })
+                            ?: return@action Response.NOT_FOUND_ELEMENT()
+                    pageStatus.driver.clickFirstEl("button.hk-button--primary", equals = "Save changes")
+                            ?: return@action Response.NOT_FOUND_ELEMENT()
+                    Thread.sleep(2000)
+                }
+            }
+            ActionType.IGNORE -> {
+
+            }
+            ActionType.ENDPAGE -> {
+                return Response.OK()
+            }
         }
+
         return Response.WAITING()
     }
 
