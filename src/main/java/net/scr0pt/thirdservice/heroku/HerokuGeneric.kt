@@ -162,28 +162,28 @@ class HerokuRegister(
                     } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
                         println("doooo 6")
                         closeWindow()
-                        val gmail = Gmail(gmailUsername, gmailPassword)
-                        gmail.onEvent(MailReceiveEvent(
-                                key = "ona_heroku_sender",
-                                validator = { mail ->
-                                    (mail.id ?: 0) > registerTime &&
-                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com") &&
-                                            Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
-                                },
-                                callback = { mails ->
-                                    val mail =
-                                            mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
-                                    val acceptLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")
-                                    if (acceptLink != null) {
-                                        println(acceptLink)
-                                        gmail.logout()
-                                        installDriver(acceptLink)
-                                    }
-                                },
-                                once = false,
-                                new = true,
-                                fetchContent = true
-                        ))
+                        Gmail(gmailUsername, gmailPassword).apply {
+                            onEvent(MailReceiveEvent(
+                                    key = "ona_heroku_sender",
+                                    validator = { mail ->
+                                        mail.receivedDate > registerTime
+                                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com")
+                                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
+                                    },
+                                    callback = { mails ->
+                                        val mail =
+                                                mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
+                                        mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")?.let {
+                                            this.logout()
+                                            installDriver(it)
+                                        }
+                                    },
+                                    once = false,
+                                    new = true,
+                                    fetchContent = true
+                            )
+                            )
+                        }
                         return@bypassCaptcha
                     }
                 }
@@ -197,28 +197,6 @@ class HerokuRegister(
     private fun installDriver(acceptLink: String) {
         val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox)
         val pageManager = PageManager(driverManager, acceptLink)
-        pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
-            onEvent(MailReceiveEvent(
-                    key = "ona_heroku_sender",
-                    validator = { mail ->
-                        mail.receivedDate > pageManager.startTime
-                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com")
-                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
-                    },
-                    callback = { mails ->
-                        val mail =
-                                mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
-                        mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")?.let {
-                            this.logout()
-                            pageManager.driver.get(it)
-                        }
-                    },
-                    once = false,
-                    new = true,
-                    fetchContent = true
-            )
-            )
-        }
         pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {
                     herokuCollection.updateOne(
