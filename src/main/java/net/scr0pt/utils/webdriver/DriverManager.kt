@@ -81,7 +81,16 @@ class DriverManager(
         abstract fun get(headless: Boolean = false): WebDriver
     }
 
-    fun get(url: String) = driver.get(url)
+    fun get(url: String) {
+        for(i in 0..10){
+            try {
+                driver.get(url)
+                break
+            } catch (e: Exception) {
+                Thread.sleep(1000)
+            }
+        }
+    }
 
 
     fun close() {
