@@ -40,11 +40,8 @@ object FakeProfileV2 {
                     ?: return null//July 2, 1961
             val username = doc?.select("dl.dl-horizontal > dt:containsOwn(Username) ~ dd")?.text() ?: return null
             val password = doc?.select("dl.dl-horizontal > dt:containsOwn(Password) ~ dd")?.text() ?: return null
-            val email = doc?.select("dl.dl-horizontal > dt:containsOwn(Email Address) ~ dd")?.text() ?: return null
-            val maidenName = doc?.select("dl.dl-horizontal > dt:containsOwn(Mother's maiden name) ~ dd")?.text()
-                    ?: return null
-
-
+            val email = doc?.select("dl.dl-horizontal > dt:containsOwn(Email Address) ~ dd")?.text()?.trim()?.substringBefore(" ")?.trim() ?: return null
+            val maidenName =doc?.select("dl.dl-horizontal > dt:containsOwn(maiden name) ~ dd")?.text()?.trim() ?: return null
             return PersonProfile(
                     firstName = name.substringBefore(" "),
                     lastName = name.substringAfter(" "),
