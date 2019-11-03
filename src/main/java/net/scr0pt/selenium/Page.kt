@@ -101,13 +101,22 @@ class PageManager(val driver: DriverManager, val originUrl: String? = null) {
     private fun onWaiting(): Response {
         var pageStatus = PageStatus(driver)
 
+        pageStatus.doc?.selectFirst("body")?.let {
+            println("body_start")
+            println(it.tagName())
+            println(it.id())
+            println(it.classNames().joinToString(" ~ "))
+            println(it.text())
+            println("body_end")
+        }
+
         //is go to next page
         val listOfpageDetect = pageList.filter { it.parentDetect(pageStatus) }
         val size = listOfpageDetect.size
         if (size != 1) {
             var pagesString = ""
             listOfpageDetect.forEach { pagesString += it.TAG + ", " }
-            println("listOfpageDetect: $size | ${pagesString.removeSuffix(", ").trim()}\n| title: ${pageStatus.title} | url: ${pageStatus.url}")
+            println("listOfpageDetect: $size | ${pagesString.removeSuffix(", ").trim()} ~ | title: ${pageStatus.title} | url: ${pageStatus.url}")
         }
 
         if (listOfpageDetect.isEmpty()) {
