@@ -13,6 +13,7 @@ import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
 import net.scr0pt.utils.webdriver.DriverManager
+import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
 import java.awt.event.KeyEvent
 
@@ -40,6 +41,7 @@ class HerokuRegister(
     )
     val password = "Bruce_${System.currentTimeMillis()}"
     val robotManager = RobotManager()
+    var isDone = false
 
     fun run() {
         println(gmailUsername)
@@ -70,32 +72,27 @@ class HerokuRegister(
 //ignore company name
 
             tab()//role
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
-//            for (i in 0..(RandomUtils.nextInt(1, 7))) {
-//                robot.keyPress(KeyEvent.VK_DOWN)
-//                robot.keyRelease(KeyEvent.VK_DOWN)
-//                sleep()
-//            }
+            for (i in 0..(RandomUtils.nextInt(1, 7))) {
+                robot.keyPress(KeyEvent.VK_DOWN)
+                robot.keyRelease(KeyEvent.VK_DOWN)
+                sleep()
+            }
 
 
             tab()//country default VN
-//            robot.keyPress(KeyEvent.VK_HOME)
-//            robot.keyRelease(KeyEvent.VK_HOME)
-//            for (i in 0..(RandomUtils.nextInt(1, 242))) {
-//                robot.keyPress(KeyEvent.VK_DOWN)
-//                robot.keyRelease(KeyEvent.VK_DOWN)
-//                sleep()
-//            }
+            robot.keyPress(KeyEvent.VK_HOME)
+            robot.keyRelease(KeyEvent.VK_HOME)
+            for (i in 0..(RandomUtils.nextInt(1, 242))) {
+                robot.keyPress(KeyEvent.VK_DOWN)
+                robot.keyRelease(KeyEvent.VK_DOWN)
+            }
 
             tab()//programing language
-            robot.keyPress(KeyEvent.VK_DOWN)
-            robot.keyRelease(KeyEvent.VK_DOWN)
-//            for (i in 0..(RandomUtils.nextInt(1, 12))) {
-//                robot.keyPress(KeyEvent.VK_DOWN)
-//                robot.keyRelease(KeyEvent.VK_DOWN)
-//                sleep()
-//            }
+            for (i in 0..(RandomUtils.nextInt(1, 12))) {
+                robot.keyPress(KeyEvent.VK_DOWN)
+                robot.keyRelease(KeyEvent.VK_DOWN)
+                sleep()
+            }
 
             tab()//captcha button
             robot.keyPress(KeyEvent.VK_ENTER)
@@ -139,6 +136,7 @@ class HerokuRegister(
                     if (txt == "Retry later!") {
                         println("doooo 3.5")
                         closeWindow()
+                        isDone = true
                         return@bypassCaptcha
                     } else if (txt.contains("We could not verify you are not a robot. Please try the CAPTCHA again.")) {
                         println("doooo 4")
@@ -190,6 +188,7 @@ class HerokuRegister(
                     }
                 }
             }, onFail = {
+                isDone = true
                 closeWindow()
             })
         }
@@ -265,6 +264,7 @@ class HerokuRegister(
                 )
             }
             pageManager.driver.close()
+            isDone = true
         }
     }
 }
@@ -294,7 +294,10 @@ class HerokuGeneric {
                         appName = randomAppname(prefix = result.username),
                         email = gmailUsername,
                         herokuCollection = herokuCollection
-                ).run()
+                ).apply {
+                    run()
+                    while (!isDone) Thread.sleep(5000)
+                }
             }
         }
     }
