@@ -82,10 +82,10 @@ class HerokuRegister(
             tab()//country default VN
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
-            for (i in 0..(RandomUtils.nextInt(1, 242))) {
-                robot.keyPress(KeyEvent.VK_DOWN)
-                robot.keyRelease(KeyEvent.VK_DOWN)
-            }
+//            for (i in 0..(RandomUtils.nextInt(1, 242))) {
+//                robot.keyPress(KeyEvent.VK_DOWN)
+//                robot.keyRelease(KeyEvent.VK_DOWN)
+//            }
 
             tab()//programing language
             for (i in 0..(RandomUtils.nextInt(1, 12))) {
