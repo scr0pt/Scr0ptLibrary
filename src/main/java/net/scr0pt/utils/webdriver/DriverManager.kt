@@ -116,7 +116,16 @@ class DriverManager(
     val url
         get() = driver.currentUrl.removeSuffix("/")
     val html: String
-        get() = driver.pageSource
+        get() {
+            for(i in 0..10){
+                try {
+                    return driver.pageSource
+                } catch (e: Exception) {
+                    Thread.sleep(1000)
+                }
+            }
+            return ""
+        }
     val doc: Document?
         get() = try {
             Jsoup.parse(html)

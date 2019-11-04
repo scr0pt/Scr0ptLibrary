@@ -157,10 +157,8 @@ class HerokuRegister(
                             || txt.contains("Help us make some avocado toast!")
                     ) {
                         println("doooo 5")
-                        robot.keyPress(KeyEvent.VK_ALT)
-                        robot.keyPress(KeyEvent.VK_F4)
-                        robot.keyRelease(KeyEvent.VK_ALT)
-                        robot.keyRelease(KeyEvent.VK_F4)
+                        isDone = true
+                        closeWindow()
                         sleep()
                         return@bypassCaptcha
                     } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
