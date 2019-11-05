@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.webdriver.DriverManager
 import org.bson.Document
+import org.bson.conversions.Bson
 import org.openqa.selenium.By
 
 
@@ -243,7 +244,12 @@ class Neu {
 }
 */
 
-fun MongoCollection<Document>.random(doc: Document): Document? {
+fun MongoCollection<Document>.random(doc: Document?): Document? {
+    var count = this.countDocuments(doc)
+    val nextInt = kotlin.random.Random.nextInt(0, count.toInt())
+    return this.find(doc).skip(nextInt).first()
+}
+fun MongoCollection<Document>.random(doc: Bson?): Document? {
     var count = this.countDocuments(doc)
     val nextInt = kotlin.random.Random.nextInt(0, count.toInt())
     return this.find(doc).skip(nextInt).first()

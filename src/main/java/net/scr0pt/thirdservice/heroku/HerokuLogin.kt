@@ -3,6 +3,7 @@ package net.scr0pt.thirdservice.heroku
 import com.mongodb.client.MongoClients
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.PageStatus
@@ -36,87 +37,102 @@ fun changeHerokuEmail() {
     val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
     val infinityMail = InfinityMail(gmailUsername)
 
-    herokuCollection.find(Filters.exists("original_email", false)).forEach { doc ->
-        val email = doc.getString("email")
-        val password = doc.getString("password")
-
-        if (email.replace(".", "").substringBeforeLast("@") == infinityMail.username.replace(".", "").substringBeforeLast("@")) return@forEach
-
-        var newEmail: String? = null
-        do {
-            val newImail = infinityMail.getNext() ?: return@forEach
-            newEmail = newImail.fullAddress
-        } while (newEmail == null || newImail.username == infinityMail.username || herokuCollection.countDocuments(org.bson.Document("email", newEmail)) > 0)
-
-        val driver = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
-
-        val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT).apply {
-            onPageDetectOnce = {
-                herokuCollection.updateOne(
-                        org.bson.Document("email", email),
-                        Updates.set("cookies", driver.cookieStr)
+    val emails = arrayListOf<String>()
+    herokuCollection.find().forEach { doc -> doc?.getString("email")?.let { emails.add(it) } }
+    var doc: org.bson.Document? = null
+    do {
+        doc = herokuCollection.random(
+                Filters.and(
+                        Filters.exists("original_email", false),
+                        Filters.not(
+                                Filters.eq("email", "/.edu.vn/")
+                        )
                 )
+        )
+        if (doc != null) {
+            val email = doc.getString("email")
+            val password = doc.getString("password")
+
+            if (email.replace(".", "").substringBeforeLast("@") == infinityMail.username.replace(".", "").substringBeforeLast("@")) return@changeHerokuEmail
+
+            var newEmail: String? = null
+            do {
+                val newImail = infinityMail.getNext() ?: return@changeHerokuEmail
+                newEmail = newImail.fullAddress
+            } while (newEmail == null || newImail.username == infinityMail.username || emails.contains(newEmail) || herokuCollection.countDocuments(org.bson.Document("email", newEmail)) > 0)
+            emails.add(newEmail)
+
+
+            val driver = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
+
+            val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT).apply {
+                onPageDetectOnce = {
+                    herokuCollection.updateOne(
+                            org.bson.Document("email", email),
+                            Updates.set("cookies", driver.cookieStr)
+                    )
+                }
             }
-        }
-        val pageManager = PageManager(driver, "https://id.heroku.com/login")
-        pageManager.gmail = Gmail(gmailUsername, gmailPassword)
-        pageManager.gmail?.onEvent(
-                MailReceiveEvent(
-                        key = "ona1sender",
-                        validator = { mail ->
-                            mail.receivedDate > pageManager.startTime &&
-                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                            mail.from,
-                                            "noreply@heroku.com"
-                                    ) &&
-                                    Mail.CompareType.EQUAL_IGNORECASE.compare(
-                                            mail.subject,
-                                            "Confirm Heroku Account Email Change"
-                                    )
-                        },
-                        callback = { mails ->
-                            val mail =
-                                    mails.firstOrNull { it.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']") != null }
-                            val confirmLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']")?.attr("href")
-                            if (confirmLink != null) {
-                                println("confirmLink: $confirmLink")
-                                driver.get(confirmLink)
-                                pageManager.gmail?.logout()
-                                herokuDashboardPage.onPageDetect = {
-                                    pageManager.isSuccess = true
+            val pageManager = PageManager(driver, "https://id.heroku.com/login")
+            pageManager.gmail = Gmail(gmailUsername, gmailPassword)
+            pageManager.gmail?.onEvent(
+                    MailReceiveEvent(
+                            key = "ona1sender",
+                            validator = { mail ->
+                                mail.receivedDate > pageManager.startTime &&
+                                        Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                                mail.from,
+                                                "noreply@heroku.com"
+                                        ) &&
+                                        Mail.CompareType.EQUAL_IGNORECASE.compare(
+                                                mail.subject,
+                                                "Confirm Heroku Account Email Change"
+                                        )
+                            },
+                            callback = { mails ->
+                                val mail =
+                                        mails.firstOrNull { it.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']") != null }
+                                val confirmLink = mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/email/confirm/']")?.attr("href")
+                                if (confirmLink != null) {
+                                    println("confirmLink: $confirmLink")
+                                    driver.get(confirmLink)
+                                    pageManager.gmail?.logout()
+                                    herokuDashboardPage.onPageDetect = {
+                                        pageManager.isSuccess = true
+                                    }
                                 }
-                            }
-                        },
-                        once = false,
-                        new = true,
-                        fetchContent = true
-                )
-        )
-        pageManager.gmail?.connect()
+                            },
+                            once = false,
+                            new = true,
+                            fetchContent = true
+                    )
+            )
+            pageManager.gmail?.connect()
 
-        pageManager.addPageList(
-                arrayListOf(
-                        HerokuLoginPage(email, password),
-                        HerokuLoginAuthCallbackPage(),
-                        herokuDashboardPage,
-                        HerokuAccountConfirmPasswordPage(password),
-                        HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)),
-                        HerokuAccountConfirmPasswordDonePage()
-                )
-        )
-        pageManager.run {
-            if (it is Response.OK) {
-                println("Set original_email to $email ")
-                println("Set email to $newEmail ")
-                herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
-                        Updates.set("original_email", email),
-                        Updates.set("email", newEmail)
-                ))
+            pageManager.addPageList(
+                    arrayListOf(
+                            HerokuLoginPage(email, password),
+                            HerokuLoginAuthCallbackPage(),
+                            herokuDashboardPage,
+                            HerokuAccountConfirmPasswordPage(password),
+                            HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)),
+                            HerokuAccountConfirmPasswordDonePage()
+                    )
+            )
+            pageManager.run {
+                if (it is Response.OK) {
+                    println("Set original_email to $email ")
+                    println("Set email to $newEmail ")
+                    herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            Updates.set("original_email", email),
+                            Updates.set("email", newEmail)
+                    ))
+                }
+                println("changeHerokuEmail response $it")
+                driver.close()
             }
-            println("changeHerokuEmail response $it")
-            driver.close()
         }
-    }
+    }while (doc != null)
 }
 
 

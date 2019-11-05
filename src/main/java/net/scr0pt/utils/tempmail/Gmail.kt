@@ -49,7 +49,7 @@ class Gmail(
         val TSL_PORT = 587 // Port for TLS/STARTTLS
     }
 
-    var maxMailPerFolder = 100
+    var maxMailPerFolder = 10
 
     private var session: Session? = null
     private var store: Store? = null
