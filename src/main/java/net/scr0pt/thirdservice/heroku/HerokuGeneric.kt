@@ -240,6 +240,7 @@ class HerokuRegister(
                     fetchContent = true
             )
             )
+            connect()
         }
 
         pageManager.run { pageResponse ->
