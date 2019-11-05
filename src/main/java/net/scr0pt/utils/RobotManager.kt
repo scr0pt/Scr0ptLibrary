@@ -4,13 +4,14 @@ import java.awt.BorderLayout
 import java.awt.MouseInfo
 import java.awt.Robot
 import java.awt.Toolkit
-import java.awt.event.*
+import java.awt.event.InputEvent
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
 import javax.swing.JFrame
 import javax.swing.JTextField
-import javax.swing.event.MouseInputAdapter
 
 fun main() {
-   detectMousePosition()
+    detectMousePosition()
 }
 
 class RobotManager {
@@ -51,7 +52,7 @@ class RobotManager {
         } else if (browerType == BrowserType.FIREFOX) {
             run.exec("\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -private-window")
         }
-        realylongSleep()
+        longSleep()
     }
 
     fun switchWindow() {
@@ -173,12 +174,19 @@ class RobotManager {
 
     fun printScreenText(): String {
         println("~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        val clipboardTxt = getScreenText()
+        println(clipboardTxt)
+        println("~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        return clipboardTxt
+    }
+
+
+    fun getScreenText(): String {
+        clearClipboard()
         ctrA()
         ctrC()
         val clipboardTxt = SystemClipboard.get()
-        SystemClipboard.copy(CLIPBOARD_DELETED)
-        println(clipboardTxt)
-        println("~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        clearClipboard()
         return clipboardTxt
     }
 
@@ -195,7 +203,7 @@ class RobotManager {
         moveToAddressBarAndClick()
         clearAndPasteInput(url)
         robot.keyPress(KeyEvent.VK_ENTER)
-        realylongSleep()
+        longSleep()
     }
 
     fun getCurrentUrl(): String {
@@ -209,10 +217,15 @@ class RobotManager {
         longSleep()
     }
 
-
+    fun isInputReady(): Boolean {
+        val text = "isInputReady"
+        clearAndPasteInput(text)
+        return getScreenText() == text
+    }
 
 }
-fun detectMousePosition(){
+
+fun detectMousePosition() {
     val frame = JFrame("Key Listener")
     val contentPane = frame.contentPane
     val listener = object : KeyListener {
@@ -223,8 +236,7 @@ fun detectMousePosition(){
         }
 
         override fun keyPressed(event: KeyEvent) {
-            if(event.extendedKeyCode == KeyEvent.VK_SPACE)
-            {
+            if (event.extendedKeyCode == KeyEvent.VK_SPACE) {
                 val location = MouseInfo.getPointerInfo().location
                 println("")
                 println("Pair<Int, Int>(${location.x}, ${location.y})")

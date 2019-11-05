@@ -2,24 +2,16 @@ package net.scr0pt.crawl.school
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
+import kotlinx.coroutines.runBlocking
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-
 import org.bson.Document
-import java.awt.Toolkit
-import java.awt.BorderLayout
-import java.awt.MouseInfo
-import javax.swing.JTextField
-import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
-import javax.swing.JFrame
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 fun main() {
-    println(Toolkit.getDefaultToolkit().screenSize.width)
-    println(Toolkit.getDefaultToolkit().screenSize.height)
-    println(Toolkit.getDefaultToolkit().screenResolution)
-    val url = "https://dashboard.heroku.com/apps/anigoo-news/access"
-    val a = 1
+    var a = listOf(1,2,3)
+println(a.take(10))
 }
 
 fun main22() {

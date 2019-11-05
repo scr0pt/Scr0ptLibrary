@@ -1,23 +1,15 @@
 package net.scr0pt.utils.tempmail
 
 import com.sun.mail.imap.IMAPBodyPart
-import net.scr0pt.utils.curl.NetworkUtils
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import java.util.*
 import javax.mail.*
-import javax.mail.event.MessageCountAdapter
-import javax.mail.event.MessageCountEvent
 import javax.mail.internet.MimeMultipart
-import kotlin.text.StringBuilder
 
 fun main() {
-    NetworkUtils.getUnsafeOkHttpClient()
-
-    //1571281709000
-    val registerTime = 1571290983527
     val gmail = Gmail("vinhnguyen4h4@gmail.com", "eHK;HyL.e=2k1704FgqN").apply {
         onEvent(
                 MailReceiveEvent(
@@ -36,6 +28,7 @@ fun main() {
                         fetchContent = true
                 )
         )
+        connect()
     }
 }
 
@@ -85,17 +78,20 @@ class Gmail(
     var messages = arrayListOf<Message>()
     override fun updateInbox(): List<Mail>? {
         val list = arrayListOf<Mail>()
-        messages = arrayListOf<Message>()
+        messages.clear()
         spamFolder?.messages?.reversed()?.let {
-            messages.addAll(it)
+            messages.addAll(it.take(100))
         }
+
         inboxFolder?.messages?.reversed()?.let {
-            messages.addAll(it)
+            messages.addAll(it.take(100))
         }
+
         for (message in messages) {
             val mail = message.toMail()
             list.add(mail)
         }
+
         list.sortByDescending { it.receivedDate }
         return list
     }
@@ -110,8 +106,32 @@ class Gmail(
         return mail
     }
 
+    fun Message.customEquals(other: Any?): Boolean {
+        when (other) {
+            null -> {
+                return false
+            }
+            is Message -> {
+                return this.from.firstOrNull() == other.from.firstOrNull()
+                        && this.receivedDate == other.receivedDate
+                        && this.sentDate == other.sentDate
+            }
+
+            is Mail -> {
+                val thisMail = this.toMail()
+                return thisMail.from == other.from
+                        && thisMail.to == other.to
+                        && thisMail.id == other.id
+                        && thisMail.receivedDate == other.receivedDate
+                        && thisMail.sentDate == other.sentDate
+            }
+            else -> return false
+        }
+    }
+
     override fun getMailContent(mail: Mail): Element? {
-        val message = messages?.first { it.receivedDate.time == mail.id }
+        log("getMailContent mail ${mail.from}")
+        val message = messages.firstOrNull { it.customEquals(mail) } ?: return null
         val content = getContent(message.content)
         return Jsoup.parse(content)
     }

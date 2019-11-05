@@ -1,12 +1,15 @@
 package net.scr0pt.utils.tempmail
 
-import org.jsoup.nodes.Element
+import kotlinx.coroutines.runBlocking
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.event.onReceiveMails
 import net.scr0pt.utils.tempmail.models.Mail
+import org.jsoup.nodes.Element
+import java.text.SimpleDateFormat
 import java.util.*
 
 abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onInitFail: (() -> Unit)?) {
+    val TAG: String = this::class.java.simpleName
     val inbox = arrayListOf<Mail>()
     var isLogout = false
     var timeUpdate = 5000L//milisecond
@@ -17,23 +20,30 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
         events.add(event)
     }
 
+    fun log(msg: String) {
+        println("$TAG [${SimpleDateFormat("HH:mm:ss").format(Date())}]: $msg")
+    }
+
     var emailAddress: String? = null
 
-    init {
-        Thread(Runnable {
+    fun connect() {
+        log("connect")
+        runBlocking {
             if (init()) {
-                onInnitSuccess?.let { it(this) }
+                onInnitSuccess?.invoke(this@GenericMail)
                 startSchedule()
             } else {
-                onInitFail?.let { it() }
+                onInitFail?.invoke()
             }
-        }).start()
+        }
     }
 
     fun startSchedule() {
+        log("startSchedule")
         schedule = Timer().also { timer ->
             timer.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
+                    log("Timer schedule running")
                     onUpdateInbox()
                 }
             }, 0, timeUpdate)
@@ -46,9 +56,10 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
 
     fun onUpdateInbox() {
         if (isLogout) return
-        println("onUpdateInbox")
-        updateInbox()
-                ?.takeIf { !isLogout && it.isNotEmpty() }
+        log("onUpdateInbox")
+        val newInbox = updateInbox()
+        log("child updateInbox done")
+        newInbox?.takeIf { !isLogout && it.isNotEmpty() }
                 ?.let { newInboxs ->
                     val filter =
                             newInboxs.filter { newInbox -> inbox.none { it.id != null && newInbox.id != null && it.id == newInbox.id } }//new inbox mails that not in old inbox mails
@@ -73,9 +84,10 @@ abstract class GenericMail(val onInnitSuccess: ((GenericMail) -> Unit)?, val onI
     abstract fun getMailContent(mail: Mail): Element?
 
     open fun logout() {
-        println("GenericMail logout")
+        log("logout")
         isLogout = true
         events.clear()
         schedule?.cancel()
+        schedule = null
     }
 }
