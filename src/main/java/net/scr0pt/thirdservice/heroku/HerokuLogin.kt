@@ -1,6 +1,7 @@
 package net.scr0pt.thirdservice.heroku
 
 import com.mongodb.client.MongoClients
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageManager
@@ -21,8 +22,11 @@ fun randomAppname(prefix: String? = null): String {
     return appName.toLowerCase()
 }
 
-
 fun main() {
+    changeHerokuEmail()
+}
+
+fun changeHerokuEmail() {
     val mongoClient2 =
             MongoClients.create(MongoConnection.megaConnection)
     val herokuDatabase = mongoClient2.getDatabase("heroku")
@@ -32,7 +36,7 @@ fun main() {
     val gmailPassword = "5dQICtEu5Z6AIo5C8vnN"
     val infinityMail = InfinityMail(gmailUsername)
 
-    herokuCollection.find().forEach { doc ->
+    herokuCollection.find(Filters.exists("original_email", false)).forEach { doc ->
         val email = doc.getString("email")
         val password = doc.getString("password")
 
@@ -44,14 +48,15 @@ fun main() {
             newEmail = newImail.fullAddress
         } while (newEmail == null || newImail.username == infinityMail.username || herokuCollection.countDocuments(org.bson.Document("email", newEmail)) > 0)
 
-        val driver = DriverManager(driverType = DriverManager.BrowserType.Chrome)
+        val driver = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
 
-        val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT)
-        herokuDashboardPage.onPageDetectOnce = {
-            herokuCollection.updateOne(
-                    org.bson.Document("email", email),
-                    Updates.set("cookies", driver.cookieStr)
-            )
+        val herokuDashboardPage = HerokuDashboardPage(action = HerokuDashboardPage.HerokuDashboardAction.GO_TO_ACCOUNT).apply {
+            onPageDetectOnce = {
+                herokuCollection.updateOne(
+                        org.bson.Document("email", email),
+                        Updates.set("cookies", driver.cookieStr)
+                )
+            }
         }
         val pageManager = PageManager(driver, "https://id.heroku.com/login")
         pageManager.gmail = Gmail(gmailUsername, gmailPassword)
@@ -59,7 +64,7 @@ fun main() {
                 MailReceiveEvent(
                         key = "ona1sender",
                         validator = { mail ->
-                            (mail.id ?: 0) > pageManager.startTime &&
+                            mail.receivedDate > pageManager.startTime &&
                                     Mail.CompareType.EQUAL_IGNORECASE.compare(
                                             mail.from,
                                             "noreply@heroku.com"
@@ -87,32 +92,28 @@ fun main() {
                         fetchContent = true
                 )
         )
+        pageManager.gmail?.connect()
 
         pageManager.addPageList(
                 arrayListOf(
-                        HerokuLoginPage(email, password) {
-                            println("HerokuLoginPage success")
-                        }, herokuDashboardPage
-                        ,
-                        HerokuAccountConfirmPasswordPage(password) {
-                            println("HerokuAccountConfirmPasswordPage success")
-                        },
-                        HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)) {
-                            println("HerokuAccountPage success")
-                        },
-                        HerokuAccountConfirmPasswordDonePage() {
-                            println("HerokuAccountConfirmPasswordDonePage success")
-                        }
+                        HerokuLoginPage(email, password),
+                        HerokuLoginAuthCallbackPage(),
+                        herokuDashboardPage,
+                        HerokuAccountConfirmPasswordPage(password),
+                        HerokuAccountPage(action = HerokuAccountPage.HerokuAccountAction.CHANGE_EMAIL(newEmail)),
+                        HerokuAccountConfirmPasswordDonePage()
                 )
         )
         pageManager.run {
             if (it is Response.OK) {
+                println("Set original_email to $email ")
+                println("Set email to $newEmail ")
                 herokuCollection.updateOne(org.bson.Document("email", email), Updates.combine(
                         Updates.set("original_email", email),
                         Updates.set("email", newEmail)
                 ))
             }
-            println("Login Heroku response $it")
+            println("changeHerokuEmail response $it")
             driver.close()
         }
     }
@@ -202,8 +203,17 @@ class HerokuLoginPage(
     }
 
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.title == "Heroku | Login" &&
-                    pageStatus.url.startsWith("https://id.heroku.com/login")
+            pageStatus.title == "Heroku | Login"
+                    && pageStatus.url == "https://id.heroku.com/login"
+}
+
+class HerokuLoginAuthCallbackPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.title == "Heroku"
+                    && pageStatus.url.startsWith("https://dashboard.heroku.com/auth/heroku/callback?code=")
 }
 
 class HerokuDashboardPage(
@@ -295,7 +305,7 @@ class HerokuAccountConfirmPasswordDonePage(
 ) : Page(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.title == "Account | Heroku" &&
-                    pageStatus.url.startsWith("https://dashboard.heroku.com/account") &&
+                    pageStatus.url == "https://dashboard.heroku.com/account" &&
                     pageStatus.notContain(".modal-overlay .ember-modal-dialog .modal-box .modal-header") &&
                     pageStatus.equalsText(".hk-message.hk-message--success .lh-copy", "A confirmation link has been sent to your new email address and you must click on the link to complete the address change. A notice has also been sent to your old email address.")
 }

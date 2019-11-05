@@ -174,6 +174,7 @@ fun registerFembed(
                             fetchContent = true
                     )
             )
+            connect()
         }
 
         addPageList(arrayListOf(

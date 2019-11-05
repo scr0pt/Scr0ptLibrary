@@ -119,6 +119,7 @@ fun login(
                         fetchContent = true
                 )
         )
+        connect()
     }
 
     driver.waitUntilUrlChange()

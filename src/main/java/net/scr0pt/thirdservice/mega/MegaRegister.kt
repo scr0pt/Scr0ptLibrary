@@ -66,6 +66,7 @@ fun main(args: Array<String>) {
                             fetchContent = true
                     )
             )
+            connect()
         }
         pageManager.addPageList(
                 arrayListOf(
