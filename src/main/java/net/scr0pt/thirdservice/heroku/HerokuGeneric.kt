@@ -219,6 +219,7 @@ class HerokuRegister(
                  }*/
         ))
         pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
+            maxMailPerFolder = 3
             onEvent(MailReceiveEvent(
                     key = "ona_heroku_sender",
                     validator = { mail ->

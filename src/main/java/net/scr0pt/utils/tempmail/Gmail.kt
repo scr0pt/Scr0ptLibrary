@@ -49,6 +49,7 @@ class Gmail(
         val TSL_PORT = 587 // Port for TLS/STARTTLS
     }
 
+    var maxMailPerFolder = 100
 
     private var session: Session? = null
     private var store: Store? = null
@@ -80,11 +81,11 @@ class Gmail(
         val list = arrayListOf<Mail>()
         messages.clear()
         spamFolder?.messages?.reversed()?.let {
-            messages.addAll(it.take(100))
+            messages.addAll(it.take(maxMailPerFolder))
         }
 
         inboxFolder?.messages?.reversed()?.let {
-            messages.addAll(it.take(100))
+            messages.addAll(it.take(maxMailPerFolder))
         }
 
         for (message in messages) {
