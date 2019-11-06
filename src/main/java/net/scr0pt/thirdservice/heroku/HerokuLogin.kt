@@ -77,7 +77,7 @@ fun changeHerokuEmail() {
             pageManager.gmail = Gmail(gmailUsername, gmailPassword)
             pageManager.gmail?.onEvent(
                     MailReceiveEvent(
-                            key = "ona1sender",
+                            key = "noreply@heroku.com",
                             validator = { mail ->
                                 mail.receivedDate > pageManager.startTime &&
                                         Mail.CompareType.EQUAL_IGNORECASE.compare(
@@ -131,8 +131,10 @@ fun changeHerokuEmail() {
                 println("changeHerokuEmail response $it")
                 driver.close()
             }
+        } else {
+            Thread.sleep(60000)
         }
-    }while (doc != null)
+    } while (true)
 }
 
 

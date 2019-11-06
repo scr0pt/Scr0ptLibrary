@@ -36,28 +36,16 @@ fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document
 
     println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
 
-    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = true)
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = false)
     PageManager(driverManager, "https://signup.live.com/signup").apply {
         addPageList(
                 arrayListOf(
-                        OutlookRegisterEnterEmailPage(email) {
-                            println("OutlookRegisterEnterEmailPage success")
-                        },
-                        OutlookRegisterEnterPasswordPage(password) {
-                            println("OutlookRegisterEnterPasswordPage success")
-                        },
-                        OutlookRegisterEnterNamePage(firstName, lastName) {
-                            println("OutlookRegisterEnterNamePage success")
-                        },
-                        OutlookRegisterEnterBirthdatePage() {
-                            println("OutlookRegisterEnterBirthdatePage success")
-                        },
-                        OutlookRegisterEnterCaptchaPage() {
-                            println("OutlookRegisterEnterCaptchaPage success")
-                        },
-                        MicrosoftAccountPage() {
-                            println("MicrosoftAccountPage success")
-                        }
+                        OutlookRegisterEnterEmailPage(email) ,
+                        OutlookRegisterEnterPasswordPage(password) ,
+                        OutlookRegisterEnterNamePage(firstName, lastName),
+                        OutlookRegisterEnterBirthdatePage(),
+                        OutlookRegisterEnterCaptchaPage() ,
+                        MicrosoftAccountPage()
                 )
         )
         run { response ->
