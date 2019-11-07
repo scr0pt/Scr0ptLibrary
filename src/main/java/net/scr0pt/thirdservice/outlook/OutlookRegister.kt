@@ -24,8 +24,8 @@ fun main() {
     val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("microsoft-account")
 
 
-    val domail = if (RandomUtils.nextBoolean()) "hotmail.com" else "outlook.com"
-    val email = "scr0pt" + RandomStringUtils.randomAlphabetic(15).toLowerCase() + "@" + domail
+//    val domail = if (RandomUtils.nextBoolean()) "hotmail.com" else "outlook.com"
+    val email = "scr0pt" + RandomStringUtils.randomAlphabetic(15).toLowerCase() + "@outlook.com"
     outlookRegister(email = email, collection = collection)
 }
 
