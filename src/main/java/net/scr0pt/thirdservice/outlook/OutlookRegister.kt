@@ -8,6 +8,7 @@ import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.FakeProfile
+import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
@@ -30,9 +31,9 @@ fun main() {
 
 fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
     val password = "TheOutlook22001@22"
-    val result = FakeProfile.getNewProfile()
-    val firstName = result?.name?.first ?: "Bruce"
-    val lastName = result?.name?.last ?: "Lee"
+    val result = FakeProfileV2.getNewProfile() ?: return
+    val firstName = result.firstName
+    val lastName = result.lastName
 
     println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
 
