@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import kotlinx.coroutines.delay
 import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.Response
@@ -18,8 +19,8 @@ import java.util.*
 fun main() {
     val microsoftOutlook = MicrosoftOutlook()
 
-//    microsoftOutlook.doRegister()
-    microsoftOutlook.doLoginAllAcc()
+    microsoftOutlook.doRegister()
+//    microsoftOutlook.doLoginAllAcc()
 }
 
 class MicrosoftOutlook {
@@ -102,18 +103,26 @@ class MicrosoftOutlook {
             run { response ->
                 println(response)
 
-                if (response is Response.OK) {
-                    collection.insertOne(
-                            org.bson.Document("email", email).append("password", password)
-                                    .append("firstname", firstName).append("lastname", lastName)
-                                    .append("created_at", Date()).append("updated_at", Date())
-                                    .append("cookies", driver.cookieStr)
-                    )
-                } else if (response is MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR) {
-                    println(response.msg)
+                when (response) {
+                    is Response.OK -> {
+                        collection.insertOne(
+                                org.bson.Document("email", email).append("password", password)
+                                        .append("firstname", firstName).append("lastname", lastName)
+                                        .append("created_at", Date()).append("updated_at", Date())
+                                        .append("cookies", driver.cookieStr)
+                        )
+                        driver.get("https://outlook.live.com")
+                        Thread.sleep(20000)
+                        collection.updateOne(Document("email", email), Updates.combine(
+                                Updates.set("acc_status", "initial"),
+                                Updates.set("cookies", driver.cookieStr)
+                        ))
+                    }
+                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR -> println(response.msg)
+                    is MicrosoftResponse.REFISTER_EMAIL_ALREADY_REGISTED -> println(response.msg)
+                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_FORMAT_ERROR -> println(response.msg)
                 }
 
-                driver.get("https://outlook.live.com")
             }
         }
     }

@@ -53,14 +53,15 @@ class HerokuRegister(
     fun registerHerokuRobot() {
         with(robotManager) {
             openBrowser()
-            for(i in 0..20){
-                if(isInputReady()) break
+            for (i in 0..20) {
+                if (isInputReady()) break
             }
 
             browserGoTo("https://signup.heroku.com")
 
-            for(i in 0..20){
-                if(isInputReady()) break            }
+            for (i in 0..20) {
+                if (isInputReady()) break
+            }
 
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)

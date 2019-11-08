@@ -22,11 +22,12 @@ class OutlookRegisterEnterEmailPage(
     override fun onWaiting(pageStatus: PageStatus): Response? {
         //Enter the email address in the format someone@example.com.
         val errorMessage = pageStatus.doc?.selectFirst("div[role=\"alert\"] .alert.alert-error")?.text()
-        if (errorMessage != null) {
-            return MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR(msg = errorMessage)
+        return when {
+            errorMessage == "Someone already has this email address. Try another name or claim one of these that's available" -> MicrosoftResponse.REFISTER_EMAIL_ALREADY_REGISTED(msg = errorMessage)
+            errorMessage == "Enter the email address in the format someone@example.com." -> MicrosoftResponse.REFISTER_ENTER_EMAIL_FORMAT_ERROR(msg = errorMessage)
+            errorMessage != null -> MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR(msg = errorMessage)
+            else -> null
         }
-
-        return null
     }
 
     override fun action(pageStatus: PageStatus): Response {
@@ -127,9 +128,9 @@ class OutlookRegisterEnterPhoneNumberPage(
                     && pageStatus.title == "Add security info"
                     && pageStatus.html.contains("When you need to prove you're you or a change is made to your account, we'll use your security info to contact you.")
                     && pageStatus.html.contains("Send a code to this phone number")
-                    && pageStatus.equalsText(".form-group.template-input label","Country code")
-                    && pageStatus.equalsText(".form-group.template-input label","Phone number")
-                    && pageStatus.equalsText(".form-group.template-input label","Enter the access code")
+                    && pageStatus.equalsText(".form-group.template-input label", "Country code")
+                    && pageStatus.equalsText(".form-group.template-input label", "Phone number")
+                    && pageStatus.equalsText(".form-group.template-input label", "Enter the access code")
 }
 
 class MicrosoftAccountPage(
@@ -150,7 +151,7 @@ class MicrosoftAccountLoginEnterEmailPage(
 
     override fun onWaiting(pageStatus: PageStatus): Response? {
         val errorMessage = pageStatus.doc?.selectFirst("div[role=\"alert\"] .alert.alert-error")?.text()
-        if (errorMessage  == "That Microsoft account doesn't exist. Enter a different account or get a new one.") {
+        if (errorMessage == "That Microsoft account doesn't exist. Enter a different account or get a new one.") {
             return MicrosoftResponse.LOGIN_ACC_DOESNT_EXIST(msg = errorMessage)
         }
 
@@ -166,9 +167,10 @@ class MicrosoftAccountLoginEnterEmailPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://login.live.com/login.srf")
                     && pageStatus.title == "Sign in to your Microsoft account"
-                    && pageStatus.equalsText("#loginHeader","Sign in")
+                    && pageStatus.equalsText("#loginHeader", "Sign in")
                     && pageStatus.contain(emailInputSelector, filter = { it.attr("aria-hidden") != "true" })
 }
+
 class MicrosoftAccountLoginEnterPasswordPage(
         val password: String,
         onPageFinish: (() -> Unit)? = null
@@ -184,9 +186,10 @@ class MicrosoftAccountLoginEnterPasswordPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://login.live.com/login.srf")
                     && pageStatus.title == "Sign in to your Microsoft account"
-                    && pageStatus.equalsText("#loginHeader","Enter password")
+                    && pageStatus.equalsText("#loginHeader", "Enter password")
                     && pageStatus.contain(passwordInputSelector, filter = { it.attr("aria-hidden") != "true" })
 }
+
 class MicrosoftAccountLoginAccountLockedPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
@@ -201,7 +204,7 @@ class MicrosoftAccountLoginAccountLockedPage(
 
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://account.live.com/Abuse")
-                    && pageStatus.title =="Your account has been temporarily suspended"
-                    && pageStatus.equalsText("#StartHeader","Your account has been locked")
+                    && pageStatus.title == "Your account has been temporarily suspended"
+                    && pageStatus.equalsText("#StartHeader", "Your account has been locked")
                     && pageStatus.contain(nextBtnSelector, filter = { it.attr("aria-hidden") != "true" })
 }

@@ -292,6 +292,8 @@ sealed class MicrosoftResponse(msg: String? = null) : Response(msg) {
     class REFISTER_ENTER_PHONE_NUMBER_PAGE(msg: String? = null) : MicrosoftResponse(msg)
     class ACCOUNT_HAS_BEEN_SUSPENDED(msg: String? = null) : MicrosoftResponse(msg)
     class LOGIN_ACC_DOESNT_EXIST(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_EMAIL_ALREADY_REGISTED(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_ENTER_EMAIL_FORMAT_ERROR(msg: String? = null) : MicrosoftResponse(msg)
 }
 
 
