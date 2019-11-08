@@ -4,6 +4,7 @@ import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
+import net.scr0pt.thirdservice.heroku.HerokuAccessPage
 import org.apache.commons.lang3.RandomUtils
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.Select
@@ -134,9 +135,20 @@ class OutlookRegisterEnterPhoneNumberPage(
 }
 
 class MicrosoftAccountPage(
+        private val actionType: ActionType = ActionType.ENDPAGE,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun isEndPage() = true
+    enum class ActionType {
+        ENDPAGE, GOTO_INBOX
+    }
+
+    override fun action(pageStatus: PageStatus): Response {
+        when(actionType){
+            ActionType.ENDPAGE -> return Response.OK()
+            ActionType.GOTO_INBOX -> pageStatus.driver.get("https://outlook.live.com")
+        }
+        return Response.WAITING()
+    }
 
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://account.microsoft.com") &&
@@ -207,4 +219,24 @@ class MicrosoftAccountLoginAccountLockedPage(
                     && pageStatus.title == "Your account has been temporarily suspended"
                     && pageStatus.equalsText("#StartHeader", "Your account has been locked")
                     && pageStatus.contain(nextBtnSelector, filter = { it.attr("aria-hidden") != "true" })
+}
+
+class MicrosoftAccountCreatingYourMailboxPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://outlook.live.com/owa/")
+                    && pageStatus.title == "Creating your mailbox"
+}
+
+class MicrosoftAccountEmailInboxPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    override fun isEndPage() = true
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://outlook.live.com/mail/inbox")
+                    && pageStatus.title.startsWith("Mail - ")
+                    && pageStatus.title.endsWith(" - Outlook")
+                    && pageStatus.contain("button[type=\"button\"]", filter = { it.text() == "New message" })
 }

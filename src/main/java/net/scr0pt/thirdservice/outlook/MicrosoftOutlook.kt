@@ -4,7 +4,6 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
-import kotlinx.coroutines.delay
 import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.Response
@@ -27,7 +26,7 @@ class MicrosoftOutlook {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
-    val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("microsoft-account")
+    val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("microsoft-account")
 
     fun doLoginAllAcc() {
         collection.find(Filters.exists("acc_status", false)).forEach {
@@ -65,9 +64,9 @@ class MicrosoftOutlook {
         }
     }
 
-    fun doRegister() {
-        val password = "TheOutlook22001@22"
+    fun doRegister(driverManager: DriverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)) {
         val result = FakeProfileV2.getNewProfile() ?: return
+        val password = "TheOutlook22001@22"
         val firstName = result.firstName
         val lastName = result.lastName
         val username = result.username
@@ -80,7 +79,6 @@ class MicrosoftOutlook {
 
         println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
 
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)
         PageManager(driverManager, "https://signup.live.com/signup").apply {
             addPageList(
                     arrayListOf(
@@ -97,7 +95,19 @@ class MicrosoftOutlook {
                             OutlookRegisterEnterBirthdatePage(),
                             OutlookRegisterEnterCaptchaPage(),
                             OutlookRegisterEnterPhoneNumberPage(),
-                            MicrosoftAccountPage()
+                            MicrosoftAccountPage(actionType = MicrosoftAccountPage.ActionType.GOTO_INBOX).apply {
+                                onPageDetect = {
+                                    collection.insertOne(
+                                            Document("email", email).append("password", password)
+                                                    .append("firstname", firstName).append("lastname", lastName)
+                                                    .append("created_at", Date()).append("updated_at", Date())
+                                                    .append("acc_status", "initial")
+                                                    .append("cookies", driver.cookieStr)
+                                    )
+                                }
+                            },
+                            MicrosoftAccountCreatingYourMailboxPage(),
+                            MicrosoftAccountEmailInboxPage()
                     )
             )
             run { response ->
@@ -105,22 +115,22 @@ class MicrosoftOutlook {
 
                 when (response) {
                     is Response.OK -> {
-                        collection.insertOne(
-                                org.bson.Document("email", email).append("password", password)
-                                        .append("firstname", firstName).append("lastname", lastName)
-                                        .append("created_at", Date()).append("updated_at", Date())
+                        collection.updateOne(Document("email", email),
+                                Document("updated_at", Date())
                                         .append("cookies", driver.cookieStr)
                         )
-                        driver.get("https://outlook.live.com")
-                        Thread.sleep(20000)
-                        collection.updateOne(Document("email", email), Updates.combine(
-                                Updates.set("acc_status", "initial"),
-                                Updates.set("cookies", driver.cookieStr)
-                        ))
                     }
-                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR -> println(response.msg)
-                    is MicrosoftResponse.REFISTER_EMAIL_ALREADY_REGISTED -> println(response.msg)
-                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_FORMAT_ERROR -> println(response.msg)
+                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR -> {
+                        println(response.msg)
+                    }
+                    is MicrosoftResponse.REFISTER_EMAIL_ALREADY_REGISTED -> {
+                        doRegister(driverManager)
+                        println(response.msg)
+                    }
+                    is MicrosoftResponse.REFISTER_ENTER_EMAIL_FORMAT_ERROR -> {
+                        doRegister(driverManager)
+                        println(response.msg)
+                    }
                 }
 
             }
