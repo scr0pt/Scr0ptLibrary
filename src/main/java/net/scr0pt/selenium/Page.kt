@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -173,12 +174,11 @@ class PageStatus(val driver: DriverManager) {
     val url: String = driver.url
     val html: String = driver.html
 
-    fun contain(selector: String, text: String? = null): Boolean =
-            if (text == null) {
-                doc?.selectFirst(selector) != null
-            } else {
-                doc?.select(selector)?.firstOrNull { it.text().trim().contains(text) } != null
-            }
+    fun contain(selector: String, text: String? = null, filter: (Element) -> Boolean = { _ -> true }): Boolean =
+            doc?.select(selector)?.firstOrNull {
+                (text == null || it.text().trim().contains(text))
+                        && filter(it)
+            } != null
 
     fun equalsText(selector: String, text: String): Boolean =
             doc?.select(selector)?.firstOrNull { it.text().trim() == text.trim() } != null
@@ -285,6 +285,13 @@ sealed class MegaResponse(msg: String? = null) : Response(msg) {
     class NOT_VERIFY_EMAIL_YET(msg: String? = null) : MegaResponse(msg)
     class CONFIRMATIOM_LINK_NO_LONGER_VALID(msg: String? = null) : MegaResponse(msg)
     class INCORECT_PASSWORD(msg: String? = null) : MegaResponse(msg)
+}
+
+sealed class MicrosoftResponse(msg: String? = null) : Response(msg) {
+    class REFISTER_ENTER_EMAIL_ERROR(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_ENTER_PHONE_NUMBER_PAGE(msg: String? = null) : MicrosoftResponse(msg)
+    class ACCOUNT_HAS_BEEN_SUSPENDED(msg: String? = null) : MicrosoftResponse(msg)
+    class LOGIN_ACC_DOESNT_EXIST(msg: String? = null) : MicrosoftResponse(msg)
 }
 
 

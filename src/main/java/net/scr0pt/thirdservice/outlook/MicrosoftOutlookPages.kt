@@ -1,94 +1,35 @@
 package net.scr0pt.thirdservice.outlook
 
-import com.mongodb.client.MongoClients
-import com.mongodb.client.MongoCollection
+import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.Page
-import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
-import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.utils.FakeProfile
-import net.scr0pt.utils.FakeProfileV2
-import net.scr0pt.utils.webdriver.DriverManager
-import org.apache.commons.lang3.RandomStringUtils
 import org.apache.commons.lang3.RandomUtils
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.Select
-import java.util.*
 
-
-fun main() {
-    val mongoClient =
-            MongoClients.create(MongoConnection.megaConnection)
-    val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
-    val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("microsoft-account")
-
-
-    val domail = if (RandomUtils.nextBoolean()) "hotmail.com" else "outlook.com"
-    val email = "scr0pt" + RandomStringUtils.randomAlphabetic(15).toLowerCase() + "@" + domail
-    outlookRegister(email = email, collection = collection)
-}
-
-fun outlookRegister(email: String, collection: MongoCollection<org.bson.Document>) {
-    val password = "TheOutlook22001@22"
-    val result = FakeProfileV2.getNewProfile() ?: return
-    val firstName = result.firstName
-    val lastName = result.lastName
-
-    println("email: $email\npassword: $password\nfirstname: $firstName\nlastname: $lastName")
-
-    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = false)
-    PageManager(driverManager, "https://signup.live.com/signup").apply {
-        addPageList(
-                arrayListOf(
-                        OutlookRegisterEnterEmailPage(email) {
-                            println("OutlookRegisterEnterEmailPage success")
-                        },
-                        OutlookRegisterEnterPasswordPage(password) {
-                            println("OutlookRegisterEnterPasswordPage success")
-                        },
-                        OutlookRegisterEnterNamePage(firstName, lastName) {
-                            println("OutlookRegisterEnterNamePage success")
-                        },
-                        OutlookRegisterEnterBirthdatePage() {
-                            println("OutlookRegisterEnterBirthdatePage success")
-                        },
-                        OutlookRegisterEnterCaptchaPage() {
-                            println("OutlookRegisterEnterCaptchaPage success")
-                        },
-                        MicrosoftAccountPage() {
-                            println("MicrosoftAccountPage success")
-                        }
-                )
-        )
-        run { response ->
-            println(response)
-
-            if (response is Response.OK) {
-                collection.insertOne(
-                        org.bson.Document("email", email).append("password", password).append(
-                                "firstname",
-                                firstName
-                        ).append("lastname", lastName).append("created_at", Date()).append("updated_at", Date())
-                )
-            }
-
-            driver.get("https://outlook.live.com")
-
-            Thread.sleep(20000)
-//        outlookRegisterPageManager.driver.close()
-            Thread.sleep(600000)
-        }
-    }
-}
+/**
+ * Created by Long
+ * Date: 11/8/2019
+ * Time: 10:16 PM
+ */
 
 
 class OutlookRegisterEnterEmailPage(
         val email: String,
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
-    override fun action(pageStatus: PageStatus): Response {
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        //Enter the email address in the format someone@example.com.
+        val errorMessage = pageStatus.doc?.selectFirst("div[role=\"alert\"] .alert.alert-error")?.text()
+        if (errorMessage != null) {
+            return MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR(msg = errorMessage)
+        }
 
+        return null
+    }
+
+    override fun action(pageStatus: PageStatus): Response {
         pageStatus.driver.sendKeysFirstEl(email, "input#MemberName") ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
@@ -108,7 +49,6 @@ class OutlookRegisterEnterPasswordPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-
         pageStatus.driver.sendKeysFirstEl(password, "input#PasswordInput") ?: return Response.NOT_FOUND_ELEMENT()
         pageStatus.driver.clickFirstEl("#iSignupAction") ?: return Response.NOT_FOUND_ELEMENT()
         return Response.WAITING()
@@ -144,8 +84,6 @@ class OutlookRegisterEnterBirthdatePage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-
-
         val BirthYear = Select(pageStatus.driver.findFirstEl(By.id("BirthYear")))
         BirthYear.selectByValue(RandomUtils.nextInt(1980, 2001).toString())//exclude 2001
         val BirthDay = Select(pageStatus.driver.findFirstEl(By.id("BirthDay")))//except 31, 30
@@ -179,17 +117,91 @@ class OutlookRegisterEnterCaptchaPage(
                     pageStatus.equalsText("#wlspispHipInstructionContainer", "Enter the characters you see")
 }
 
+class OutlookRegisterEnterPhoneNumberPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    override fun action(pageStatus: PageStatus) = MicrosoftResponse.REFISTER_ENTER_PHONE_NUMBER_PAGE()
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://signup.live.com/signup")
+                    && pageStatus.title == "Add security info"
+                    && pageStatus.html.contains("When you need to prove you're you or a change is made to your account, we'll use your security info to contact you.")
+                    && pageStatus.html.contains("Send a code to this phone number")
+                    && pageStatus.equalsText(".form-group.template-input label","Country code")
+                    && pageStatus.equalsText(".form-group.template-input label","Phone number")
+                    && pageStatus.equalsText(".form-group.template-input label","Enter the access code")
+}
+
 class MicrosoftAccountPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun isEndPage() = true
 
-    override fun action(pageStatus: PageStatus): Response {
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://account.microsoft.com") &&
+                    pageStatus.title == "Microsoft account | Home"
+}
 
+class MicrosoftAccountLoginEnterEmailPage(
+        val email: String,
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    private val emailInputSelector = ".form-group .placeholderContainer input[type=\"email\"][name=\"loginfmt\"]"
+
+    override fun onWaiting(pageStatus: PageStatus): Response? {
+        val errorMessage = pageStatus.doc?.selectFirst("div[role=\"alert\"] .alert.alert-error")?.text()
+        if (errorMessage  == "That Microsoft account doesn't exist. Enter a different account or get a new one.") {
+            return MicrosoftResponse.LOGIN_ACC_DOESNT_EXIST(msg = errorMessage)
+        }
+
+        return null
+    }
+
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(email, emailInputSelector)
+        pageStatus.driver.clickFirstEl(".button-container input[type=\"submit\"]")
         return Response.WAITING()
     }
 
     override fun detect(pageStatus: PageStatus): Boolean =
-            pageStatus.url.startsWith("https://account.microsoft.com") &&
-                    pageStatus.title == "Microsoft account | Home"
+            pageStatus.url.startsWith("https://login.live.com/login.srf")
+                    && pageStatus.title == "Sign in to your Microsoft account"
+                    && pageStatus.equalsText("#loginHeader","Sign in")
+                    && pageStatus.contain(emailInputSelector, filter = { it.attr("aria-hidden") != "true" })
+}
+class MicrosoftAccountLoginEnterPasswordPage(
+        val password: String,
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    private val passwordInputSelector = ".form-group .placeholderContainer input[type=\"password\"][name=\"passwd\"]"
+
+    override fun action(pageStatus: PageStatus): Response {
+        pageStatus.driver.sendKeysFirstEl(password, passwordInputSelector)
+        pageStatus.driver.clickFirstEl(".button-container input[type=\"submit\"]")
+        return Response.WAITING()
+    }
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://login.live.com/login.srf")
+                    && pageStatus.title == "Sign in to your Microsoft account"
+                    && pageStatus.equalsText("#loginHeader","Enter password")
+                    && pageStatus.contain(passwordInputSelector, filter = { it.attr("aria-hidden") != "true" })
+}
+class MicrosoftAccountLoginAccountLockedPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    private val nextBtnSelector = ".position-buttons .button-container input#StartAction[type=\"submit\"]"
+
+    override fun action(pageStatus: PageStatus) = MicrosoftResponse.ACCOUNT_HAS_BEEN_SUSPENDED()
+
+    //    override fun action(pageStatus: PageStatus): Response {
+//        pageStatus.driver.clickFirstEl(nextBtnSelector)
+//        return Response.WAITING()
+//    }
+
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://account.live.com/Abuse")
+                    && pageStatus.title =="Your account has been temporarily suspended"
+                    && pageStatus.equalsText("#StartHeader","Your account has been locked")
+                    && pageStatus.contain(nextBtnSelector, filter = { it.attr("aria-hidden") != "true" })
 }
