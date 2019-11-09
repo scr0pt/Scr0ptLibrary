@@ -12,10 +12,11 @@ import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
+import java.time.temporal.TemporalField
 import java.util.*
 
 
-fun main() {
+fun main(args: Array<String>) {
     val microsoftOutlook = MicrosoftOutlook()
 
     microsoftOutlook.doRegister()
@@ -66,10 +67,10 @@ class MicrosoftOutlook {
 
     fun doRegister(driverManager: DriverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)) {
         val result = FakeProfileV2.getNewProfile() ?: return
-        val password = "TheOutlook22001@22"
+        val password = "TheOutlook_${result.password}"
         val firstName = result.firstName
         val lastName = result.lastName
-        val username = result.username.toLowerCase()
+        val username = result.getUsernameWithFirstNameandYear()
         var email: String = if (username.contains("@")) {
             username
         } else {
