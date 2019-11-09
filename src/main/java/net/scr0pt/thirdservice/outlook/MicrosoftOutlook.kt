@@ -69,7 +69,7 @@ class MicrosoftOutlook {
         val password = "TheOutlook22001@22"
         val firstName = result.firstName
         val lastName = result.lastName
-        val username = result.username
+        val username = result.username.toLowerCase()
         var email: String = if (username.contains("@")) {
             username
         } else {
@@ -107,6 +107,7 @@ class MicrosoftOutlook {
                                 }
                             },
                             MicrosoftAccountCreatingYourMailboxPage(),
+                            MicrosoftAccountEmailOutlookNewUserPage(),
                             MicrosoftAccountEmailInboxPage()
                     )
             )
@@ -116,9 +117,9 @@ class MicrosoftOutlook {
                 when (response) {
                     is Response.OK -> {
                         collection.updateOne(Document("email", email),
-                                Document("updated_at", Date())
-                                        .append("cookies", driver.cookieStr)
+                                Updates.set("cookies", driver.cookieStr)
                         )
+                        driver.close()
                     }
                     is MicrosoftResponse.REFISTER_ENTER_EMAIL_ERROR -> {
                         println(response.msg)

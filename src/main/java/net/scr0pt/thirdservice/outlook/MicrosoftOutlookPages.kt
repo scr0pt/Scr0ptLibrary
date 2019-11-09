@@ -4,7 +4,6 @@ import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.Page
 import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
-import net.scr0pt.thirdservice.heroku.HerokuAccessPage
 import org.apache.commons.lang3.RandomUtils
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.Select
@@ -143,7 +142,7 @@ class MicrosoftAccountPage(
     }
 
     override fun action(pageStatus: PageStatus): Response {
-        when(actionType){
+        when (actionType) {
             ActionType.ENDPAGE -> return Response.OK()
             ActionType.GOTO_INBOX -> pageStatus.driver.get("https://outlook.live.com")
         }
@@ -227,6 +226,15 @@ class MicrosoftAccountCreatingYourMailboxPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://outlook.live.com/owa/")
                     && pageStatus.title == "Creating your mailbox"
+}
+
+//Pre page of MicrosoftAccountEmailInboxPage (when page MicrosoftAccountEmailInboxPage is not ready)
+class MicrosoftAccountEmailOutlookNewUserPage(
+        onPageFinish: (() -> Unit)? = null
+) : Page(onPageFinish = onPageFinish) {
+    override fun detect(pageStatus: PageStatus): Boolean =
+            pageStatus.url.startsWith("https://outlook.live.com/mail/newuser")
+                    && pageStatus.title == "Outlook"
 }
 
 class MicrosoftAccountEmailInboxPage(
