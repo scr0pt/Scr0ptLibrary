@@ -105,6 +105,7 @@ class OutlookRegisterEnterBirthdatePage(
 class OutlookRegisterEnterCaptchaPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
+
     override fun action(pageStatus: PageStatus): Response {
 
         pageStatus.driver.findFirstEl(".form-group.template-input", contains = "Enter the characters you see")?.findElement(By.tagName("input"))?.click()

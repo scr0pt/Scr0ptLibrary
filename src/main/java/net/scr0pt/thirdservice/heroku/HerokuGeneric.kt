@@ -6,7 +6,7 @@ import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.thirdservice.openload.bypassCaptcha
+import net.scr0pt.selenium.bypassCaptcha
 import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.tempmail.Gmail

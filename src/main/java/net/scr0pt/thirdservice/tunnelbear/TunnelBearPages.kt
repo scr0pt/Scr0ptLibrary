@@ -24,7 +24,12 @@ class TunnelBearRegisterPage(
     )
 
     override fun action(pageStatus: PageStatus): Response {
-        form.submit(pageStatus.driver)
+        pageStatus.driver.executeScript("""
+            var form = document.getElementById("signup-form");
+            form.email.value = "${email}";
+            form.password.value = "${password}";
+            form.submit();
+        """.trimIndent())
         return Response.WAITING()
     }
 

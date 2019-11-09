@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
+import net.scr0pt.OSUtils
 import net.scr0pt.selenium.MicrosoftResponse
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.Response
@@ -94,7 +95,9 @@ class MicrosoftOutlook {
                             },
                             OutlookRegisterEnterNamePage(firstName, lastName),
                             OutlookRegisterEnterBirthdatePage(),
-                            OutlookRegisterEnterCaptchaPage(),
+                            OutlookRegisterEnterCaptchaPage().apply {
+                                onPageDetectOnce = { OSUtils.makeSound() }
+                            },
                             OutlookRegisterEnterPhoneNumberPage(),
                             MicrosoftAccountPage(actionType = MicrosoftAccountPage.ActionType.GOTO_INBOX).apply {
                                 onPageDetect = {

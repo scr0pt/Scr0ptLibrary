@@ -5,11 +5,11 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 
-import net.scr0pt.bot.google.*
-import net.scr0pt.bot.google.GoogleSearch
 import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.thirdservice.openload.bypassCaptcha
+import net.scr0pt.selenium.bypassCaptcha
+import net.scr0pt.thirdservice.google.*
+import net.scr0pt.thirdservice.google.GoogleSearch
 import net.scr0pt.utils.FakeProfile
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.RobotManager
@@ -17,6 +17,7 @@ import net.scr0pt.utils.SystemClipboard
 
 import net.scr0pt.utils.webdriver.DriverElements
 import net.scr0pt.utils.webdriver.DriverManager
+import org.bson.Document
 import java.awt.event.KeyEvent
 
 /**
@@ -526,12 +527,12 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
                         val cookieStr = getCookieStr(this)
 
                         if (cookieStr != "") {
-                            collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            collection.updateOne(Document("email", email), Updates.combine(
                                     Updates.set("cookies", cookieStr),
                                     Updates.set("cluster_builded", true)
                             ))
                         } else {
-                            collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                            collection.updateOne(Document("email", email), Updates.combine(
                                     Updates.set("cluster_builded", true)
                             ))
                         }
@@ -541,7 +542,7 @@ fun login(email: String, password: String, collection: MongoCollection<org.bson.
             } else if (getCurrentUrl().endsWith("#clusters")) {
                 val cookieStr = getCookieStr(this)
                 if (cookieStr != "") {
-                    collection.updateOne(org.bson.Document("email", email), Updates.combine(
+                    collection.updateOne(Document("email", email), Updates.combine(
                             Updates.set("cookies", cookieStr)
                     ))
                 }

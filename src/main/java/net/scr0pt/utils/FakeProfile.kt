@@ -29,6 +29,8 @@ class PersonProfile(
         val username: String,
         val password: String
 ) {
+    val fullname: String
+        get() = firstName + " " + lastName
     fun getUsernameWithFirstNameandYear(): String {
         val year = birthday.get(Calendar.YEAR).toString()
         return (firstName + username.removeSuffix(year) + year).toLowerCase()

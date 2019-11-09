@@ -1,5 +1,9 @@
 package net.scr0pt
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import java.awt.Toolkit
+
 fun main() {
     println(System.getProperty("sun.arch.data.model"))
 }
@@ -11,4 +15,13 @@ object OSUtils {
     fun isWindows() = OSName.startsWith("Windows")
     fun isLinux() = OSName.startsWith("Linux")
     fun isMac() = OSName.startsWith("Mac")
+
+    fun makeSound() {
+        Thread(Runnable {
+            for (i in 0..5) {
+                Toolkit.getDefaultToolkit().beep()
+                Thread.sleep(500)
+            }
+        }).start()
+    }
 }

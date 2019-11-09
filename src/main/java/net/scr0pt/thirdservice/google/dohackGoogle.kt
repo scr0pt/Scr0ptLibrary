@@ -1,4 +1,4 @@
-package net.scr0pt.bot.google
+package net.scr0pt.thirdservice.google
 
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.Response

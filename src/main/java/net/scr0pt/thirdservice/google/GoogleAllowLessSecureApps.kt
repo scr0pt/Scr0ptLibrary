@@ -1,4 +1,4 @@
-package net.scr0pt.bot.google
+package net.scr0pt.thirdservice.google
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
