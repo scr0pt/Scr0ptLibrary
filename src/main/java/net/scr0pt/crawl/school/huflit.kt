@@ -9,12 +9,12 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import net.scr0pt.thirdservice.mongodb.MongoConnection
+import net.scr0pt.utils.curl.LongConnection
 import org.apache.commons.lang3.StringUtils
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import org.apache.pdfbox.text.PDFTextStripperByArea
 import org.bson.Document
-import net.scr0pt.utils.curl.LongConnection
 import java.io.File
 import java.lang.reflect.Type
 
@@ -66,8 +66,8 @@ fun main() {
                     )
             )
 
-            while (response?.body?.contains("Hệ thống đang từ chối truy cập của bạn.") ?: false) {
-                val second = response?.doc?.selectFirst("span#secField")?.text()?.toLong() ?: 60L
+            while (response?.body?.contains("Hệ thống đang từ chối truy cập của bạn.") == true) {
+                val second = response.doc?.selectFirst("span#secField")?.text()?.toLong() ?: 60L
                 println("Sleep $second second")
                 Thread.sleep(second * 1000)
                 response = conn.post(

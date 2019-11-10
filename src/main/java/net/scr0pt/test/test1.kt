@@ -7,10 +7,10 @@ import net.minidev.json.JSONArray
 import net.minidev.json.JSONObject
 import net.minidev.json.JSONValue
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.bson.Document
-import org.bson.types.ObjectId
 import net.scr0pt.utils.curl.LongConnection
 import net.scr0pt.utils.curl.NetworkUtils
+import org.bson.Document
+import org.bson.types.ObjectId
 
 /**
  * Created by Long
@@ -61,7 +61,7 @@ fun main2() {
 
 }
 
-class CTUSession() {
+class CTUSession {
     private val collectionQlvbDiploma: MongoCollection<Document>
     val conn = LongConnection().also {
         NetworkUtils.getUnsafeOkHttpClient()
@@ -196,7 +196,7 @@ class CTUSession() {
                 for (td in tr) {
                     println("------------ $td")
                     if (td is String && td != "tr") {
-                        row.add(td as String)
+                        row.add(td)
                     }
                 }
 

@@ -32,7 +32,7 @@ object NetworkUtils {
             val sslContext = SSLContext.getInstance("SSL")
             sslContext.init(null, trustAllCerts, java.security.SecureRandom())
             // Create an ssl socket factory with our all-trusting manager
-            val sslSocketFactory = sslContext.getSocketFactory()
+            val sslSocketFactory = sslContext.socketFactory
 
             HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier { hostname, session -> true }

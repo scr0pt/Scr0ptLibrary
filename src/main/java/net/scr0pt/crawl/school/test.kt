@@ -2,10 +2,8 @@ package net.scr0pt.crawl.school
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
-import kotlinx.coroutines.runBlocking
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
-import java.text.SimpleDateFormat
 import java.util.*
 
 

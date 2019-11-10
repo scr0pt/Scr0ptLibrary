@@ -14,7 +14,7 @@ fun main() {
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("diploma-neu-2")
 
-    val firefox =DriverManager(driverType = DriverManager.BrowserType.Firefox)
+    val firefox = DriverManager(driverType = DriverManager.BrowserType.Firefox)
     firefox.get("http://vanbang.neu.edu.vn/#mainResult")
     firefox.clickFirstEl(By.id("ctl00_phd_slices_VanBangListViewOnly__searchButton"))
     Thread.sleep(500)
@@ -249,6 +249,7 @@ fun MongoCollection<Document>.random(doc: Document?): Document? {
     val nextInt = kotlin.random.Random.nextInt(0, count.toInt())
     return this.find(doc).skip(nextInt).first()
 }
+
 fun MongoCollection<Document>.random(doc: Bson?): Document? {
     var count = this.countDocuments(doc)
     val nextInt = kotlin.random.Random.nextInt(0, count.toInt())

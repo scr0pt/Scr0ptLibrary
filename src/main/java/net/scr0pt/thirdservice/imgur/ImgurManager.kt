@@ -2,11 +2,11 @@ package net.scr0pt.thirdservice.imgur
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import org.jsoup.Jsoup
 import net.scr0pt.thirdservice.imgur.entity.CheckCaptchaResponse
 import net.scr0pt.thirdservice.imgur.entity.ImgurAcc
 import net.scr0pt.thirdservice.imgur.entity.RemoteUploadResponse
 import net.scr0pt.utils.curl.LongConnection
+import org.jsoup.Jsoup
 
 fun main2() {
     val imgurAcc = ImgurAcc()

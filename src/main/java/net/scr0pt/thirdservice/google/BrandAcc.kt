@@ -38,7 +38,7 @@ fun run(gmailUsername: String, gmailPassword: String, recoverEmail: String?, edu
     brandAcc.loginGoogle(gmailUsername, gmailPassword, recoverEmail) {
         brandAcc.createNewBrandAcc(eduCollection, gmailUsername)
         val endTime = System.currentTimeMillis()
-        println("It takes ${(endTime - startTime)/1000} seconds")
+        println("It takes ${(endTime - startTime) / 1000} seconds")
     }
 }
 
@@ -86,7 +86,7 @@ class BrandAcc {
             } else if (currentUrl.startsWith(GoogleConstants.phoneNumberLoginVerify)) {
                 closeWindow()
                 break
-            } else if (currentUrl == GoogleConstants.PlusPageSignUpIdvChallenge){
+            } else if (currentUrl == GoogleConstants.PlusPageSignUpIdvChallenge) {
                 closeWindow()
                 break
             }

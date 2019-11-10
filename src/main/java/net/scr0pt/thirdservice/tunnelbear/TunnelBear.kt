@@ -20,7 +20,7 @@ import org.bson.Document
 
 fun main() {
     val tunnelBear = TunnelBear()
-    tunnelBear.doRegisterAllEmails("vinhnguyen4h4@gmail.com","eHK;HyL.e=2k1704FgqN")
+    tunnelBear.doRegisterAllEmails("vinhnguyen4h4@gmail.com", "eHK;HyL.e=2k1704FgqN")
 }
 
 class TunnelBear {

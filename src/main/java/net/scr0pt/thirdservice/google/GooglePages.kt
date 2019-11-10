@@ -309,7 +309,7 @@ class VerifyItsYouPhoneDevice(onPageFinish: (() -> Unit)? = null) : GooglePage(o
 class AccountDisable(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus) = pageStatus.equalsText(headingTextSelector, "Đã vô hiệu hóa tài khoản")
 
-    override fun isEndPage() = true
+    override fun action(pageStatus: PageStatus) = GoogleResponse.ACCOUNT_DISABLE()
 }
 
 

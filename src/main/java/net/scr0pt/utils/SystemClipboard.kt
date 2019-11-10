@@ -6,8 +6,13 @@ import java.awt.datatransfer.StringSelection
 
 object SystemClipboard {
     val systemClipboard = Toolkit.getDefaultToolkit().systemClipboard
-    fun copy(text: String){
+    fun copy(text: String) {
         systemClipboard.setContents(StringSelection(text), null)
     }
-    fun get(): String = systemClipboard.getData(DataFlavor.stringFlavor).toString()
+
+    fun get(): String = try {
+        systemClipboard.getData(DataFlavor.stringFlavor).toString()
+    } catch (e: Exception) {
+        ""
+    }
 }

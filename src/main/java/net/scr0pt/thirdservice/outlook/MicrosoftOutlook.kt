@@ -13,7 +13,6 @@ import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.webdriver.DriverManager
 import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
-import java.time.temporal.TemporalField
 import java.util.*
 
 
@@ -47,7 +46,7 @@ class MicrosoftOutlook {
                     MicrosoftAccountLoginAccountLockedPage(),
                     MicrosoftAccountPage()
             ))
-            run() {
+            run {
                 if (it is MicrosoftResponse.ACCOUNT_HAS_BEEN_SUSPENDED) {
                     collection.updateOne(Document("email", email), Updates.set("acc_status", "locked"))
                     driver.close()

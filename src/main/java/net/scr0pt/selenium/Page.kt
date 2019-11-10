@@ -24,14 +24,14 @@ fun main() {
 
 class GoogleSearchResult(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://www.google.com/search") == true &&
-                pageStatus.title?.endsWith("- Tìm với Google") == true
+        return pageStatus.url.startsWith("https://www.google.com/search") == true &&
+                pageStatus.title.endsWith("- Tìm với Google") == true
     }
 }
 
 class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://www.google.com") == true &&
+        return pageStatus.url.startsWith("https://www.google.com") == true &&
                 pageStatus.title == "Google"
     }
 
@@ -267,6 +267,7 @@ sealed class MlabResponse(msg: String? = null) : Response(msg) {
 sealed class GoogleResponse(msg: String? = null) : Response(msg) {
     class RECAPTCHA(msg: String? = null) : GoogleResponse(msg)
     class NOT_FOUND_EMAIL(msg: String? = null) : GoogleResponse(msg)
+    class ACCOUNT_DISABLE(msg: String? = null) : GoogleResponse(msg)
     class INCORECT_PASSWORD(msg: String? = null) : GoogleResponse(msg)
     class PASSWORD_CHANGED(msg: String? = null) : GoogleResponse(msg)
     class CANT_LOGIN_FOR_YOU(msg: String? = null) : GoogleResponse(msg)

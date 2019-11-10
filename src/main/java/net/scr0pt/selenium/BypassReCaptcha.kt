@@ -7,17 +7,19 @@ import net.scr0pt.utils.RobotManager
  * Date: 11/9/2019
  * Time: 2:22 PM
  */
-fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit, onSpecialCase: (() -> Unit)? = null) {
+
+fun isCaptchaOpen(text: String) = text.startsWith("Select all images with") || text.startsWith("Select all squares with")
+
+fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit, onSpecialCase: (() -> Unit)? = null, isDone: ((String) -> Boolean)? = null) {
     with(robotManager) {
         println("bypassCaptcha 1")
         for (i in 0..40) {//Select all images with
             println("bypassCaptcha 2")
             val text = printScreenText().trim()
-            if (text.startsWith("Select all images with")
-                    || text.startsWith("Select all squares with")) break
+            if (isCaptchaOpen(text)) break
             println("bypassCaptcha 3")
 
-            if (i > 10 && text.equals("I'm not a robot\nPrivacy - Terms"))  {
+            if (i > 10 && (text == "I'm not a robot\nPrivacy - Terms" || (isDone != null && isDone(text)))) {
                 println("bypassCaptcha 4")
                 onSuccess()
                 return@bypassCaptcha
@@ -36,7 +38,7 @@ fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorr
             sleep()
             val text = printScreenText().trim()
             when {
-                text.equals("I'm not a robot\nPrivacy - Terms") -> {
+                text == "I'm not a robot\nPrivacy - Terms" -> {
                     println("bypassCaptcha 8")
                     onSuccess()
                     return@bypassCaptcha
@@ -53,10 +55,15 @@ fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorr
                     onFail()
                     return@bypassCaptcha
                 }
-                text.endsWith("Signing up signifies that you have read and agree to the Terms of Service and our Privacy Policy.") ->{
+                text.endsWith("Signing up signifies that you have read and agree to the Terms of Service and our Privacy Policy.", ignoreCase = true) -> {
                     println("bypassCaptcha 11")
                     println("onFail")
                     onFail()
+                    return@bypassCaptcha
+                }
+                isDone != null && isDone(text) -> {
+                    println("bypassCaptcha 11.1")
+                    onSuccess()
                     return@bypassCaptcha
                 }
             }

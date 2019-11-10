@@ -62,7 +62,7 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     }
 
     fun openBrowser() {
-        run.exec("${browerType.path()} ${browerType.cmd()} -start-maximized")
+        run.exec("${browerType.path()} ${browerType.cmd()} --start-maximized")
         longSleep()
     }
 
@@ -91,6 +91,18 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     fun enter() {
         robot.keyPress(KeyEvent.VK_ENTER)
         robot.keyRelease(KeyEvent.VK_ENTER)
+        sleep()
+    }
+
+    fun end() {
+        robot.keyPress(KeyEvent.VK_END)
+        robot.keyRelease(KeyEvent.VK_END)
+        sleep()
+    }
+
+    fun home() {
+        robot.keyPress(KeyEvent.VK_HOME)
+        robot.keyRelease(KeyEvent.VK_HOME)
         sleep()
     }
 
@@ -231,7 +243,7 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     }
 
     fun closeWindow() {
-        mouseMove(Toolkit.getDefaultToolkit().getScreenSize().width - 13, 13)
+        mouseMove(Toolkit.getDefaultToolkit().screenSize.width - 13, 13)
         click()
         longSleep()
     }

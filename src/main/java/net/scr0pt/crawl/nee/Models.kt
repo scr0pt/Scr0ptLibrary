@@ -1,7 +1,7 @@
 package net.scr0pt.crawl.nee
 
-import org.apache.commons.lang3.StringUtils
 import net.scr0pt.thirdservice.google.utils.GoogleParser
+import org.apache.commons.lang3.StringUtils
 
 /**
  * Created by Long

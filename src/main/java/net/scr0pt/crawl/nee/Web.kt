@@ -2,10 +2,10 @@ package net.scr0pt.crawl.nee
 
 import net.scr0pt.OSUtils
 import net.scr0pt.crawl.nee.phrase.WebPhrase
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.curl.LongConnection
 import net.scr0pt.utils.curl.LongConnectionLocalStorage
 import net.scr0pt.utils.curl.adapter.ParseURL
+import org.jsoup.nodes.Document
 
 /**
  *
@@ -377,7 +377,7 @@ constructor(name: String?) {
                 ep.anime = anime
 
                 if (!isGetThisEp(ep)) {
-                    println("Don't get this ep. Existed in db/link invalid: " + ep?.anime?.name + " ep " + ep.name + "  " + ep.web_link)
+                    println("Don't get this ep. Existed in db/link invalid: " + ep.anime?.name + " ep " + ep.name + "  " + ep.web_link)
                     continue
                 }
                 if (ep.subtype == null) ep.subtype = phrase.subType
@@ -677,7 +677,7 @@ constructor(name: String?) {
         }
         println("Link xem anime: $linkXemAnime")
         doc = conn.get(linkXemAnime)?.doc ?: return
-        val eplist = getAllEpisode(doc) ?: return//moi chi co name va link
+        val eplist = getAllEpisode(doc)//moi chi co name va link
 
 
         //backup setting

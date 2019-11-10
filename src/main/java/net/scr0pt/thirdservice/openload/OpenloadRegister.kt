@@ -14,11 +14,11 @@ import org.bson.Document
 import java.util.*
 
 
- fun main() {
+fun main() {
     register()
 }
 
- fun register() {
+fun register() {
     val gmailUsername = "brucealmighty5daeae612ce20558@gmail.com"
 
     val infinityMail = InfinityMail(gmailUsername)

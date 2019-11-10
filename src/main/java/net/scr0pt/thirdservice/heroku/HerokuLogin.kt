@@ -132,7 +132,7 @@ fun changeHerokuEmail() {
                 driver.close()
             }
         }
-    }while (doc != null)
+    } while (doc != null)
 }
 
 
@@ -145,7 +145,7 @@ fun main22() {
     val herokuCollection = herokuDatabase.getCollection("heroku-account")
 
 //    herokuCollection.random(org.bson.Document())?.let {
-    herokuCollection.find()?.forEach {
+    herokuCollection.find().forEach {
         if (it.getList("collaborators", String::class.java)?.contains(collaboratorEmail) == true) return@forEach
         Thread.sleep(15000)
 

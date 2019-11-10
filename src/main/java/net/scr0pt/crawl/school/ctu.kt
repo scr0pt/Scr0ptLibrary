@@ -6,9 +6,11 @@ import net.minidev.json.JSONArray
 import net.minidev.json.JSONObject
 import net.minidev.json.JSONValue
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.utils.webdriver.*
-import okhttp3.*
+import net.scr0pt.utils.webdriver.DriverManager
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.bson.Document
 import java.io.IOException
@@ -35,7 +37,7 @@ fun main() {
                 Thread.sleep(2000)
                 firefox.executeScript("document.querySelectorAll('.v-filterselect-suggestmenu .gwt-MenuItem')[${type - 10}].click()")
             }
-        } else typs?.get(type)?.click()
+        } else typs.get(type).click()
 
 
         for (char in "qưertyuioplkjhgfdsazxcvbnmwôơ") {
@@ -147,7 +149,7 @@ fun parser(doc: org.jsoup.nodes.Document, collectionQlvbDiploma: MongoCollection
     }
 }
 
-class CTUSession() {
+class CTUSession {
     private val collectionQlvbDiploma: MongoCollection<Document>
     var csrfToken: String = ""
     var syncId: Int = 0
@@ -297,7 +299,7 @@ class CTUSession() {
                         for (td in tr) {
                             println("------------ $td")
                             if (td is String && td != "tr") {
-                                row.add(td as String)
+                                row.add(td)
                             }
                         }
 

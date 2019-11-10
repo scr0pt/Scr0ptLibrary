@@ -1,7 +1,5 @@
 package net.scr0pt
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import java.awt.Toolkit
 
 fun main() {

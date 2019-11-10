@@ -8,9 +8,9 @@ import net.scr0pt.crawl.nee.Anime
 import net.scr0pt.crawl.nee.Episode
 import net.scr0pt.crawl.nee.File
 import net.scr0pt.crawl.nee.sortLabel
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.MyString
 import net.scr0pt.utils.curl.LongConnection
+import org.jsoup.nodes.Document
 
 /**
  *

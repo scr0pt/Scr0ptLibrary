@@ -48,5 +48,5 @@ class TunnelBearRegisterAccConfirmedPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url == "https://www.tunnelbear.com/account/confirmed"
                     && pageStatus.title == "TunnelBear: Secure VPN Service"
-                    && pageStatus.equalsText("h1.green-text","Account Confirmed!")
+                    && pageStatus.equalsText("h1.green-text", "Account Confirmed!")
 }

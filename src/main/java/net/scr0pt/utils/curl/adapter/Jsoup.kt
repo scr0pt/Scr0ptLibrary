@@ -1,10 +1,10 @@
 package net.scr0pt.utils.curl.adapter
 
+import net.scr0pt.utils.curl.LongConnection
+import net.scr0pt.utils.curl.LongResponse
 import org.jsoup.Connection
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import net.scr0pt.utils.curl.LongConnection
-import net.scr0pt.utils.curl.LongResponse
 
 fun LongConnection.toJsoupConnection(
         method: LongConnection.REQUEST_METHOD? = null,
