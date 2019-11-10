@@ -243,9 +243,13 @@ fun doingAfterBypassCaptcha(robotManager: RobotManager, collection: MongoCollect
         click(safePointPosition)
         val txt = printScreenText()
         if (txt.contains("Your cluster name is used to generate your hostname and cannot be changed later") && txt.contains("Enter cluster name")) {
-            click((screenSize.width / (2.6)).toInt(), (screenSize.height / (2.33)).toInt())
+            val clusterNamePosition = Pair<Int, Int>(466, 464)
+//            val clusterNamePosition = Pair<Int, Int>((screenSize.width / (2.6)).toInt(), (screenSize.height / (2.33)).toInt())
+            click(clusterNamePosition)
             clearAndPasteInput("MyCluster")
-            click((screenSize.width / (1.43)).toInt(), (screenSize.height / (1.92)).toInt())
+            val nextBtnPosition = Pair<Int, Int>(1070, 560)
+//            val nextBtnPosition = Pair<Int, Int>((screenSize.width / (1.43)).toInt(), (screenSize.height / (1.92)).toInt())
+            click(nextBtnPosition)
             longSleep()
         }
 
