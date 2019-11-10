@@ -25,18 +25,22 @@ import java.awt.event.KeyEvent
  *
  */
 
-fun main() {
+fun main(args: Array<String>) {
     val mongoClient =
             MongoClients.create(MongoConnection.megaConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("mlab")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("mlab-account")
-    processLogin(collection)
+    while (true) processLogin(collection)
 //    processRegister(collection)
 }
 
 fun processLogin(collection: MongoCollection<Document>) {
     collection.random(Filters.and(Filters.exists("cluster_builded", false), Filters.exists("cookies", false)))?.let {
-        robotLoginMlab(it.getString("email"), it.getString("password"), collection)
+        val email = it.getString("email")
+        val password = it.getString("password")
+        if (email != null && password != null) {
+            robotLoginMlab(email, password, collection)
+        }
     }
 }
 
@@ -155,6 +159,11 @@ fun robotLoginMlab(email: String, password: String, collection: MongoCollection<
         openBrowser()
         browserGoTo("https://cloud.mongodb.com/user#/atlas/login")
 
+        for (i in 0..10) {
+            if (isInputReady()) break
+            else sleep()
+        }
+
         clearAndPasteInput(email)
         enter()
         sleep()
@@ -188,6 +197,7 @@ fun robotLoginMlab(email: String, password: String, collection: MongoCollection<
 fun doing(robotManager: RobotManager, collection: MongoCollection<Document>, email: String) {
     val initialResolveCaptchaBtn = Pair<Int, Int>(599, 694)
 //    val initialResolveCaptchaBtn = Pair(885, 915)
+    println("doing -> doing bypassCaptcha")
     bypassCaptcha(initialResolveCaptchaBtn, initialResolveCaptchaBtn, initialResolveCaptchaBtn, robotManager, onSuccess = {
         if (isBashboardCreateClusterOpen(robotManager.getScreenText())) {
             doingAfterBypassCaptcha(robotManager, collection, email)
@@ -250,6 +260,7 @@ fun doingAfterBypassCaptcha(robotManager: RobotManager, collection: MongoCollect
 
         longSleep()
         for (i in 0..10) {
+            println(6.6)
             val text = getScreenText()
             println(text)
             if (isCaptchaOpen(text)) {
@@ -257,6 +268,7 @@ fun doingAfterBypassCaptcha(robotManager: RobotManager, collection: MongoCollect
 //                val initialResolveCaptchaBtn = Pair(875, 1000)
 //                val multipleCorrect = Pair<Int, Int>(600, 695)
                 val multipleCorrect = Pair<Int, Int>(660, 695)
+                println("doingAfterBypassCaptcha -> doing bypassCaptcha")
                 bypassCaptcha(initialResolveCaptchaBtn, multipleCorrect, initialResolveCaptchaBtn, this, onSuccess = {
                     println(5.5)
                     click(safePointPosition)

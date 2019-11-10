@@ -8,7 +8,7 @@ import net.scr0pt.utils.RobotManager
  * Time: 2:22 PM
  */
 
-fun isCaptchaOpen(text: String) = text.startsWith("Select all images with") || text.startsWith("Select all squares with")
+fun isCaptchaOpen(text: String) = text.trim().startsWith("Select all images with") || text.trim().startsWith("Select all squares with")
 
 fun bypassCaptcha(initialResolveCaptchaBtn: Pair<Int, Int>? = null, multipleCorrect: Pair<Int, Int>, newCapthchaBtn: Pair<Int, Int>, robotManager: RobotManager, onSuccess: () -> Unit, onFail: () -> Unit, onSpecialCase: (() -> Unit)? = null, isDone: ((String) -> Boolean)? = null) {
     with(robotManager) {
