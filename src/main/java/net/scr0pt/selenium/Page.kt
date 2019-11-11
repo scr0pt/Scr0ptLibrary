@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.webdriver.DriverManager
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -23,14 +24,14 @@ fun main() {
 
 class GoogleSearchResult(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://www.google.com/search") == true &&
-                pageStatus.title?.endsWith("- Tìm với Google") == true
+        return pageStatus.url.startsWith("https://www.google.com/search") == true &&
+                pageStatus.title.endsWith("- Tìm với Google") == true
     }
 }
 
 class GoogleSearch(onPageFinish: (() -> Unit)? = null) : Page(onPageFinish) {
     override fun detect(pageStatus: PageStatus): Boolean {
-        return pageStatus.url?.startsWith("https://www.google.com") == true &&
+        return pageStatus.url.startsWith("https://www.google.com") == true &&
                 pageStatus.title == "Google"
     }
 
@@ -173,12 +174,11 @@ class PageStatus(val driver: DriverManager) {
     val url: String = driver.url
     val html: String = driver.html
 
-    fun contain(selector: String, text: String? = null): Boolean =
-            if (text == null) {
-                doc?.selectFirst(selector) != null
-            } else {
-                doc?.select(selector)?.firstOrNull { it.text().trim().contains(text) } != null
-            }
+    fun contain(selector: String, text: String? = null, filter: (Element) -> Boolean = { _ -> true }): Boolean =
+            doc?.select(selector)?.firstOrNull {
+                (text == null || it.text().trim().contains(text))
+                        && filter(it)
+            } != null
 
     fun equalsText(selector: String, text: String): Boolean =
             doc?.select(selector)?.firstOrNull { it.text().trim() == text.trim() } != null
@@ -267,6 +267,7 @@ sealed class MlabResponse(msg: String? = null) : Response(msg) {
 sealed class GoogleResponse(msg: String? = null) : Response(msg) {
     class RECAPTCHA(msg: String? = null) : GoogleResponse(msg)
     class NOT_FOUND_EMAIL(msg: String? = null) : GoogleResponse(msg)
+    class ACCOUNT_DISABLE(msg: String? = null) : GoogleResponse(msg)
     class INCORECT_PASSWORD(msg: String? = null) : GoogleResponse(msg)
     class PASSWORD_CHANGED(msg: String? = null) : GoogleResponse(msg)
     class CANT_LOGIN_FOR_YOU(msg: String? = null) : GoogleResponse(msg)
@@ -285,6 +286,15 @@ sealed class MegaResponse(msg: String? = null) : Response(msg) {
     class NOT_VERIFY_EMAIL_YET(msg: String? = null) : MegaResponse(msg)
     class CONFIRMATIOM_LINK_NO_LONGER_VALID(msg: String? = null) : MegaResponse(msg)
     class INCORECT_PASSWORD(msg: String? = null) : MegaResponse(msg)
+}
+
+sealed class MicrosoftResponse(msg: String? = null) : Response(msg) {
+    class REFISTER_ENTER_EMAIL_ERROR(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_ENTER_PHONE_NUMBER_PAGE(msg: String? = null) : MicrosoftResponse(msg)
+    class ACCOUNT_HAS_BEEN_SUSPENDED(msg: String? = null) : MicrosoftResponse(msg)
+    class LOGIN_ACC_DOESNT_EXIST(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_EMAIL_ALREADY_REGISTED(msg: String? = null) : MicrosoftResponse(msg)
+    class REFISTER_ENTER_EMAIL_FORMAT_ERROR(msg: String? = null) : MicrosoftResponse(msg)
 }
 
 

@@ -1,7 +1,7 @@
 package net.scr0pt.utils.tempmail.event
 
-import org.jsoup.nodes.Element
 import net.scr0pt.utils.tempmail.models.Mail
+import org.jsoup.nodes.Element
 
 /**
  * Created by Long

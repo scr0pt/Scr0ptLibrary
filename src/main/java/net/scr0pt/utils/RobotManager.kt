@@ -14,23 +14,38 @@ fun main() {
     detectMousePosition()
 }
 
-class RobotManager {
+class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     val CLIPBOARD_DELETED = "SystemClipboardDeleted"
     val screenResolution = Toolkit.getDefaultToolkit().screenResolution
     val screenSize = Toolkit.getDefaultToolkit().screenSize
 
     enum class BrowserType {
         CHROME {
+            override fun cmd() = ""
             override fun baseY() = 30
+            override fun path() = "\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\""
         },
         FIREFOX {
+            override fun path() = "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\""
+            override fun cmd() = ""
+            override fun baseY() = 0
+        },
+        CHROME_INCOGNITO {
+            override fun path() = "\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\""
+            override fun cmd() = "-incognito"
+            override fun baseY() = 30
+        },
+        FIREFOX_INCOGNITO {
+            override fun path() = "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\""
+            override fun cmd() = "-private-window"
             override fun baseY() = 0
         };
 
         abstract fun baseY(): Int
+        abstract fun cmd(): String
+        abstract fun path(): String
     }
 
-    val browerType = BrowserType.CHROME
     val robot = Robot()
     val run = Runtime.getRuntime()
 
@@ -47,11 +62,7 @@ class RobotManager {
     }
 
     fun openBrowser() {
-        if (browerType == BrowserType.CHROME) {
-            run.exec("\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" -incognito -start-maximized")
-        } else if (browerType == BrowserType.FIREFOX) {
-            run.exec("\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -private-window")
-        }
+        run.exec("${browerType.path()} ${browerType.cmd()} --start-maximized")
         longSleep()
     }
 
@@ -83,6 +94,18 @@ class RobotManager {
         sleep()
     }
 
+    fun end() {
+        robot.keyPress(KeyEvent.VK_END)
+        robot.keyRelease(KeyEvent.VK_END)
+        sleep()
+    }
+
+    fun home() {
+        robot.keyPress(KeyEvent.VK_HOME)
+        robot.keyRelease(KeyEvent.VK_HOME)
+        sleep()
+    }
+
     fun clearInput() {
         ctrA()
         robot.keyPress(KeyEvent.VK_DELETE)
@@ -111,6 +134,14 @@ class RobotManager {
             sleep()
             _url = getCurrentUrl()
         } while (!_url.startsWith(url))
+    }
+
+    fun waitUntilUrlFit(filter: (String) -> Boolean) {
+        var _url: String
+        do {
+            sleep()
+            _url = getCurrentUrl()
+        } while (!filter(_url))
     }
 
     fun waitUntilUrlEndWith(url: String) {
@@ -212,7 +243,7 @@ class RobotManager {
     }
 
     fun closeWindow() {
-        mouseMove(Toolkit.getDefaultToolkit().getScreenSize().width - 13, 13)
+        mouseMove(Toolkit.getDefaultToolkit().screenSize.width - 13, 13)
         click()
         longSleep()
     }
@@ -221,6 +252,11 @@ class RobotManager {
         val text = "isInputReady"
         clearAndPasteInput(text)
         return getScreenText() == text
+    }
+
+    fun isScreenTextContain(list: List<String>): Boolean {
+        val text = getScreenText()
+        return list.all { text.contains(it) }
     }
 
 }

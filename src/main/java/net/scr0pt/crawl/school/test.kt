@@ -2,16 +2,22 @@ package net.scr0pt.crawl.school
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
-import kotlinx.coroutines.runBlocking
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import org.bson.Document
-import java.text.SimpleDateFormat
 import java.util.*
 
 
 fun main() {
-    var a = listOf(1,2,3)
-println(a.take(10))
+    val mongoClient =
+            MongoClients.create(MongoConnection.megaConnection)
+    val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
+    val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("microsoft-account")
+    collection.insertOne(
+            org.bson.Document("email", "Rine1946@outlook.com").append("password", "TheOutlook22001@22")
+                    .append("firstname", "Ahmed").append("lastname", "T. Parker")
+                    .append("created_at", Date()).append("updated_at", Date())
+                    .append("acc_status", "initial")
+    )
 }
 
 fun main22() {

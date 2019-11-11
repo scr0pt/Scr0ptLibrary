@@ -1,16 +1,16 @@
 package net.scr0pt.crawl.nee.phrase
 
 
+import net.minidev.json.JSONArray
+import net.minidev.json.JSONObject
+import net.minidev.json.JSONValue
 import net.scr0pt.crawl.nee.Anime
 import net.scr0pt.crawl.nee.Episode
 import net.scr0pt.crawl.nee.File
 import net.scr0pt.crawl.nee.sortLabel
-import net.minidev.json.JSONArray
-import net.minidev.json.JSONObject
-import net.minidev.json.JSONValue
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.MyString
 import net.scr0pt.utils.curl.LongConnection
+import org.jsoup.nodes.Document
 
 /**
  *

@@ -2,8 +2,8 @@ package net.scr0pt.utils.webdriver
 
 import net.lingala.zip4j.ZipFile
 import net.scr0pt.OSUtils
-import org.jsoup.Jsoup
 import net.scr0pt.utils.curl.NetworkUtils
+import org.jsoup.Jsoup
 import java.io.File
 
 fun main() {

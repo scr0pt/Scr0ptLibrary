@@ -5,8 +5,8 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.*
+import net.scr0pt.selenium.bypassCaptcha
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.thirdservice.openload.bypassCaptcha
 import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.RobotManager
 import net.scr0pt.utils.tempmail.Gmail
@@ -53,14 +53,15 @@ class HerokuRegister(
     fun registerHerokuRobot() {
         with(robotManager) {
             openBrowser()
-            for(i in 0..20){
-                if(isInputReady()) break
+            for (i in 0..20) {
+                if (isInputReady()) break
             }
 
             browserGoTo("https://signup.heroku.com")
 
-            for(i in 0..20){
-                if(isInputReady()) break            }
+            for (i in 0..20) {
+                if (isInputReady()) break
+            }
 
             robot.keyPress(KeyEvent.VK_HOME)
             robot.keyRelease(KeyEvent.VK_HOME)
@@ -485,7 +486,7 @@ class GoogleGmailPage(
         onPageFinish: (() -> Unit)? = null
 ) : Page(onPageFinish = onPageFinish) {
     override fun action(pageStatus: PageStatus): Response {
-        val link = pageStatus.html.substringAfter("Thanks for signing up with Heroku! You must follow this link to activate your account: ")?.substringBefore("Have fun")?.trim()
+        val link = pageStatus.html.substringAfter("Thanks for signing up with Heroku! You must follow this link to activate your account: ").substringBefore("Have fun").trim()
         if (link.startsWith("https://id.heroku.com/account/accept/")) {
             pageStatus.driver.get(link)
         }

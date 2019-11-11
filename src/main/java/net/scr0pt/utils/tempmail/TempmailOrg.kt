@@ -2,9 +2,9 @@ package net.scr0pt.utils.tempmail
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import org.jsoup.nodes.Element
 import net.scr0pt.utils.tempmail.models.Mail
-import java.lang.reflect.Type;
+import org.jsoup.nodes.Element
+import java.lang.reflect.Type
 
 class TempmailOrg(onInnitSuccess: ((TempmailOrg) -> Unit)? = null, onInitFail: (() -> Unit)? = null) : TempMail(
         url = "https://temp-mail.org",

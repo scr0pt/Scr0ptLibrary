@@ -117,7 +117,7 @@ data class RelatedAnime(@Expose val relationship: String, @Expose val name: Stri
 
 fun AnimeModel.toDocument(): Document {
     val doc = Document()
-    (JSONValue.parse(Gson().toJson(this)) as JSONObject)?.forEach { t, u ->
+    (JSONValue.parse(Gson().toJson(this)) as JSONObject).forEach { t, u ->
         doc.append(t, u)
     }
     return doc

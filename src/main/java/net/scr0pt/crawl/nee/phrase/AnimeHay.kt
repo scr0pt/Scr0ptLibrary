@@ -4,10 +4,10 @@ import net.scr0pt.crawl.nee.Anime
 import net.scr0pt.crawl.nee.Episode
 import net.scr0pt.crawl.nee.File
 import net.scr0pt.crawl.nee.sortLabel
-import org.apache.commons.lang3.StringUtils
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.MyString
 import net.scr0pt.utils.curl.LongConnection
+import org.apache.commons.lang3.StringUtils
+import org.jsoup.nodes.Document
 
 /**
  *
@@ -92,23 +92,22 @@ class AnimeHay(con: LongConnection, id: Long?) : WebPhrase() {
             val split = str_InfoLoad.split("\",\"".toRegex())
             val arrVideo = arrayListOf<File>()
 
-            split.filter { it.length > 5 && it.contains("http") && it.contains("//") }
-                    ?.forEach {
-                        val string = it.trim()
-                        val split1 = string.split("\":\"".toRegex())
-                        var label = split1[0]
-                        var link: String? = split1[1]
-                        if ((link?.length ?: 0) > 10 && link?.contains("http") == true) {
-                            link = MyString.cleanJsonLink(link)
-                            if (label.contains("z")) {
-                                label = label.substring(label.indexOf("z") + 1)
-                            }
-                            val v = File()
-                            v.sourceLink = (link)
-                            v.label = label
-                            arrVideo.add(v)
-                        }
+            split.filter { it.length > 5 && it.contains("http") && it.contains("//") }.forEach {
+                val string = it.trim()
+                val split1 = string.split("\":\"".toRegex())
+                var label = split1[0]
+                var link: String? = split1[1]
+                if ((link?.length ?: 0) > 10 && link?.contains("http") == true) {
+                    link = MyString.cleanJsonLink(link)
+                    if (label.contains("z")) {
+                        label = label.substring(label.indexOf("z") + 1)
                     }
+                    val v = File()
+                    v.sourceLink = (link)
+                    v.label = label
+                    arrVideo.add(v)
+                }
+            }
 
             return when {
                 arrVideo.isEmpty() -> null

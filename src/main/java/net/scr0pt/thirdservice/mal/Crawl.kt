@@ -4,8 +4,6 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.crawl.school.insertOneUnique
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.apache.commons.lang3.StringUtils
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.curl.LongConnection
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -124,7 +122,7 @@ class Crawl(val collection: MongoCollection<org.bson.Document>) {
 
         //get External Links
         doc.selectFirst("h2:contains(External Links)")?.let { externalLinks ->
-            val element = externalLinks?.nextElementSibling()
+            val element = externalLinks.nextElementSibling()
             animeModel.officialPage = element?.selectFirst("a[href]:contains(Official Site)")?.attr("href")
             animeModel.anidb = element?.selectFirst("a[href]:contains(AnimeDB)")?.attr("href")
             animeModel.ann = element?.selectFirst("a[href]:contains(AnimeNewsNetwork)")?.attr("href")
@@ -151,7 +149,7 @@ class Crawl(val collection: MongoCollection<org.bson.Document>) {
             val _e1 = el.select("td[width=100%] > a[href]") ?: continue
             for (_ell in _e1) {
                 val link = _ell.attr("href") ?: continue
-                val name = _ell.text().trim() ?: continue
+                val name = _ell.text().trim()
                 val idAnime = parserMalId(link)
                 val idManga = parserMangaId(link)
                 val type = if (idAnime != null) "Anime" else "Manga"

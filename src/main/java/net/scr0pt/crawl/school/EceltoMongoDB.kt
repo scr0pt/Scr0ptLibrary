@@ -3,7 +3,10 @@ package net.scr0pt.crawl.school
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.CellType
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.bson.Document
 import java.io.FileInputStream
 

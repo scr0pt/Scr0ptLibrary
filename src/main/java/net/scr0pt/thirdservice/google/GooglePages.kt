@@ -1,4 +1,4 @@
-package net.scr0pt.bot.google
+package net.scr0pt.thirdservice.google
 
 import net.scr0pt.selenium.GoogleResponse
 import net.scr0pt.selenium.Page
@@ -6,6 +6,13 @@ import net.scr0pt.selenium.PageStatus
 import net.scr0pt.selenium.Response
 import net.scr0pt.utils.webdriver.DriverElements
 
+object GoogleConstants {
+    val recoverEmailLoginVerify = "https://accounts.google.com/signin/v2/challenge/kpe"
+    val phoneNumberLoginVerify = "https://accounts.google.com/signin/v2/challenge/iap"
+    val googleSearch = "https://www.google.com/"
+    val protectYourAccount = "https://myaccount.google.com/signinoptions/recovery-options-collection"
+    val PlusPageSignUpIdvChallenge = "https://accounts.google.com/b/0/PlusPageSignUpIdvChallenge"
+}
 
 class LoginEnterEmailPage(val email: String, onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     private val emailSelector = "input#identifierId[type=\"email\"]"
@@ -302,7 +309,7 @@ class VerifyItsYouPhoneDevice(onPageFinish: (() -> Unit)? = null) : GooglePage(o
 class AccountDisable(onPageFinish: (() -> Unit)? = null) : GooglePage(onPageFinish = onPageFinish) {
     override fun detect(pageStatus: PageStatus) = pageStatus.equalsText(headingTextSelector, "Đã vô hiệu hóa tài khoản")
 
-    override fun isEndPage() = true
+    override fun action(pageStatus: PageStatus) = GoogleResponse.ACCOUNT_DISABLE()
 }
 
 

@@ -1,8 +1,8 @@
 package net.scr0pt.thirdservice.google.photo
 
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.MyString
 import net.scr0pt.utils.curl.LongConnection
+import org.jsoup.nodes.Document
 
 /**
  * Created by Long
@@ -67,7 +67,7 @@ class PhotoManager(val photoAcc: PhotoAcc) {
                         .filter { it.startsWith("'") && it.endsWith("'") && it.contains(":") }
                         .forEach { s1 ->
                             val s2 = s1.substring(1, s1.length - 1)
-                            s2.split(":".toRegex())?.get(1)?.toLongOrNull()?.let {
+                            s2.split(":".toRegex()).get(1).toLongOrNull()?.let {
                                 return s2
                             }
                         }

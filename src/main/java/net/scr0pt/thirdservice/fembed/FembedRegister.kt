@@ -39,7 +39,7 @@ fun main() {
 
         val result = FakeProfile.getNewProfile()
         val first = result?.name?.first ?: continue
-        val last = result?.name?.last ?: continue
+        val last = result.name?.last ?: continue
 
         registerFembed(
                 "${first} $last", email,
@@ -74,7 +74,7 @@ class FembedRegisterPage(
 
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://dash.fembed.com/auth/register") &&
-                    pageStatus.equalsText("#register_form .title","Free Register!")
+                    pageStatus.equalsText("#register_form .title", "Free Register!")
 }
 
 class FembedThankYouForJoiningPage(
@@ -83,7 +83,7 @@ class FembedThankYouForJoiningPage(
     override fun detect(pageStatus: PageStatus): Boolean =
             pageStatus.url.startsWith("https://dash.fembed.com/auth/register") &&
                     pageStatus.title == "Register - Fembed" &&
-                    pageStatus.equalsText("#register_done .title", "Thank You for joining." )&&
+                    pageStatus.equalsText("#register_done .title", "Thank You for joining.") &&
                     pageStatus.notContain(".notification.is-danger") &&
                     !pageStatus.equalsText("#register_form .title", "Free Register!")
 }

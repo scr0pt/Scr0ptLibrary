@@ -4,8 +4,8 @@ package net.scr0pt.crawl.nee.phrase
 import net.scr0pt.crawl.nee.Anime
 import net.scr0pt.crawl.nee.Episode
 import net.scr0pt.crawl.nee.File
-import org.jsoup.nodes.Document
 import net.scr0pt.utils.curl.LongConnection
+import org.jsoup.nodes.Document
 
 
 /**

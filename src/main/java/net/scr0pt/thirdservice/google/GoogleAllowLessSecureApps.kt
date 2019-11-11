@@ -1,11 +1,10 @@
-package net.scr0pt.bot.google
+package net.scr0pt.thirdservice.google
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
 import net.scr0pt.selenium.GoogleResponse
-import net.scr0pt.thirdservice.mlab.loginGoogle
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 
 import net.scr0pt.utils.webdriver.DriverManager
@@ -18,7 +17,7 @@ import org.bson.Document
  */
 
 
- fun main() {
+fun main() {
     val mongoClient = MongoClients.create(MongoConnection.eduConnection)
     val serviceAccountDatabase = mongoClient.getDatabase("edu-school-account")
     val collection: MongoCollection<Document> = serviceAccountDatabase.getCollection("vimaru-email-info")
@@ -54,7 +53,7 @@ import org.bson.Document
 fun allowLessSecureApps(driver: DriverManager, gmailUsername: String, collection: MongoCollection<Document>) {
     println(1)
     driver.get("https://myaccount.google.com/lesssecureapps?utm_source=google-account&utm_medium=web")
-    var accessTxt = driver.findFirstEl("div", startWithsOneOf = listOf("Allow less secure apps: ","Cho phép ứng dụng kém an toàn: ") )?.text
+    var accessTxt = driver.findFirstEl("div", startWithsOneOf = listOf("Allow less secure apps: ", "Cho phép ứng dụng kém an toàn: "))?.text
             ?: return
     println(1.5)
     if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
@@ -67,7 +66,8 @@ fun allowLessSecureApps(driver: DriverManager, gmailUsername: String, collection
         driver.refresh()
         Thread.sleep(2000)
 
-        accessTxt = driver.findFirstEl("div", startWithsOneOf = listOf("Allow less secure apps: ","Cho phép ứng dụng kém an toàn: ") )?.text ?: return
+        accessTxt = driver.findFirstEl("div", startWithsOneOf = listOf("Allow less secure apps: ", "Cho phép ứng dụng kém an toàn: "))?.text
+                ?: return
         println(4)
         if (accessTxt == "Allow less secure apps: ON" || accessTxt == "Cho phép ứng dụng kém an toàn: BẬT") {
             println(5)

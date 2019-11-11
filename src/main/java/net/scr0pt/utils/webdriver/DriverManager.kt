@@ -38,7 +38,7 @@ class DriverManager(
         Firefox {
             override fun get(headless: Boolean): WebDriver {
                 if (GeckoUtils.getGeckoDriver()) {
-                    System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE);
+                    System.setProperty("webdriver.gecko.driver", GeckoUtils.GECKODRIVER_EXE_FILE)
                 } else {
                     println("Cant get getko driver")
                 }
@@ -82,7 +82,7 @@ class DriverManager(
     }
 
     fun get(url: String) {
-        for(i in 0..10){
+        for (i in 0..10) {
             try {
                 driver.get(url)
                 break
@@ -117,7 +117,7 @@ class DriverManager(
         get() = driver.currentUrl.removeSuffix("/")
     val html: String
         get() {
-            for(i in 0..10){
+            for (i in 0..10) {
                 try {
                     return driver.pageSource
                 } catch (e: Exception) {

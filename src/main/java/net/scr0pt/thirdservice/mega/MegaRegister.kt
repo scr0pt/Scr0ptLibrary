@@ -5,7 +5,7 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Updates
 import net.scr0pt.selenium.*
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import net.scr0pt.utils.FakeProfile
+import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.InfinityMail
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
@@ -33,13 +33,13 @@ fun main(args: Array<String>) {
         if (emails.contains(email)) continue
         emails.add(email)
 
-        val result = FakeProfile.getNewProfile()
-        val firstName = result?.name?.first ?: "Bruce"
-        val lastName = result?.name?.last ?: "Lee"
+        val result = FakeProfileV2.getNewProfile() ?: continue
+        val firstName = result.firstName
+        val lastName = result.lastName
         val password = "Bruce_${System.currentTimeMillis()}"
         println("email: $email")
         println("password: $password")
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)
         val pageManager = PageManager(driverManager, "https://mega.nz/register")
         pageManager.gmail = Gmail(gmailUsername, gmailPassword).apply {
             onEvent(
@@ -77,7 +77,7 @@ fun main(args: Array<String>) {
                                             .append("lastName", lastName).append("verify_email", false)
                             )
                         },
-                        MegaRegisterConfirmEmailPage() {
+                        MegaRegisterConfirmEmailPage {
                             collection.updateOne(org.bson.Document("User_Name", email), Updates.set("verify_email", true))
                         },
                         MegaRegisterEnterPasswordAfterEnterConfirmLinkPage(password),
@@ -300,7 +300,7 @@ fun getRecoverKey(): String? {
     val fileName = "C:\\Users\\Administrator\\Downloads\\MEGA-RECOVERYKEY.txt"
     val myFile = File(fileName)
     if (myFile.exists()) {
-        val recoverKey = myFile.readLines()?.first()
+        val recoverKey = myFile.readLines().first()
         myFile.delete()
         return recoverKey
     }

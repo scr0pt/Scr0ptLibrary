@@ -2,13 +2,8 @@ package net.scr0pt.utils.javamail
 
 import org.apache.commons.mail.DefaultAuthenticator
 import org.apache.commons.mail.SimpleEmail
-import java.util.Properties
-import javax.mail.Folder
-import javax.mail.Message
-import javax.mail.MessagingException
-import javax.mail.Session
-import javax.mail.Store
-import javax.mail.URLName
+import java.util.*
+import javax.mail.*
 
 fun main() {
 //    SendMailSSL.sendMail()
@@ -24,9 +19,9 @@ fun main() {
     val messages = mailService.messages
     for (i in 0 until messageCount) {
         var subject = ""
-        if (messages[i].getSubject() != null)
-            subject = messages[i].getSubject()
-        val fromAddress = messages[i].getFrom()
+        if (messages[i].subject != null)
+            subject = messages[i].subject
+        val fromAddress = messages[i].from
 
         println(subject)
         println(fromAddress)

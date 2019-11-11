@@ -4,8 +4,8 @@ import com.google.gson.Gson
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
-import org.bson.Document
 import net.scr0pt.utils.curl.LongConnection
+import org.bson.Document
 
 fun main() {
     val haui = Haui()
@@ -184,7 +184,7 @@ class Haui {
 
         println(response.body)
 
-        if (response.body?.contains("The anti-forgery token could not be decrypted") ?: false) return null
+        if (response.body?.contains("The anti-forgery token could not be decrypted") == true) return null
 
         val apiResponse = Gson().fromJson<HauiApiResponse>(response.body, HauiApiResponse::class.java) ?: return null
         if (apiResponse.err == 0) {

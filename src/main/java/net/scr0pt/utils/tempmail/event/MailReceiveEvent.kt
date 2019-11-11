@@ -1,6 +1,5 @@
 package net.scr0pt.utils.tempmail.event
 
-import javafx.application.Application.launch
 import net.scr0pt.utils.tempmail.models.Mail
 
 /**
@@ -11,7 +10,7 @@ import net.scr0pt.utils.tempmail.models.Mail
 class MailReceiveEvent(
         val key: String,
         val validator: (Mail) -> Boolean,//filter inboxs
-        private val callback:  (List<Mail>) -> Unit,
+        private val callback: (List<Mail>) -> Unit,
         val once: Boolean = true,//only run callback once
         val fetchContent: Boolean = false,
         val new: Boolean = true//only get new emails
