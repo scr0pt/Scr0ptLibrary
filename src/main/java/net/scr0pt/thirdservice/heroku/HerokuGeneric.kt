@@ -9,6 +9,7 @@ import net.scr0pt.selenium.bypassCaptcha
 import net.scr0pt.thirdservice.mongodb.MongoConnection
 import net.scr0pt.utils.FakeProfileV2
 import net.scr0pt.utils.RobotManager
+import net.scr0pt.utils.RobotManager.Companion.screenSize
 import net.scr0pt.utils.tempmail.Gmail
 import net.scr0pt.utils.tempmail.event.MailReceiveEvent
 import net.scr0pt.utils.tempmail.models.Mail
@@ -118,14 +119,14 @@ class HerokuRegister(
 
     private fun doooo() {
         with(robotManager) {
-            //            val baseX = 1170
-            val baseX = 900
-//            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
-            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
-//            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
-            val newCapthchaBtn = Pair<Int, Int>(595, 580)
-//            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
-            val multipleCorrect = Pair<Int, Int>(590, 590)
+            val baseX = 1170
+//            val baseX = 900
+            val initialResolveCaptchaBtn = Pair<Int, Int>(750, screenSize.height - 80)
+//            val initialResolveCaptchaBtn = Pair<Int, Int>(470, screenSize.height - 75)
+            val newCapthchaBtn = Pair<Int, Int>(870, screenSize.height - 190)
+//            val newCapthchaBtn = Pair<Int, Int>(595, 580)
+            val multipleCorrect = Pair<Int, Int>(870, screenSize.height - 160)
+//            val multipleCorrect = Pair<Int, Int>(590, 590)
             val createNewAccountBtn = Pair<Int, Int>(baseX, screenSize.height - 200)
             val registerTime = System.currentTimeMillis()
             println("doooo 1")
@@ -182,7 +183,7 @@ class HerokuRegister(
     }
 
     private fun watingEmailConfirm(registerTime: Long) {
-        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)
+        val driverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = true)
         val pageManager = PageManager(driverManager)
         pageManager.addPageList(arrayListOf(
                 HerokuSetYourPasswordPage(password = password) {

@@ -89,7 +89,7 @@ fun openloadRegister(robotManager: RobotManager, email: String, password: String
             robotManager.click(submitBtn)
             longSleep()
 
-            robotManager.click(5 * robotManager.screenSize.width / 6, robotManager.screenSize.height / 2)//safe screen point
+            robotManager.click(5 * RobotManager.screenSize.width / 6, RobotManager.screenSize.height / 2)//safe screen point
 
             val txt = robotManager.printScreenText()
             if (txt.contains("An Account with this Email exists already.")) {

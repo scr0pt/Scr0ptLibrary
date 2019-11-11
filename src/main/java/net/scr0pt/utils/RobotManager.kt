@@ -1,12 +1,10 @@
 package net.scr0pt.utils
 
-import java.awt.BorderLayout
-import java.awt.MouseInfo
-import java.awt.Robot
-import java.awt.Toolkit
+import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
+import java.util.HashMap
 import javax.swing.JFrame
 import javax.swing.JTextField
 
@@ -14,10 +12,34 @@ fun main() {
     detectMousePosition()
 }
 
+
 class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     val CLIPBOARD_DELETED = "SystemClipboardDeleted"
     val screenResolution = Toolkit.getDefaultToolkit().screenResolution
-    val screenSize = Toolkit.getDefaultToolkit().screenSize
+    companion object {
+        val screenSize = Toolkit.getDefaultToolkit().screenSize
+        val windowScreenSize = ScreenSize.getType(screenSize)
+    }
+
+    enum class ScreenSize{
+        FullHD{
+            override fun detect(screenSize: Dimension) = screenSize.width == 1920 && screenSize.height==1080
+        },
+        HD{
+            override fun detect(screenSize: Dimension) = screenSize.width == 1366 && screenSize.height==768
+        };
+
+        companion object {
+            fun getType(screenSize: Dimension): ScreenSize? {
+                return when {
+                    FullHD.detect(screenSize) -> FullHD
+                    HD.detect(screenSize) -> HD
+                    else -> null
+                }
+            }
+        }
+        abstract fun detect(screenSize: Dimension): Boolean
+    }
 
     enum class BrowserType {
         CHROME {
@@ -187,7 +209,8 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
         click()
     }
 
-    fun click(position: Pair<Int, Int>) {
+    fun click(position: Pair<Int, Int>?) {
+        position ?: return
         mouseMove(position.first, position.second)
         click()
     }
@@ -257,6 +280,12 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
     fun isScreenTextContain(list: List<String>): Boolean {
         val text = getScreenText()
         return list.all { text.contains(it) }
+    }
+
+    fun click(positions: HashMap<ScreenSize, Pair<Int, Int>>) {
+        if (positions.containsKey(windowScreenSize)) {
+            click(positions[windowScreenSize])
+        }
     }
 
 }
