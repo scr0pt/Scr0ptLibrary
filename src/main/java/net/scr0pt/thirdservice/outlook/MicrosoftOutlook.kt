@@ -65,7 +65,7 @@ class MicrosoftOutlook {
         }
     }
 
-    fun doRegister(driverManager: DriverManager = DriverManager(driverType = DriverManager.BrowserType.Firefox, driverHeadless = false)) {
+    fun doRegister(driverManager: DriverManager = DriverManager(driverType = DriverManager.BrowserType.Chrome, driverHeadless = false)) {
         val result = FakeProfileV2.getNewProfile() ?: return
         val password = "TheOutlook_${result.password}"
         val firstName = result.firstName
