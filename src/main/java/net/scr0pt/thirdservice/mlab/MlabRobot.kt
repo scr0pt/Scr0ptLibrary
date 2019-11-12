@@ -36,7 +36,13 @@ fun main(args: Array<String>) {
 }
 
 fun processLogin(collection: MongoCollection<Document>) {
-    collection.random(Filters.and(Filters.exists("cluster_builded", false), Filters.exists("cookies", false)))?.let {
+    collection.random(
+            Filters.and(
+                    Filters.exists("cluster_builded", false),
+                    Filters.exists("cookies", false),
+                    Filters.eq("acc_status", "registered")
+            )
+    )?.let {
         val email = it.getString("email")
         val password = it.getString("password")
         if (email != null && password != null) {

@@ -4,7 +4,7 @@ import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
-import java.util.HashMap
+import java.util.*
 import javax.swing.JFrame
 import javax.swing.JTextField
 
@@ -239,7 +239,7 @@ class RobotManager(val browerType: BrowserType = BrowserType.CHROME) {
         clearClipboard()
         ctrA()
         ctrC()
-        val clipboardTxt = SystemClipboard.get()
+        val clipboardTxt = SystemClipboard.get().trim()
         clearClipboard()
         return clipboardTxt
     }

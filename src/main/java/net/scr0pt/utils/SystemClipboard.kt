@@ -7,7 +7,11 @@ import java.awt.datatransfer.StringSelection
 object SystemClipboard {
     val systemClipboard = Toolkit.getDefaultToolkit().systemClipboard
     fun copy(text: String) {
-        systemClipboard.setContents(StringSelection(text), null)
+        try {
+            systemClipboard.setContents(StringSelection(text), null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun get(): String = try {
