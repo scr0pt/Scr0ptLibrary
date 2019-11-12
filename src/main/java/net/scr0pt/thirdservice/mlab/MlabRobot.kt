@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import net.scr0pt.crawl.school.random
+import net.scr0pt.robot.rPageProcessLogin
 import net.scr0pt.selenium.MlabResponse
 import net.scr0pt.selenium.PageManager
 import net.scr0pt.selenium.bypassCaptcha
@@ -39,7 +40,8 @@ fun processLogin(collection: MongoCollection<Document>) {
         val email = it.getString("email")
         val password = it.getString("password")
         if (email != null && password != null) {
-            robotLoginMlab(email, password, collection)
+            rPageProcessLogin(email, password, collection)
+//            robotLoginMlab(email, password, collection)
         }
     }
 }
@@ -185,11 +187,16 @@ fun robotLoginMlab(email: String, password: String, collection: MongoCollection<
                 doingAfterBypassCaptcha(this, collection, email)
                 return@robotLoginMlab
             }
+            sleep()
         }
 
-        if (getCurrentUrl().endsWith("#clusters")) alreadyCreatedCluster(this, collection, email)
-        else {
-            val a = 1//debug
+        val currentUrl = getCurrentUrl()
+        when {
+            currentUrl.endsWith("#clusters") -> dooone(this, collection, email)
+            currentUrl.startsWith("https://cloud.mongodb.com/user#/atlas/login") -> closeWindow()
+            else -> {
+                val a = 1//debug
+            }
         }
     }
 }
@@ -201,7 +208,7 @@ fun doing(robotManager: RobotManager, collection: MongoCollection<Document>, ema
     bypassCaptcha(initialResolveCaptchaBtn, initialResolveCaptchaBtn, initialResolveCaptchaBtn, robotManager, onSuccess = {
         if (isBashboardCreateClusterOpen(robotManager.getScreenText())) {
             doingAfterBypassCaptcha(robotManager, collection, email)
-        } else if (robotManager.getCurrentUrl().endsWith("#clusters")) alreadyCreatedCluster(robotManager, collection, email)
+        } else if (robotManager.getCurrentUrl().endsWith("#clusters")) dooone(robotManager, collection, email)
         else {
             val a = 1//debug
         }
@@ -210,7 +217,7 @@ fun doing(robotManager: RobotManager, collection: MongoCollection<Document>, ema
     }, onSpecialCase = {
         if (isBashboardCreateClusterOpen(robotManager.getScreenText())) {
             doingAfterBypassCaptcha(robotManager, collection, email)
-        } else if (robotManager.getCurrentUrl().endsWith("#clusters")) alreadyCreatedCluster(robotManager, collection, email)
+        } else if (robotManager.getCurrentUrl().endsWith("#clusters")) dooone(robotManager, collection, email)
         else {
             val a = 1//debug
         }
@@ -301,39 +308,27 @@ fun doingAfterBypassCaptcha(robotManager: RobotManager, collection: MongoCollect
     }
 }
 
-fun dooone(robotManager: RobotManager, collection: MongoCollection<Document>, email: String) {
+fun dooone(robotManager: RobotManager, collection: MongoCollection<Document>, email: String, isCloseWindow: Boolean = true) {
     println("Your cluster is being created")
     val cookieStr = robotManager.getCookieStr()
 
+    val list = arrayListOf(Updates.set("cluster_builded", true))
     if (cookieStr != "") {
-        collection.updateOne(Document("email", email), Updates.combine(
-                Updates.set("cookies", cookieStr),
-                Updates.set("cluster_builded", true)
-        ))
-    } else {
-        collection.updateOne(Document("email", email), Updates.combine(
-                Updates.set("cluster_builded", true)
-        ))
+        list.add(Updates.set("cookies", cookieStr))
     }
-    robotManager.closeWindow()
+    collection.updateOne(Document("email", email), Updates.combine(list))
+    if (isCloseWindow) {
+        robotManager.closeWindow()
+    }
 }
 
-fun alreadyCreatedCluster(robotManager: RobotManager, collection: MongoCollection<Document>, email: String) {
-    val cookieStr = robotManager.getCookieStr()
-    if (cookieStr != "") {
-        collection.updateOne(Document("email", email), Updates.combine(
-                Updates.set("cookies", cookieStr)
-        ))
-    }
-    robotManager.closeWindow()
-}
 
 fun RobotManager.getCookieStr(): String {
     println("getCookieStr")
 
     robot.keyPress(KeyEvent.VK_F12)
     robot.keyRelease(KeyEvent.VK_F12)
-    sleep()
+    longSleep()
 
     SystemClipboard.copy("")
 

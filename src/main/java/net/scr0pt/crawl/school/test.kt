@@ -3,21 +3,14 @@ package net.scr0pt.crawl.school
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoCollection
 import net.scr0pt.thirdservice.mongodb.MongoConnection
+import org.apache.commons.lang3.RandomUtils
 import org.bson.Document
-import java.util.*
 
 
 fun main() {
-    val mongoClient =
-            MongoClients.create(MongoConnection.megaConnection)
-    val serviceAccountDatabase = mongoClient.getDatabase("microsoft")
-    val collection: MongoCollection<org.bson.Document> = serviceAccountDatabase.getCollection("microsoft-account")
-    collection.insertOne(
-            org.bson.Document("email", "Rine1946@outlook.com").append("password", "TheOutlook22001@22")
-                    .append("firstname", "Ahmed").append("lastname", "T. Parker")
-                    .append("created_at", Date()).append("updated_at", Date())
-                    .append("acc_status", "initial")
-    )
+    for (i in 0..10) {
+        println(RandomUtils.nextInt(0, 3))
+    }
 }
 
 fun main22() {
